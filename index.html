@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vijf — Dutch flashcards</title>
+<meta name="description" content="A five-box Leitner system for learning Dutch words.">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#14181F">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="icon" href="./icons/favicon.png" type="image/png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="vijf">
+<style>
+  :root {
+    --ink: #14181F;
+    --paper: #EAEAE5;
+    --card: #FFFFFF;
+    --signal: #FFC917;
+    --deep: #003082;
+    --mute: #82827C;
+    --line: #C9C9C2;
+    --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * , *::before, *::after { box-sizing: border-box; }
+  html { background: var(--paper); }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #app {
+    min-height: 100vh;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: calc(18px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));
+  }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--mute);
+  }
+
+  .top {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    border-bottom: 2px solid var(--ink); padding-bottom: 10px; margin-bottom: 22px;
+  }
+  .wordmark { font-size: 34px; font-weight: 800; letter-spacing: -0.045em; line-height: 0.9; }
+  .wordmark span { color: var(--deep); }
+  .tally { font-family: var(--mono); font-size: 11px; color: var(--mute); text-align: right; line-height: 1.5; }
+  .tally b { color: var(--ink); font-size: 15px; }
+
+  .tray { display: flex; flex-direction: column; gap: 8px; }
+  .slot {
+    position: relative; display: grid; grid-template-columns: 40px 1fr auto;
+    align-items: center; gap: 12px; background: var(--card);
+    border: 1.5px solid var(--ink); padding: 14px 14px 14px 0;
+    cursor: pointer; text-align: left; width: 100%; font: inherit; color: inherit;
+    transition: transform 0.12s ease;
+  }
+  .slot:active { transform: translateX(3px); }
+  .slot:focus-visible { outline: 3px solid var(--deep); outline-offset: 2px; }
+  .slot .num {
+    font-family: var(--mono); font-size: 13px; font-weight: 700; text-align: center;
+    align-self: stretch; display: flex; align-items: center; justify-content: center;
+    background: var(--ink); color: var(--paper); margin: -14px 0; padding: 14px 0;
+  }
+  .slot[data-full="1"] .num { background: var(--signal); color: var(--ink); }
+  .slot .lbl { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+  .slot .sub {
+    font-family: var(--mono); font-size: 10px; color: var(--mute);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px;
+  }
+  .slot .cnt { font-family: var(--mono); font-size: 22px; font-weight: 700; min-width: 34px; text-align: right; }
+  .slot[data-empty="1"] { border-color: var(--line); }
+  .slot[data-empty="1"] .num { background: var(--line); color: #fff; }
+  .slot[data-empty="1"] .cnt, .slot[data-empty="1"] .lbl { color: var(--mute); }
+  .edges { display: flex; gap: 2px; margin-top: 7px; flex-wrap: wrap; }
+  .edges i { display: block; width: 3px; height: 12px; background: var(--deep); }
+
+  .row { display: flex; gap: 8px; margin-top: 22px; }
+  .btn {
+    flex: 1; font: inherit; font-size: 14px; font-weight: 700; letter-spacing: -0.01em;
+    padding: 14px 12px; border: 1.5px solid var(--ink); background: transparent;
+    color: var(--ink); cursor: pointer; border-radius: 0;
+  }
+  .btn:active { background: var(--ink); color: var(--paper); }
+  .btn:focus-visible { outline: 3px solid var(--deep); outline-offset: 2px; }
+  .btn--fill { background: var(--ink); color: var(--paper); }
+  .btn--fill:active { background: var(--deep); }
+  .btn--ghost { border-color: var(--line); color: var(--mute); font-weight: 500; }
+  .btn small {
+    display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase; opacity: 0.6; margin-top: 3px; font-weight: 400;
+  }
+
+  .bar {
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--mute); margin-bottom: 14px;
+  }
+  .bar button { font: inherit; background: none; border: none; color: var(--mute); cursor: pointer; padding: 4px 0; }
+  .bar button:active { color: var(--ink); }
+
+  .stage { perspective: 1200px; margin-bottom: 18px; }
+  .flip {
+    position: relative; width: 100%; min-height: 300px;
+    transform-style: preserve-3d; cursor: pointer;
+    transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .flip.turned { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    background: var(--card); border: 1.5px solid var(--ink); padding: 22px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .face--back { transform: rotateY(180deg); background: var(--signal); }
+  .word { font-size: 38px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; word-break: break-word; }
+  .hint {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--mute);
+  }
+  .face--back .hint { color: rgba(20,24,31,0.55); }
+  .mid { flex: 1; display: flex; align-items: center; }
+
+  .rate { display: flex; gap: 8px; }
+  .rate .btn { padding: 16px 10px; }
+  .rate .yes { background: var(--ink); color: var(--paper); }
+
+  label.field { display: block; margin-bottom: 14px; }
+  label.field .eyebrow { display: block; margin-bottom: 5px; }
+  input[type="text"], textarea {
+    width: 100%; font: inherit; font-size: 17px; padding: 12px;
+    border: 1.5px solid var(--ink); background: var(--card); color: var(--ink); border-radius: 0;
+  }
+  textarea { min-height: 130px; font-size: 15px; font-family: var(--mono); }
+  input:focus, textarea:focus { outline: 3px solid var(--signal); outline-offset: -1px; }
+
+  .item {
+    display: grid; grid-template-columns: 26px 1fr auto; gap: 10px;
+    align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line);
+  }
+  .item .bx { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--deep); }
+  .item .nl { font-weight: 700; font-size: 15px; }
+  .item .nat { font-size: 13px; color: var(--mute); }
+  .item .del { background: none; border: none; font: inherit; font-size: 18px; color: var(--line); cursor: pointer; padding: 4px 6px; }
+  .item .del:active { color: var(--ink); }
+
+  .note { font-size: 13px; line-height: 1.5; color: var(--mute); margin-top: 18px; }
+  .empty { border: 1.5px dashed var(--line); padding: 26px 20px; text-align: center; }
+  .empty p { font-size: 15px; line-height: 1.5; margin: 8px 0 0; }
+  h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 16px; }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom));
+    transform: translateX(-50%); background: var(--ink); color: var(--paper);
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 11px 16px; z-index: 50;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .flip, .slot { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function () {
+  var KEY = 'leitner-dutch-v1';
+  var app = document.getElementById('app');
+  var state = { cards: [], nextId: 1 };
+  var view = 'home';
+  var session = null;
+
+  var STARTER = [
+    ['the house','het huis'],['the water','het water'],['the bread','het brood'],
+    ['tomorrow','morgen'],['always','altijd'],['together','samen'],
+    ['to work','werken'],['to understand','begrijpen'],['expensive','duur'],
+    ['busy','druk'],['nice / kind','aardig'],['almost','bijna']
+  ];
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) state = JSON.parse(raw);
+    } catch (e) {}
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch (e) { toast('Opslaan mislukt'); }
+  }
+
+  function inBox(n) { return state.cards.filter(function (c) { return c.box === n; }); }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m];
+    });
+  }
+  function toast(msg) {
+    var t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 1800);
+  }
+  function go(v) { view = v; render(); }
+
+  function header() {
+    return '<div class="top"><div class="wordmark">vijf<span>.</span></div>' +
+      '<div class="tally"><b>' + inBox(5).length + '</b> / ' + state.cards.length +
+      '<br>geleerd</div></div>';
+  }
+
+  function homeView() {
+    var names = ['Nieuw', 'Wankel', 'Op weg', 'Bijna', 'Geleerd'];
+    var subs = ['brand new', 'shaky', 'getting there', 'nearly there', 'mastered'];
+    var h = header() + '<div class="tray">';
+    for (var i = 1; i <= 5; i++) {
+      var n = inBox(i).length, edges = '';
+      for (var e = 0; e < Math.min(n, 20); e++) edges += '<i></i>';
+      h += '<button class="slot" data-go="box' + i + '" data-empty="' + (n ? 0 : 1) +
+        '" data-full="' + (i === 5 && n ? 1 : 0) + '">' +
+        '<span class="num">' + i + '</span><span>' +
+        '<span class="lbl">' + names[i - 1] + '</span>' +
+        '<span class="sub">' + subs[i - 1] + '</span>' +
+        (n ? '<span class="edges">' + edges + '</span>' : '') +
+        '</span><span class="cnt">' + n + '</span></button>';
+    }
+    h += '</div>';
+    if (!state.cards.length) {
+      h += '<div class="empty" style="margin-top:22px"><div class="eyebrow">Leeg</div>' +
+        '<p>Add your first word and it lands in box 1.</p></div>';
+    }
+    h += '<div class="row">' +
+      '<button class="btn btn--fill" data-go="add">Woord toevoegen<small>add words</small></button>' +
+      '<button class="btn" data-go="list">Alles<small>all cards</small></button></div>';
+    if (!state.cards.length) {
+      h += '<div class="row"><button class="btn btn--ghost" data-act="starter">' +
+        'Start met 12 voorbeeldwoorden<small>load a starter set</small></button></div>';
+    }
+    h += '<p class="note">Tap a box to study it. <b>Ken ik</b> moves a card up one box; ' +
+      '<b>Nog niet</b> leaves it where it is. Nothing ever moves back down.</p>';
+    return h;
+  }
+
+  function studyView() {
+    if (!session || !session.queue.length) return summaryView();
+    var card = state.cards.find(function (c) { return c.id === session.queue[0]; });
+    if (!card) { session.queue.shift(); return studyView(); }
+    var readonly = session.box === 5;
+
+    var h = '<div class="bar"><button data-go="home">← Dozen</button>' +
+      '<span>Doos ' + session.box + ' · ' + session.queue.length + ' over</span></div>' +
+      '<div class="stage"><div class="flip" id="flip">' +
+      '<div class="face"><span class="hint">Jouw taal</span>' +
+      '<div class="mid"><div class="word">' + esc(card.native) + '</div></div>' +
+      '<span class="hint">Tik om te draaien · tap to flip</span></div>' +
+      '<div class="face face--back"><span class="hint">Nederlands</span>' +
+      '<div class="mid"><div class="word">' + esc(card.dutch) + '</div></div>' +
+      '<span class="hint">' + (readonly ? 'Geleerd — blijft in doos 5' : 'Wist je het?') +
+      '</span></div></div></div>';
+
+    if (readonly) {
+      h += '<div class="row" style="margin-top:0">' +
+        '<button class="btn btn--fill" data-act="next">Volgende<small>next card</small></button></div>';
+    } else {
+      h += '<div class="rate">' +
+        '<button class="btn no" data-act="no">Nog niet<small>stays in box ' + session.box + '</small></button>' +
+        '<button class="btn yes" data-act="yes">Ken ik<small>→ box ' + (session.box + 1) + '</small></button></div>';
+    }
+    return h;
+  }
+
+  function summaryView() {
+    var h = '<div class="bar"><button data-go="home">← Dozen</button><span>Klaar</span></div>' +
+      '<h2>Ronde afgerond.</h2>';
+    if (session) {
+      h += '<p class="note" style="margin-top:0">' + session.up + ' cards moved up to box ' +
+        Math.min(session.box + 1, 5) + '. ' + session.held + ' stayed in box ' + session.box + '.</p>';
+    }
+    h += '<div class="row"><button class="btn btn--fill" data-go="home">' +
+      'Terug naar de dozen<small>back to boxes</small></button></div>';
+    return h;
+  }
+
+  function addView() {
+    return '<div class="bar"><button data-go="home">← Dozen</button><span>Toevoegen</span></div>' +
+      '<h2>Nieuw woord</h2>' +
+      '<label class="field"><span class="eyebrow">Jouw taal · your language</span>' +
+      '<input type="text" id="f-native" autocomplete="off" autocapitalize="none"></label>' +
+      '<label class="field"><span class="eyebrow">Nederlands · Dutch</span>' +
+      '<input type="text" id="f-dutch" autocomplete="off" autocapitalize="none"></label>' +
+      '<div class="row" style="margin-top:4px"><button class="btn btn--fill" data-act="save-one">' +
+      'Bewaren in doos 1<small>save to box 1</small></button></div>' +
+      '<h2 style="margin-top:34px">Meerdere tegelijk</h2>' +
+      '<label class="field"><span class="eyebrow">Eén per regel · your word = dutch word</span>' +
+      '<textarea id="f-bulk" placeholder="the house = het huis&#10;tomorrow = morgen"></textarea></label>' +
+      '<div class="row" style="margin-top:0"><button class="btn" data-act="save-bulk">' +
+      'Lijst toevoegen<small>import list</small></button></div>';
+  }
+
+  function listView() {
+    var h = '<div class="bar"><button data-go="home">← Dozen</button><span>' +
+      state.cards.length + ' kaarten</span></div>';
+    if (!state.cards.length) {
+      return h + '<div class="empty"><div class="eyebrow">Leeg</div><p>No cards yet.</p></div>' +
+        '<div class="row"><button class="btn btn--fill" data-go="add">Woord toevoegen<small>add words</small></button></div>';
+    }
+    state.cards.slice().sort(function (a, b) { return a.box - b.box || b.id - a.id; })
+      .forEach(function (c) {
+        h += '<div class="item"><span class="bx">' + c.box + '</span><span>' +
+          '<span class="nl">' + esc(c.dutch) + '</span><br>' +
+          '<span class="nat">' + esc(c.native) + '</span></span>' +
+          '<button class="del" data-del="' + c.id + '" aria-label="Verwijderen">×</button></div>';
+      });
+    h += '<div class="row"><button class="btn" data-act="backup">Back-up maken<small>copy your data</small></button></div>' +
+      '<div class="row" style="margin-top:8px"><button class="btn btn--ghost" data-act="wipe">' +
+      'Alles wissen<small>delete everything</small></button></div>' +
+      '<p class="note">Cards live on this device. Make a back-up before clearing your browser data.</p>';
+    return h;
+  }
+
+  function backupView() {
+    return '<div class="bar"><button data-go="list">← Alles</button><span>Back-up</span></div>' +
+      '<h2>Back-up</h2>' +
+      '<p class="note" style="margin-top:0">Copy this text somewhere safe. Paste it back here and ' +
+      'tap restore to bring your cards and boxes back on any device.</p>' +
+      '<label class="field"><span class="eyebrow">Jouw gegevens · your data</span>' +
+      '<textarea id="f-json">' + esc(JSON.stringify(state)) + '</textarea></label>' +
+      '<div class="row" style="margin-top:0">' +
+      '<button class="btn" data-act="copy">Kopiëren<small>copy</small></button>' +
+      '<button class="btn btn--fill" data-act="restore">Terugzetten<small>restore</small></button></div>';
+  }
+
+  function render() {
+    var v = { home: homeView, study: studyView, add: addView, list: listView, backup: backupView };
+    app.innerHTML = (v[view] || homeView)();
+    window.scrollTo(0, 0);
+  }
+
+  function startBox(n) {
+    var ids = inBox(n).map(function (c) { return c.id; });
+    if (!ids.length) { toast('Doos ' + n + ' is leeg'); return; }
+    for (var i = ids.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = ids[i]; ids[i] = ids[j]; ids[j] = t;
+    }
+    session = { box: n, queue: ids, up: 0, held: 0 };
+    go('study');
+  }
+
+  function rate(liked) {
+    var id = session.queue[0];
+    var card = state.cards.find(function (c) { return c.id === id; });
+    if (!card) { session.queue.shift(); render(); return; }
+    if (liked) {
+      card.box = Math.min(card.box + 1, 5);
+      card.reviewedAt = Date.now();
+      session.up++;
+      session.queue.shift();
+    } else {
+      session.held++;
+      session.queue.shift();
+      session.queue.push(id);
+    }
+    save();
+    render();
+  }
+
+  function addCard(native, dutch) {
+    if (!native || !dutch) return false;
+    state.cards.push({
+      id: state.nextId++, native: native, dutch: dutch,
+      box: 1, createdAt: Date.now(), reviewedAt: null
+    });
+    return true;
+  }
+
+  app.addEventListener('click', function (ev) {
+    var el = ev.target.closest('[data-go],[data-act],[data-del],#flip');
+    if (!el) return;
+
+    if (el.id === 'flip') { el.classList.toggle('turned'); return; }
+
+    var goTo = el.getAttribute('data-go');
+    if (goTo) {
+      if (goTo.indexOf('box') === 0) startBox(parseInt(goTo.slice(3), 10));
+      else go(goTo);
+      return;
+    }
+
+    var del = el.getAttribute('data-del');
+    if (del) {
+      state.cards = state.cards.filter(function (c) { return c.id !== parseInt(del, 10); });
+      save(); render(); return;
+    }
+
+    var act = el.getAttribute('data-act');
+    if (act === 'yes') rate(true);
+    else if (act === 'no') rate(false);
+    else if (act === 'next') { session.queue.shift(); render(); }
+    else if (act === 'starter') {
+      STARTER.forEach(function (p) { addCard(p[0], p[1]); });
+      save(); render(); toast('12 woorden in doos 1');
+    }
+    else if (act === 'save-one') {
+      var n = document.getElementById('f-native').value.trim();
+      var d = document.getElementById('f-dutch').value.trim();
+      if (!n || !d) { toast('Vul beide velden in'); return; }
+      addCard(n, d); save();
+      document.getElementById('f-native').value = '';
+      document.getElementById('f-dutch').value = '';
+      document.getElementById('f-native').focus();
+      toast('Toegevoegd aan doos 1');
+    }
+    else if (act === 'save-bulk') {
+      var raw = document.getElementById('f-bulk').value, count = 0;
+      raw.split('\n').forEach(function (line) {
+        if (!line.trim()) return;
+        var parts = line.split(/\s*[=|\t;]\s*/);
+        if (parts.length < 2) parts = line.split(/\s*,\s*/);
+        if (parts.length < 2) return;
+        if (addCard(parts[0].trim(), parts[1].trim())) count++;
+      });
+      if (!count) { toast('Geen regels herkend'); return; }
+      save(); render(); toast(count + ' woorden toegevoegd');
+    }
+    else if (act === 'backup') go('backup');
+    else if (act === 'copy') {
+      var ta = document.getElementById('f-json');
+      ta.select(); ta.setSelectionRange(0, 999999);
+      try { document.execCommand('copy'); toast('Gekopieerd'); }
+      catch (e) { toast('Selecteer en kopieer handmatig'); }
+    }
+    else if (act === 'restore') {
+      try {
+        var data = JSON.parse(document.getElementById('f-json').value);
+        if (!data || !Array.isArray(data.cards)) throw new Error('bad');
+        state = data;
+        if (!state.nextId) {
+          state.nextId = state.cards.reduce(function (m, c) { return Math.max(m, c.id); }, 0) + 1;
+        }
+        save(); go('home'); toast('Teruggezet');
+      } catch (e) { toast('Ongeldige back-up'); }
+    }
+    else if (act === 'wipe') {
+      if (!confirm('Delete all cards and progress?')) return;
+      state = { cards: [], nextId: 1 };
+      save(); render();
+    }
+  });
+
+  load();
+  render();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
