@@ -195,6 +195,11 @@
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
     text-transform: uppercase; padding: 11px 16px; z-index: 50;
   }
+  .toast--undo { display: flex; align-items: center; gap: 16px; white-space: nowrap; padding: 8px 8px 8px 16px; }
+  .toast--undo button {
+    font: inherit; font-weight: 700; color: var(--signal); background: none;
+    border: none; cursor: pointer; padding: 6px 8px; letter-spacing: inherit; text-transform: inherit;
+  }
   @media (prefers-reduced-motion: reduce) {
     .flip, .slot, .swipe .slot--deck { transition: none; }
   }
@@ -276,6 +281,25 @@
     document.body.appendChild(t);
     setTimeout(function () { t.remove(); }, 1800);
   }
+  /* A toast with an undo button. It lives outside #app, so it gets its own listener.
+     Only one is shown at a time: a newer one replaces it and its undo is lost. */
+  var UNDO_MS = 5000, undoEl = null, undoTimer = null;
+  function undoToast(msg, onUndo) {
+    clearUndo();
+    undoEl = document.createElement('div');
+    undoEl.className = 'toast toast--undo';
+    undoEl.innerHTML = '<span></span><button type="button">Ongedaan maken</button>';
+    undoEl.firstChild.textContent = msg;
+    undoEl.lastChild.addEventListener('click', function () { clearUndo(); onUndo(); });
+    document.body.appendChild(undoEl);
+    undoTimer = setTimeout(clearUndo, UNDO_MS);
+  }
+  function clearUndo() {
+    clearTimeout(undoTimer);
+    if (undoEl) undoEl.remove();
+    undoEl = null;
+  }
+
   function go(v) { view = v; render(); }
   function open(id) { deckId = id; go('home'); }
 
@@ -564,10 +588,18 @@
     var delDeck = el && el.getAttribute('data-del-deck');
     if (delDeck) {
       var gone = parseInt(delDeck, 10);
-      state.decks = state.decks.filter(function (d) { return d.id !== gone; });
+      var at = state.decks.findIndex(function (d) { return d.id === gone; });
+      var deckGone = state.decks[at];
+      var cardsGone = state.cards.filter(function (c) { return c.deckId === gone; });
+      state.decks.splice(at, 1);
       state.cards = state.cards.filter(function (c) { return c.deckId !== gone; });
       if (deckId === gone) deckId = null;
-      save(); render(); toast('Stapel verwijderd');
+      save(); render();
+      undoToast('Stapel verwijderd', function () {
+        state.decks.splice(Math.min(at, state.decks.length), 0, deckGone);
+        state.cards = state.cards.concat(cardsGone);
+        save(); render(); toast('Teruggezet');
+      });
       return;
     }
 
@@ -648,12 +680,14 @@
       try {
         var data = migrate(JSON.parse(document.getElementById('f-json').value));
         if (!data) throw new Error('bad');
+        clearUndo();
         state = data;
         save(); launch(); toast('Teruggezet');
       } catch (e) { toast('Ongeldige back-up'); }
     }
     else if (act === 'wipe') {
       if (!confirm('Delete all decks, cards and progress?')) return;
+      clearUndo();
       state = blank(); deckId = null;
       save(); launch();
     }

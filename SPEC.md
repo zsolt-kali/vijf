@@ -16,9 +16,13 @@ no account, works offline once loaded.
 - On launch the app shows the deck list. If there is exactly one deck, it opens straight into
   that deck instead.
 - **Deleting:** swiping a deck row left on the deck list reveals a red **Verwijder** (delete)
-  button on the right. Tapping it deletes the deck **and all its cards** immediately, with no
-  further confirmation. A short swipe (under half the button width) springs back, a vertical
-  move scrolls the page instead, and tapping anywhere else closes an open row.
+  button on the right. Tapping it deletes the deck **and all its cards** immediately. A short
+  swipe (under half the button width) springs back, a vertical move scrolls the page instead,
+  and tapping anywhere else closes an open row.
+- **Undo:** after a delete, a toast "Stapel verwijderd · Ongedaan maken" shows for 5 seconds.
+  Tapping **Ongedaan maken** (undo) restores the deck in its original position with all its
+  cards and their boxes. Only the most recent delete can be undone: a second delete replaces
+  the toast, and wiping everything or restoring a back-up cancels it.
 - Decks can't be renamed, and cards can't be moved between decks (yet).
 
 ## Leitner rules
