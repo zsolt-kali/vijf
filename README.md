@@ -22,7 +22,8 @@ You can do all of this from a phone browser.
    `manifest.webmanifest`, `sw.js`, and the whole `icons` folder.
    Keep `icons` as a folder — the paths matter.
 4. Go to **Settings → Pages**. Under *Build and deployment*, set Source to
-   **Deploy from a branch**, branch `main`, folder `/ (root)`. Save.
+   **GitHub Actions**. The workflow in `.github/workflows/deploy.yml` publishes the site
+   on every push to `main`.
 5. Wait a minute or two. Your app is live at
    `https://YOUR-USERNAME.github.io/vijf/`
 
@@ -53,5 +54,8 @@ Two things to know:
 
 ## Making changes later
 
-Edit `index.html` in GitHub and commit. Then bump `CACHE = 'vijf-v1'` to `'vijf-v2'`
-in `sw.js`, or phones will keep serving the cached old version.
+Edit `index.html` in GitHub and commit. The workflow in `.github/workflows/deploy.yml`
+publishes the site and stamps a new cache version automatically, so there's nothing to bump.
+Phones that are online get the new version the next time they open the app.
+
+This needs **Settings → Pages → Source** set to **GitHub Actions** (not "Deploy from a branch").

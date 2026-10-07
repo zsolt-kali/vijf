@@ -1,5 +1,5 @@
-/* Bump CACHE when you change any file, so phones pick up the new version. */
-const CACHE = 'vijf-v1';
+/* The deploy workflow replaces this with 'vijf-<commit>' on every push to main. */
+const CACHE = 'vijf-dev';
 const ASSETS = [
   './',
   './index.html',
@@ -26,6 +26,22 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+
+  /* Pages: network first, so an online phone always gets the latest app. */
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).then((res) => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        }
+        return res;
+      }).catch(() => caches.match(e.request).then((hit) => hit || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  /* Everything else (icons, manifest): cache first. */
   e.respondWith(
     caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => {
       const copy = res.clone();
