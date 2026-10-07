@@ -1,0 +1,118 @@
+# Development
+
+How vijf is built, tested and shipped, and why it's set up this way.
+What the app *does* is in [SPEC.md](SPEC.md); planned work is in GitHub Issues.
+
+## Workflow
+
+1. **Issue.** Describe the feature or bug in a GitHub issue, with acceptance criteria.
+2. **Branch.** Work on a branch, never directly on `main`, because every push to `main` goes live.
+3. **Build and test locally** (commands below). Update `SPEC.md` and the tests in the same change
+   whenever behaviour changes.
+4. **Push the branch.** CI runs the tests on it, but doesn't deploy.
+5. **Merge to `main`** with `Closes #N` in the commit or pull request, which closes the issue.
+   CI runs the tests again and deploys if they pass. Phones get the update the next time the app
+   is opened online.
+
+## Commands
+
+One-time setup (needs Node.js LTS from nodejs.org):
+
+```bash
+npm install
+npx playwright install chromium webkit
+```
+
+Run the app locally at http://localhost:8000:
+
+```bash
+python3 -m http.server 8000
+```
+
+Run all tests (they start their own server on port 4173):
+
+```bash
+npm test
+```
+
+Run one file, one test by name, or one browser:
+
+```bash
+npx playwright test tests/decks.spec.js
+npx playwright test -g "undo restores the deck"
+npx playwright test --project=iphone-safari
+```
+
+Open the HTML report after a failed run with `npm run test:report`. In CI, the report is
+attached to the failed run as the `playwright-report` artifact.
+
+## How deploying works
+
+`.github/workflows/deploy.yml` has two jobs:
+
+- **test** runs on every push and pull request, on any branch.
+- **deploy** runs only for pushes to `main`, and only after **test** passes. It copies the app
+  files (`index.html`, `manifest.webmanifest`, `sw.js`, `icons/`) to a folder, stamps the
+  service worker's `CACHE` with the commit ID, and publishes that folder to GitHub Pages.
+
+Repo setting this relies on: **Settings → Pages → Source = GitHub Actions**.
+
+Live site: https://zsolt-kali.github.io/vijf/
+
+## Decisions
+
+Newest last. When a decision changes, add a new entry instead of rewriting the old one.
+
+### 1. One HTML file, no build step, no runtime dependencies
+The whole app is `index.html` with inline CSS and plain JavaScript. It can be edited anywhere,
+including on github.com from a phone, and nothing has to be compiled or kept up to date.
+*Trade-off:* code can't be split into modules, which also rules out unit tests (see 9).
+
+### 2. Data stays on the device
+Progress is saved in `localStorage`, with no server or accounts. It's private and free, and it
+works offline. *Trade-off:* no sync between devices; the back-up text is how data is moved.
+
+### 3. Hosting on GitHub Pages
+It's free for a public repo and includes HTTPS, which installable web apps and service workers
+require. *Considered:* Cloudflare Pages and Netlify, which are equally good. GitHub was chosen to
+keep the code and hosting in one place.
+
+### 4. Deploy through GitHub Actions, not "Deploy from a branch"
+Publishing from a workflow lets the deploy run tests first, stamp the cache version, and publish
+only the app files (not tests, docs or `node_modules`).
+
+### 5. Cache version stamped automatically with the commit ID
+The service worker only updates phones when `sw.js` changes. A manual `CACHE` bump on every
+release was easy to forget, and then phones stayed on the old version. The deploy now writes
+`vijf-<commit>` into `sw.js`, and the repo copy stays `vijf-dev`.
+*Rejected:* a git pre-commit hook (doesn't run for edits on github.com), and relying on
+reminders in `CLAUDE.md` (not a guarantee).
+
+### 6. Service worker: network-first for pages, cache-first for everything else
+Pages come from the network when online, so updates appear on the next open, and fall back to
+the cache offline. Icons and the manifest rarely change, so they're served from the cache.
+*Trade-off:* on a very slow connection the first screen waits for the network.
+
+### 7. Never change the storage key; migrate instead
+Changing the saved data's key or shape would lose everyone's progress and break old back-ups.
+Loaded data and restored back-ups both pass through `migrate()`, which upgrades old shapes.
+The migration tests protect this.
+
+### 8. "Decks" (stapels), not "boxes", for topic groups
+"Box" already means one of the five Leitner boxes, so topic groups got a different name.
+
+### 9. Deleting a deck: swipe, then undo instead of a confirm dialog
+Swipe-to-delete is familiar from phone apps. A 5-second undo protects against mistakes without
+asking "are you sure?" every time.
+
+### 10. End-to-end tests with Playwright
+Tests open the real app in a browser and use it like a person. That fits decision 1: there's no
+separate logic layer to unit-test. Tests run in **Chromium as a Pixel 7** and **WebKit as an
+iPhone 15**, the two engines people install the app with. There's one test file per
+`SPEC.md` section, so a spec change points to the test that changes with it.
+*Rejected:* unit tests (would need the app split into modules), and testing only in Chromium
+(iPhone Safari is a main target and behaves differently).
+
+### 11. Tests gate the deploy
+Tests run on every push and pull request; `main` only deploys when they pass. A change that
+breaks existing behaviour can't reach the live app.

@@ -54,8 +54,6 @@ Two things to know:
 
 ## Making changes later
 
-Edit `index.html` in GitHub and commit. The workflow in `.github/workflows/deploy.yml`
-publishes the site and stamps a new cache version automatically, so there's nothing to bump.
-Phones that are online get the new version the next time they open the app.
-
-This needs **Settings → Pages → Source** set to **GitHub Actions** (not "Deploy from a branch").
+See [DEVELOPMENT.md](DEVELOPMENT.md) for the workflow, the tests and how deploying works.
+In short: work on a branch, merge to `main`, and the site deploys automatically once the tests
+pass. Phones that are online get the new version the next time they open the app.
