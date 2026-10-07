@@ -8,10 +8,23 @@ Update this file in the same commit as any behaviour change.
 Learn Dutch words with a five-box Leitner system. Single user, single device,
 no account, works offline once loaded.
 
+## Decks
+
+- Cards are grouped into **decks** (*stapels*), one per topic. Each deck has its own five boxes.
+- The user creates a deck by name. Names can't be empty and must be unique (case-insensitive).
+- Every card belongs to exactly one deck.
+- On launch the app shows the deck list. If there is exactly one deck, it opens straight into
+  that deck instead.
+- **Deleting:** swiping a deck row left on the deck list reveals a red **Verwijder** (delete)
+  button on the right. Tapping it deletes the deck **and all its cards** immediately, with no
+  further confirmation. A short swipe (under half the button width) springs back, a vertical
+  move scrolls the page instead, and tapping anywhere else closes an open row.
+- Decks can't be renamed, and cards can't be moved between decks (yet).
+
 ## Leitner rules
 
-- Every new card starts in **box 1**.
-- Studying is per box: the user picks a box and goes through all its cards in random order.
+- Every new card starts in **box 1** of the chosen deck.
+- Studying is per box within a deck: the user picks a box and goes through all its cards in random order.
 - **Ken ik** (I know it) moves the card up one box and removes it from the session.
 - **Nog niet** (not yet) leaves the card in its box and puts it at the end of the session queue,
   so it comes back until the user knows it.
@@ -25,11 +38,12 @@ no account, works offline once loaded.
 
 | Screen | Contents |
 |---|---|
-| **Home** (Dozen) | Wordmark, plus a tally of cards in box 5 out of the total. Five box rows: number, Dutch name (Nieuw, Wankel, Op weg, Bijna, Geleerd), English subtitle, card count, and up to 20 tick marks. Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Buttons: add words, all cards. With zero cards: an empty-state note and a button that loads the 12-word starter set. |
-| **Study** | Box number and cards left. The card shows the native word on the front and the Dutch word on the back (yellow); tap to flip. Rating buttons are Nog niet / Ken ik, or Volgende in box 5. Tapping an empty box shows a toast instead of opening this screen. |
-| **Summary** | "Ronde afgerond." with the moved-up and stayed counts, and a back button. |
-| **Add** | Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
-| **All cards** (Alles) | Every card sorted by box, then newest first. Each row shows the box, the Dutch word, the native word, and a × that deletes immediately without confirmation. Buttons: back-up, and wipe everything (needs a `confirm()`). |
+| **Decks** (Stapels) | Wordmark and the number of decks. One row per deck, in creation order: name, card count, and learned (box 5) out of total. Empty decks are greyed out. Swiping a row left reveals its delete button (see Decks). A name field with **Maken** creates a deck and opens it; Enter also works. With zero cards: a button that loads the 12-word starter set into a deck called **Start** and opens it. Otherwise: an all-cards button. |
+| **Deck** (Dozen) | A back button to the deck list and the deck name. Wordmark, plus a tally of this deck's cards in box 5 out of this deck's total. Five box rows: number, Dutch name (Nieuw, Wankel, Op weg, Bijna, Geleerd), English subtitle, card count, and up to 20 tick marks. Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Buttons: add words, all cards. With zero cards in the deck: an empty-state note. |
+| **Study** | Breadcrumb "Stapels / *deck*" (both tappable), box number and cards left. The card shows the native word on the front and the Dutch word on the back (yellow); tap to flip. Rating buttons are Nog niet / Ken ik, or Volgende in box 5. Tapping an empty box shows a toast instead of opening this screen. |
+| **Summary** | Breadcrumb, "Ronde afgerond." with the moved-up and stayed counts, and buttons back to the boxes or to another deck. |
+| **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
+| **All cards** (Alles) | Every card in every deck, grouped by deck, then by box, then newest first. Each row shows the box, the Dutch word, the native word and deck name, and a × that deletes immediately without confirmation. The back button returns to wherever the screen was opened from. Buttons: back-up, and wipe everything (needs a `confirm()`). |
 | **Back-up** | A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. |
 
 ### Bulk import format
@@ -45,18 +59,31 @@ Stored in `localStorage` under the key **`leitner-dutch-v1`**:
 ```json
 {
   "cards": [
-    { "id": 1, "native": "the house", "dutch": "het huis",
+    { "id": 1, "deckId": 1, "native": "the house", "dutch": "het huis",
       "box": 1, "createdAt": 1700000000000, "reviewedAt": null }
   ],
-  "nextId": 2
+  "nextId": 2,
+  "decks": [
+    { "id": 1, "name": "Start", "createdAt": 1700000000000 }
+  ],
+  "nextDeckId": 2
 }
 ```
 
 - `box` is 1–5. `reviewedAt` is set when a card moves up and is not set on "Nog niet".
-- The back-up text is exactly this JSON. Restore accepts any object with a `cards` array and
-  rebuilds `nextId` if it's missing. There is no deeper validation.
+- The back-up text is exactly this JSON. Restore accepts any object with a `cards` array.
+  There is no deeper validation.
 - Changing the key or the card shape breaks existing data and old back-ups, so add a migration
   instead.
+
+### Migration
+
+Saved data and restored back-ups both go through `migrate()` in `index.html`:
+
+- A missing `decks`, `nextId` or `nextDeckId` is filled in.
+- Any card without a valid `deckId` goes into a deck called **Start**, which is created if it
+  doesn't exist. The card keeps its box. This is how data and back-ups from before decks
+  existed are carried over without losing progress.
 
 ## Language and look
 

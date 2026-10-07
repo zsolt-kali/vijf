@@ -21,6 +21,7 @@
     --deep: #003082;
     --mute: #82827C;
     --line: #C9C9C2;
+    --danger: #C8102E;
     --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
@@ -80,6 +81,23 @@
   .slot[data-empty="1"] { border-color: var(--line); }
   .slot[data-empty="1"] .num { background: var(--line); color: #fff; }
   .slot[data-empty="1"] .cnt, .slot[data-empty="1"] .lbl { color: var(--mute); }
+  .slot--deck { grid-template-columns: 1fr auto; padding-left: 16px; }
+  .slot--deck .lbl, .slot--deck .sub { display: block; }
+
+  /* Swipe a deck row left to reveal its delete button. */
+  .swipe { position: relative; overflow: hidden; }
+  .swipe .slot--deck { position: relative; z-index: 1; touch-action: pan-y; transition: width 0.2s ease; }
+  .swipe.open .slot--deck { width: calc(100% - 96px); }
+  .swipe__del {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 96px;
+    background: var(--danger); color: #fff; border: none; cursor: pointer;
+    font: inherit; font-size: 14px; font-weight: 700;
+  }
+  .swipe__del small {
+    display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase; opacity: 0.75; margin-top: 3px; font-weight: 400;
+  }
+  .slot .cnt small { font-size: 13px; color: var(--mute); font-weight: 400; }
   .edges { display: flex; gap: 2px; margin-top: 7px; flex-wrap: wrap; }
   .edges i { display: block; width: 3px; height: 12px; background: var(--deep); }
 
@@ -106,6 +124,14 @@
   }
   .bar button { font: inherit; background: none; border: none; color: var(--mute); cursor: pointer; padding: 4px 0; }
   .bar button:active { color: var(--ink); }
+  .crumbs { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .crumbs .here, .bar .here {
+    color: var(--ink); max-width: 190px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .make { display: flex; gap: 8px; margin-top: 22px; }
+  .make input { flex: 1; min-width: 0; }
+  .make .btn { flex: 0 0 auto; }
 
   .stage { perspective: 1200px; margin-bottom: 18px; }
   .flip {
@@ -135,12 +161,19 @@
 
   label.field { display: block; margin-bottom: 14px; }
   label.field .eyebrow { display: block; margin-bottom: 5px; }
-  input[type="text"], textarea {
+  input[type="text"], textarea, select {
     width: 100%; font: inherit; font-size: 17px; padding: 12px;
-    border: 1.5px solid var(--ink); background: var(--card); color: var(--ink); border-radius: 0;
+    border: 1.5px solid var(--ink); background-color: var(--card); color: var(--ink); border-radius: 0;
+  }
+  select {
+    -webkit-appearance: none; appearance: none; padding-right: 36px;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+      linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%;
+    background-size: 6px 6px; background-repeat: no-repeat;
   }
   textarea { min-height: 130px; font-size: 15px; font-family: var(--mono); }
-  input:focus, textarea:focus { outline: 3px solid var(--signal); outline-offset: -1px; }
+  input:focus, textarea:focus, select:focus { outline: 3px solid var(--signal); outline-offset: -1px; }
 
   .item {
     display: grid; grid-template-columns: 26px 1fr auto; gap: 10px;
@@ -163,7 +196,7 @@
     text-transform: uppercase; padding: 11px 16px; z-index: 50;
   }
   @media (prefers-reduced-motion: reduce) {
-    .flip, .slot { transition: none; }
+    .flip, .slot, .swipe .slot--deck { transition: none; }
   }
 </style>
 </head>
@@ -174,8 +207,10 @@
 (function () {
   var KEY = 'leitner-dutch-v1';
   var app = document.getElementById('app');
-  var state = { cards: [], nextId: 1 };
-  var view = 'home';
+  var state = blank();
+  var view = 'decks';
+  var deckId = null;
+  var listBack = 'decks';
   var session = null;
 
   var STARTER = [
@@ -185,10 +220,41 @@
     ['busy','druk'],['nice / kind','aardig'],['almost','bijna']
   ];
 
+  function blank() { return { cards: [], nextId: 1, decks: [], nextDeckId: 1 }; }
+  function maxId(list) {
+    return list.reduce(function (m, x) { return Math.max(m, x.id || 0); }, 0);
+  }
+  function findDeck(s, name) {
+    var key = name.trim().toLowerCase();
+    return s.decks.find(function (d) { return d.name.toLowerCase() === key; }) || null;
+  }
+  function makeDeck(s, name) {
+    var d = { id: s.nextDeckId++, name: name, createdAt: Date.now() };
+    s.decks.push(d);
+    return d;
+  }
+
+  /* Brings saved or restored data up to the current shape. Data from before decks
+     existed has no deckId on its cards: those go into a deck called Start, keeping their box. */
+  function migrate(s) {
+    if (!s || !Array.isArray(s.cards)) return null;
+    if (!Array.isArray(s.decks)) s.decks = [];
+    if (!s.nextId) s.nextId = maxId(s.cards) + 1;
+    if (!s.nextDeckId) s.nextDeckId = maxId(s.decks) + 1;
+    var ids = s.decks.map(function (d) { return d.id; });
+    var loose = s.cards.filter(function (c) { return ids.indexOf(c.deckId) < 0; });
+    if (loose.length) {
+      var start = findDeck(s, 'Start') || makeDeck(s, 'Start');
+      loose.forEach(function (c) { c.deckId = start.id; });
+    }
+    return s;
+  }
+
   function load() {
     try {
       var raw = localStorage.getItem(KEY);
-      if (raw) state = JSON.parse(raw);
+      var s = raw && migrate(JSON.parse(raw));
+      if (s) { state = s; save(); }
     } catch (e) {}
   }
   function save() {
@@ -196,7 +262,9 @@
     catch (e) { toast('Opslaan mislukt'); }
   }
 
-  function inBox(n) { return state.cards.filter(function (c) { return c.box === n; }); }
+  function deck() { return state.decks.find(function (d) { return d.id === deckId; }) || null; }
+  function cardsIn(id) { return state.cards.filter(function (c) { return c.deckId === id; }); }
+  function inBox(n) { return cardsIn(deckId).filter(function (c) { return c.box === n; }); }
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (m) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m];
@@ -209,17 +277,66 @@
     setTimeout(function () { t.remove(); }, 1800);
   }
   function go(v) { view = v; render(); }
+  function open(id) { deckId = id; go('home'); }
 
-  function header() {
+  /* Opens straight into the only deck, otherwise shows the deck list. */
+  function launch() {
+    if (state.decks.length === 1) { deckId = state.decks[0].id; view = 'home'; }
+    else view = 'decks';
+    render();
+  }
+
+  function header(tally) {
     return '<div class="top"><div class="wordmark">vijf<span>.</span></div>' +
-      '<div class="tally"><b>' + inBox(5).length + '</b> / ' + state.cards.length +
-      '<br>geleerd</div></div>';
+      '<div class="tally">' + tally + '</div></div>';
+  }
+  function crumbs() {
+    return '<span class="crumbs"><button data-go="decks">Stapels</button><span>/</span>' +
+      '<button class="here" data-go="home">' + esc(deck().name) + '</button></span>';
+  }
+
+  function decksView() {
+    var n = state.decks.length;
+    var h = header('<b>' + n + '</b><br>' + (n === 1 ? 'stapel' : 'stapels'));
+    if (n) {
+      h += '<div class="tray">';
+      state.decks.forEach(function (d) {
+        var cs = cardsIn(d.id);
+        var learned = cs.filter(function (c) { return c.box === 5; }).length;
+        h += '<div class="swipe">' +
+          '<button class="swipe__del" data-del-deck="' + d.id + '" tabindex="-1" ' +
+          'aria-label="Delete deck ' + esc(d.name) + '">Verwijder<small>delete</small></button>' +
+          '<button class="slot slot--deck" data-deck="' + d.id + '" data-empty="' + (cs.length ? 0 : 1) + '">' +
+          '<span><span class="lbl">' + esc(d.name) + '</span>' +
+          '<span class="sub">' + cs.length + (cs.length === 1 ? ' card' : ' cards') + '</span></span>' +
+          '<span class="cnt">' + learned + '<small>/' + cs.length + '</small></span></button></div>';
+      });
+      h += '</div>';
+    } else {
+      h += '<div class="empty"><div class="eyebrow">Leeg</div>' +
+        '<p>Make a deck for each topic, like food or work.</p></div>';
+    }
+    h += '<div class="make"><input type="text" id="f-deck-name" placeholder="Nieuwe stapel · new deck" ' +
+      'autocomplete="off" aria-label="New deck name">' +
+      '<button class="btn btn--fill" data-act="make-deck">Maken<small>create</small></button></div>';
+    if (!state.cards.length) {
+      h += '<div class="row"><button class="btn btn--ghost" data-act="starter">' +
+        'Start met 12 voorbeeldwoorden<small>load a starter set</small></button></div>';
+    } else {
+      h += '<div class="row"><button class="btn" data-go="list">Alles<small>all cards</small></button></div>';
+    }
+    h += '<p class="note">Each deck has its own five boxes. The number on the right is how many ' +
+      'cards in that deck are learned.' + (n ? ' Swipe a deck left to delete it.' : '') + '</p>';
+    return h;
   }
 
   function homeView() {
     var names = ['Nieuw', 'Wankel', 'Op weg', 'Bijna', 'Geleerd'];
     var subs = ['brand new', 'shaky', 'getting there', 'nearly there', 'mastered'];
-    var h = header() + '<div class="tray">';
+    var total = cardsIn(deckId).length;
+    var h = '<div class="bar"><button data-go="decks">← Stapels</button>' +
+      '<span class="here">' + esc(deck().name) + '</span></div>' +
+      header('<b>' + inBox(5).length + '</b> / ' + total + '<br>geleerd') + '<div class="tray">';
     for (var i = 1; i <= 5; i++) {
       var n = inBox(i).length, edges = '';
       for (var e = 0; e < Math.min(n, 20); e++) edges += '<i></i>';
@@ -232,17 +349,13 @@
         '</span><span class="cnt">' + n + '</span></button>';
     }
     h += '</div>';
-    if (!state.cards.length) {
+    if (!total) {
       h += '<div class="empty" style="margin-top:22px"><div class="eyebrow">Leeg</div>' +
         '<p>Add your first word and it lands in box 1.</p></div>';
     }
     h += '<div class="row">' +
       '<button class="btn btn--fill" data-go="add">Woord toevoegen<small>add words</small></button>' +
       '<button class="btn" data-go="list">Alles<small>all cards</small></button></div>';
-    if (!state.cards.length) {
-      h += '<div class="row"><button class="btn btn--ghost" data-act="starter">' +
-        'Start met 12 voorbeeldwoorden<small>load a starter set</small></button></div>';
-    }
     h += '<p class="note">Tap a box to study it. <b>Ken ik</b> moves a card up one box; ' +
       '<b>Nog niet</b> leaves it where it is. Nothing ever moves back down.</p>';
     return h;
@@ -254,7 +367,7 @@
     if (!card) { session.queue.shift(); return studyView(); }
     var readonly = session.box === 5;
 
-    var h = '<div class="bar"><button data-go="home">← Dozen</button>' +
+    var h = '<div class="bar">' + crumbs() +
       '<span>Doos ' + session.box + ' · ' + session.queue.length + ' over</span></div>' +
       '<div class="stage"><div class="flip" id="flip">' +
       '<div class="face"><span class="hint">Jouw taal</span>' +
@@ -277,20 +390,27 @@
   }
 
   function summaryView() {
-    var h = '<div class="bar"><button data-go="home">← Dozen</button><span>Klaar</span></div>' +
+    var h = '<div class="bar">' + crumbs() + '<span>Klaar</span></div>' +
       '<h2>Ronde afgerond.</h2>';
     if (session) {
       h += '<p class="note" style="margin-top:0">' + session.up + ' cards moved up to box ' +
         Math.min(session.box + 1, 5) + '. ' + session.held + ' stayed in box ' + session.box + '.</p>';
     }
     h += '<div class="row"><button class="btn btn--fill" data-go="home">' +
-      'Terug naar de dozen<small>back to boxes</small></button></div>';
+      'Terug naar de dozen<small>back to boxes</small></button>' +
+      '<button class="btn" data-go="decks">Andere stapel<small>other deck</small></button></div>';
     return h;
   }
 
   function addView() {
+    var opts = state.decks.map(function (d) {
+      return '<option value="' + d.id + '"' + (d.id === deckId ? ' selected' : '') + '>' +
+        esc(d.name) + '</option>';
+    }).join('');
     return '<div class="bar"><button data-go="home">← Dozen</button><span>Toevoegen</span></div>' +
-      '<h2>Nieuw woord</h2>' +
+      '<label class="field"><span class="eyebrow">Stapel · deck</span>' +
+      '<select id="f-deck">' + opts + '</select></label>' +
+      '<h2 style="margin-top:28px">Nieuw woord</h2>' +
       '<label class="field"><span class="eyebrow">Jouw taal · your language</span>' +
       '<input type="text" id="f-native" autocomplete="off" autocapitalize="none"></label>' +
       '<label class="field"><span class="eyebrow">Nederlands · Dutch</span>' +
@@ -305,17 +425,21 @@
   }
 
   function listView() {
-    var h = '<div class="bar"><button data-go="home">← Dozen</button><span>' +
+    var h = '<div class="bar"><button data-go="' + listBack + '">← Terug</button><span>' +
       state.cards.length + ' kaarten</span></div>';
     if (!state.cards.length) {
       return h + '<div class="empty"><div class="eyebrow">Leeg</div><p>No cards yet.</p></div>' +
-        '<div class="row"><button class="btn btn--fill" data-go="add">Woord toevoegen<small>add words</small></button></div>';
+        '<div class="row"><button class="btn btn--fill" data-go="decks">Naar de stapels<small>go to decks</small></button></div>';
     }
-    state.cards.slice().sort(function (a, b) { return a.box - b.box || b.id - a.id; })
-      .forEach(function (c) {
+    var order = state.decks.map(function (d) { return d.id; });
+    var names = {};
+    state.decks.forEach(function (d) { names[d.id] = d.name; });
+    state.cards.slice().sort(function (a, b) {
+      return order.indexOf(a.deckId) - order.indexOf(b.deckId) || a.box - b.box || b.id - a.id;
+    }).forEach(function (c) {
         h += '<div class="item"><span class="bx">' + c.box + '</span><span>' +
           '<span class="nl">' + esc(c.dutch) + '</span><br>' +
-          '<span class="nat">' + esc(c.native) + '</span></span>' +
+          '<span class="nat">' + esc(c.native) + ' · ' + esc(names[c.deckId]) + '</span></span>' +
           '<button class="del" data-del="' + c.id + '" aria-label="Verwijderen">×</button></div>';
       });
     h += '<div class="row"><button class="btn" data-act="backup">Back-up maken<small>copy your data</small></button></div>' +
@@ -338,8 +462,9 @@
   }
 
   function render() {
-    var v = { home: homeView, study: studyView, add: addView, list: listView, backup: backupView };
-    app.innerHTML = (v[view] || homeView)();
+    var v = { decks: decksView, home: homeView, study: studyView, add: addView, list: listView, backup: backupView };
+    if (!v[view] || (/^(home|study|add)$/.test(view) && !deck())) view = 'decks';
+    app.innerHTML = v[view]();
     window.scrollTo(0, 0);
   }
 
@@ -372,25 +497,97 @@
     render();
   }
 
-  function addCard(native, dutch) {
+  function addCard(native, dutch, toDeck) {
     if (!native || !dutch) return false;
     state.cards.push({
-      id: state.nextId++, native: native, dutch: dutch,
+      id: state.nextId++, deckId: toDeck, native: native, dutch: dutch,
       box: 1, createdAt: Date.now(), reviewedAt: null
     });
     return true;
   }
+  function chosenDeck() { return parseInt(document.getElementById('f-deck').value, 10); }
+
+  /* Swipe-to-delete on deck rows. A horizontal drag past half the button width opens
+     the row; a vertical move lets the page scroll instead. */
+  var SWIPE = 96, drag = null, swallowClick = false;
+  function closeSwipes() {
+    Array.prototype.forEach.call(app.querySelectorAll('.swipe.open'), function (s) {
+      s.classList.remove('open');
+    });
+  }
+  app.addEventListener('pointerdown', function (ev) {
+    swallowClick = false;
+    var row = ev.target.closest('.slot--deck');
+    if (!row) return;
+    drag = { row: row, id: ev.pointerId, x: ev.clientX, y: ev.clientY, dx: 0, on: false,
+      base: row.parentNode.classList.contains('open') ? -SWIPE : 0 };
+  });
+  app.addEventListener('pointermove', function (ev) {
+    if (!drag || ev.pointerId !== drag.id) return;
+    var dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
+    if (!drag.on) {
+      if (Math.abs(dy) > 10) { drag = null; return; }
+      if (Math.abs(dx) < 10) return;
+      drag.on = true;
+      drag.row.style.transition = 'none';
+      try { drag.row.setPointerCapture(ev.pointerId); } catch (e) {}
+    }
+    drag.dx = dx;
+    var off = Math.max(-SWIPE, Math.min(0, drag.base + dx));
+    drag.row.style.width = 'calc(100% - ' + -off + 'px)';
+  });
+  function endDrag() {
+    if (!drag) return;
+    if (drag.on) {
+      var open = drag.base + drag.dx < -SWIPE / 2;
+      drag.row.style.transition = '';
+      drag.row.style.width = '';
+      closeSwipes();
+      if (open) drag.row.parentNode.classList.add('open');
+      swallowClick = true;
+    }
+    drag = null;
+  }
+  app.addEventListener('pointerup', endDrag);
+  app.addEventListener('pointercancel', endDrag);
+
+  app.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' && ev.target.id === 'f-deck-name') {
+      app.querySelector('[data-act="make-deck"]').click();
+    }
+  });
 
   app.addEventListener('click', function (ev) {
-    var el = ev.target.closest('[data-go],[data-act],[data-del],#flip');
+    if (swallowClick) { swallowClick = false; return; }
+    var el = ev.target.closest('[data-go],[data-act],[data-del],[data-del-deck],[data-deck],#flip');
+
+    var delDeck = el && el.getAttribute('data-del-deck');
+    if (delDeck) {
+      var gone = parseInt(delDeck, 10);
+      state.decks = state.decks.filter(function (d) { return d.id !== gone; });
+      state.cards = state.cards.filter(function (c) { return c.deckId !== gone; });
+      if (deckId === gone) deckId = null;
+      save(); render(); toast('Stapel verwijderd');
+      return;
+    }
+
+    /* While a row is swiped open, any other tap just closes it. */
+    if (app.querySelector('.swipe.open')) { closeSwipes(); return; }
+
     if (!el) return;
 
     if (el.id === 'flip') { el.classList.toggle('turned'); return; }
 
+    var openDeck = el.getAttribute('data-deck');
+    if (openDeck) { open(parseInt(openDeck, 10)); return; }
+
     var goTo = el.getAttribute('data-go');
     if (goTo) {
       if (goTo.indexOf('box') === 0) startBox(parseInt(goTo.slice(3), 10));
-      else go(goTo);
+      else {
+        if (goTo === 'list' && (view === 'home' || view === 'decks')) listBack = view;
+        go(goTo);
+      }
       return;
     }
 
@@ -405,14 +602,23 @@
     else if (act === 'no') rate(false);
     else if (act === 'next') { session.queue.shift(); render(); }
     else if (act === 'starter') {
-      STARTER.forEach(function (p) { addCard(p[0], p[1]); });
-      save(); render(); toast('12 woorden in doos 1');
+      var start = findDeck(state, 'Start') || makeDeck(state, 'Start');
+      STARTER.forEach(function (p) { addCard(p[0], p[1], start.id); });
+      save(); open(start.id); toast('12 woorden in doos 1');
+    }
+    else if (act === 'make-deck') {
+      var name = document.getElementById('f-deck-name').value.trim();
+      if (!name) { toast('Geef de stapel een naam'); return; }
+      if (findDeck(state, name)) { toast('Die stapel bestaat al'); return; }
+      var made = makeDeck(state, name);
+      save(); open(made.id); toast('Stapel gemaakt');
     }
     else if (act === 'save-one') {
       var n = document.getElementById('f-native').value.trim();
       var d = document.getElementById('f-dutch').value.trim();
       if (!n || !d) { toast('Vul beide velden in'); return; }
-      addCard(n, d); save();
+      deckId = chosenDeck();
+      addCard(n, d, deckId); save();
       document.getElementById('f-native').value = '';
       document.getElementById('f-dutch').value = '';
       document.getElementById('f-native').focus();
@@ -420,12 +626,13 @@
     }
     else if (act === 'save-bulk') {
       var raw = document.getElementById('f-bulk').value, count = 0;
+      deckId = chosenDeck();
       raw.split('\n').forEach(function (line) {
         if (!line.trim()) return;
         var parts = line.split(/\s*[=|\t;]\s*/);
         if (parts.length < 2) parts = line.split(/\s*,\s*/);
         if (parts.length < 2) return;
-        if (addCard(parts[0].trim(), parts[1].trim())) count++;
+        if (addCard(parts[0].trim(), parts[1].trim(), deckId)) count++;
       });
       if (!count) { toast('Geen regels herkend'); return; }
       save(); render(); toast(count + ' woorden toegevoegd');
@@ -439,24 +646,21 @@
     }
     else if (act === 'restore') {
       try {
-        var data = JSON.parse(document.getElementById('f-json').value);
-        if (!data || !Array.isArray(data.cards)) throw new Error('bad');
+        var data = migrate(JSON.parse(document.getElementById('f-json').value));
+        if (!data) throw new Error('bad');
         state = data;
-        if (!state.nextId) {
-          state.nextId = state.cards.reduce(function (m, c) { return Math.max(m, c.id); }, 0) + 1;
-        }
-        save(); go('home'); toast('Teruggezet');
+        save(); launch(); toast('Teruggezet');
       } catch (e) { toast('Ongeldige back-up'); }
     }
     else if (act === 'wipe') {
-      if (!confirm('Delete all cards and progress?')) return;
-      state = { cards: [], nextId: 1 };
-      save(); render();
+      if (!confirm('Delete all decks, cards and progress?')) return;
+      state = blank(); deckId = null;
+      save(); launch();
     }
   });
 
   load();
-  render();
+  launch();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
