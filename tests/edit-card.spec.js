@@ -3,22 +3,45 @@ const { test, expect } = require('@playwright/test');
 const { deck, card, data, open, saved, toast, study } = require('./helpers');
 
 const oneCard = (box = 2) => data([deck(1, 'Start')], [card(1, 1, 'the hous', 'het huis', box)]);
-const cog = (page) => page.getByRole('button', { name: /Edit card/ });
+const cog = (page) => page.locator('.face:not(.face--back) .cog');
 const front = (page) => page.locator('.face:not(.face--back) .word');
 const remaining = (page) => page.locator('.bar > span').last();
 
-test('the study screen has a cog next to Not yet and I know it', async ({ page }) => {
+test('the cog sits inside the card, top-right, on both faces', async ({ page }) => {
   await open(page, oneCard());
   await study(page, 'Start', 2);
-  const buttons = page.locator('.rate .btn');
-  await expect(buttons).toHaveCount(3);
-  await expect(buttons.nth(2)).toHaveAttribute('data-act', 'edit');
-  await expect(buttons.nth(2).locator('svg')).toBeVisible();
+  await expect(page.locator('.face .cog')).toHaveCount(2);
+  await expect(page.locator('.rate .btn')).toHaveCount(2);
+
+  const faceBox = await page.locator('.face:not(.face--back)').boundingBox();
+  const cogBox = await cog(page).boundingBox();
+  expect(faceBox.x + faceBox.width - (cogBox.x + cogBox.width)).toBeLessThan(12);
+  expect(cogBox.y - faceBox.y).toBeLessThan(12);
+  expect(cogBox.width).toBeGreaterThanOrEqual(44);
 });
 
-test('in box 5 the cog sits next to Next', async ({ page }) => {
+test('tapping the cog opens the editor without flipping the card first', async ({ page }) => {
+  await open(page, oneCard());
+  await study(page, 'Start', 2);
+  await cog(page).click();
+  await expect(page.locator('#f-edit-native')).toBeVisible();
+
+  await page.getByRole('button', { name: /Cancel/ }).click();
+  await expect(page.locator('#flip')).not.toHaveClass(/turned/);
+});
+
+test('the cog on the back of the card opens the editor too', async ({ page }) => {
+  await open(page, oneCard());
+  await study(page, 'Start', 2);
+  await page.click('#flip');
+  await page.locator('.face--back .cog').click();
+  await expect(page.locator('#f-edit-dutch')).toHaveValue('het huis');
+});
+
+test('in box 5 the cog is inside the card and Next is alone below it', async ({ page }) => {
   await open(page, oneCard(5));
   await study(page, 'Start', 5);
+  await expect(page.locator('.rate .btn')).toHaveCount(1);
   await expect(page.getByRole('button', { name: /Next/ })).toBeVisible();
   await expect(cog(page)).toBeVisible();
 });

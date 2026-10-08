@@ -40,6 +40,7 @@ Work on a branch: every push to `main` deploys to GitHub Pages once the tests pa
 - **Migrations:** loaded data and restored back-ups both pass through `migrate()`. When the data shape changes, extend `migrate()` so old saves and old back-ups keep working, and never rename the storage key.
 - **Leitner rules:** "I know it" moves a card up one box, capped at 5. "Not yet" re-queues the card at the end of the current session and leaves it in its box. Cards never move down. Box 5 sessions are read-only ("Next" only). The `session` object (`{ box, queue, total, up, held, editing }`) lives only in memory; `session.queue[0]` is the current card, the counter shows `total - queue.length + 1` of `total`, and `editing` swaps the card for `editView`.
 - **Undo:** `undoToast(msg, onUndo)` is the single undo slot, shared by deck and card deletes. A newer undo replaces the old one; call `clearUndo()` before replacing `state` wholesale (restore does).
+- **Look:** colours come only from the CSS custom properties at the top of `index.html`, which mirror `design/tokens.json` (the vijf design system; `tests/look.spec.js` fails if they drift). Never write a literal colour in a rule; a fill pairs with its `on-*` token (`--danger` + `--on-danger`). Dark mode is the `prefers-color-scheme: dark` block.
 - **UI language:** English only, short and plain. Only the words being learned are Dutch. A `<small>` subtitle is used only when it adds information (e.g. `Not yet<small>stays in box 1</small>`), never as a translation.
 
 ## Service worker and the deploy

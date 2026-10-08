@@ -48,7 +48,7 @@ no account, works offline once loaded.
 |---|---|
 | **Decks** | Wordmark and the number of decks. One row per deck, in creation order: name, card count, and learned (box 5) out of total. Empty decks are greyed out. Swiping a row left reveals its delete button (see Decks). A name field with **Create** creates a deck and opens it; Enter also works. With zero cards: a button that loads the 12-word starter set into a deck called **Start** and opens it. Always: a **Backup** button, so a backup can be restored on a fresh install. |
 | **Deck** | A back button to the deck list and the deck name. Wordmark, plus a tally of this deck's cards in box 5 out of this deck's total. Five box rows: number, name (New, Shaky, Getting there, Nearly, Learned), card count, and up to 20 tick marks. Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Button: add words. With zero cards in the deck: an empty-state note. |
-| **Study** | Breadcrumb "Decks / *deck*" (both tappable) and the position counter (e.g. 3 / 12). The card shows the native word on the front ("Your language") and the Dutch word on the back ("Dutch", yellow); tap to flip. Buttons are **Not yet** ("stays in box n") / **I know it** ("→ box n+1") plus a cog (⚙), or **Next** plus the cog in box 5. The cog opens the edit form (see Editing a card). Tapping an empty box shows a toast instead of opening this screen. |
+| **Study** | Breadcrumb "Decks / *deck*" (both tappable) and the position counter (e.g. 3 / 12). The card shows the native word on the front ("Your language") and the Dutch word on the back ("Dutch", yellow); tap to flip. Below the card: **Not yet** (red, "stays in box n") and **I know it** (green, "→ box n+1"), or **Next** alone in box 5. The **cog** (⚙) sits inside the card, top-right, on both faces; tapping it opens the edit form (see Editing a card) without flipping the card. Tapping an empty box shows a toast instead of opening this screen. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
 | **Backup** | Opened from the deck list; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. |
@@ -64,7 +64,7 @@ than two parts are skipped, and so are blank lines. Any parts after the second a
 Cards are edited and deleted from the study screen. There is no list of all cards, so a card
 is reached by studying its box.
 
-- The **cog** (⚙) on the study screen replaces the card with an edit form: both meanings
+- The **cog** (⚙) inside the study card replaces the card with an edit form: both meanings
   (*Your language*, *Dutch*) prefilled, **Cancel**, **Save**, and a red **Delete card**.
 - **Save** updates both meanings and returns to the same card, still current in the session.
   The card keeps its box and `reviewedAt`. Both fields are required; an empty one shows a toast
@@ -114,8 +114,13 @@ Saved data and restored backups both go through `migrate()` in `index.html`:
 
 - The interface is in **English** only, with short, plain wording. Only the words being learned are Dutch.
   Small subtitles appear only where they add information (e.g. "stays in box 1").
-- The palette is a fixed set of CSS variables (ink, paper, signal yellow, deep blue), with a
-  square, bordered style. There is no dark mode.
+- Colours, type and sizes come from the **vijf design system** (`design/tokens.json`; see
+  `design/README.md`). Square corners, 1.5px outlines, no shadows.
+- **Dark mode follows the device setting** (`prefers-color-scheme`), including the browser bar
+  colour (`theme-color`). Every colour has a light and a dark value.
+- Colour meanings: yellow (`signal`) = learned, the back of the card; blue (`deep`) = progress
+  ticks and focus; red (`danger`) = Not yet and deleting; green (`success`) = I know it.
+  Red and green always carry their words, so they never rely on colour alone.
 - `prefers-reduced-motion` disables the card flip and box animations.
 
 ## Platform
