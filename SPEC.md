@@ -1,7 +1,11 @@
 # vijf — specification
 
-What the app does today. Ideas and bugs go in GitHub Issues, not here.
+What the apps do today. Ideas and bugs go in GitHub Issues, not here.
 Update this file in the same commit as any behaviour change.
+
+The rules here apply to every app: the **web app** (`web/`), the **iPhone app** and the
+**Apple Watch app** (both in `apple/`).
+Where an app differs, the **Platforms** section says so.
 
 ## Purpose
 
@@ -127,7 +131,9 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
   Red and green always carry their words, so they never rely on colour alone.
 - `prefers-reduced-motion` disables the card flip and box animations.
 
-## Platform
+## Platforms
+
+### Web (`web/`)
 
 - An installable PWA (`manifest.webmanifest`, standalone display, icons in `icons/`).
 - Offline support comes from a service worker (`sw.js`). The page is network-first, so an
@@ -135,8 +141,45 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
 - Deployed to GitHub Pages under `/vijf/` by a GitHub Actions workflow, which stamps the cache
   version with the commit ID. All paths are relative.
 
+### iPhone (`apple/`)
+
+- A native SwiftUI app, iOS 18 and later, iPhone, portrait. Same screens, rules, wording and
+  colours as the web app; the rules and data live in the `VijfKit` package, shared with the
+  planned watch app.
+- Data is saved on the device as the same JSON as the web app's backup. **Backup** shows that
+  text with **Copy** and **Share**, and restores from pasted text, so a backup moves between the
+  web app and the iPhone app in either direction (including backups from before decks existed).
+- Platform conventions where they help: the system back button and title instead of the web
+  app's breadcrumb (the position counter sits top-right), the system swipe action to delete a
+  deck, and add words as a sheet.
+- Differences from the web app: on the Add sheet, picking another deck adds the words there
+  but doesn't switch to that deck; the cog is the system "gearshape" symbol.
+
+### Apple Watch (`apple/VijfWatch`)
+
+- **Study only**, watchOS 11 and later. It comes with the iPhone app and has no editing,
+  adding, deleting or backup; that happens on the phone.
+- **Screens:** a list of every deck and box that has cards ("Start · Box 1 · New", count); then
+  the study screen: the position counter top-right, the card filling the screen (tap to flip;
+  Dutch on yellow), and **Not yet** (red) / **I know it** (green) side by side, or **Next** in
+  box 5. Rounds, the counter and the summary follow the Leitner rules above.
+- Always dark (watchOS), using the dark value of every colour token.
+- **Offline:** the watch keeps its own copy of the decks, so it works without the phone nearby.
+- **Sync** (WatchConnectivity):
+  - The phone is the source of truth for decks, words and deletions. After every change it
+    sends its whole library; the watch replaces its copy with it, except that a card keeps a
+    higher box the watch has reached.
+  - Each **I know it** on the watch goes to the phone with the card's new box: straight away when
+    the phone is reachable, otherwise queued until it is. The phone keeps the **higher** box.
+  - Whenever the phone's library arrives or the phone becomes reachable, the watch re-sends
+    every box it holds higher than the phone, so an answer can't get lost. Applying an answer
+    twice changes nothing.
+  - Because cards never move down, studying on both devices before they sync loses nothing.
+  - **Not yet** isn't synced: it doesn't change the card.
+
 ## Non-goals
 
-- No sync between devices, no accounts, no server.
+- No sync between devices, no accounts, no server. (The one exception: an iPhone and its own
+  Apple Watch sync directly, see Platforms.)
 - No spaced-repetition scheduling by date. The user decides which box to study.
 - Cards never get demoted.
