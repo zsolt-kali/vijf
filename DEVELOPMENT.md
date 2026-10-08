@@ -9,7 +9,8 @@ What the app *does* is in [SPEC.md](SPEC.md); planned work is in GitHub Issues.
 2. **Branch.** Work on a branch, never directly on `main`, because every push to `main` can go live.
 3. **Build and test locally** (commands below). Update `SPEC.md` and the tests in the same change
    whenever behaviour changes.
-4. **Pull request** with `Closes #N` in its description. CI runs the tests for the app the change
+4. **Pull request** into `main`, with `Closes #N` in its description. One PR at a time: no PRs
+   stacked on other unmerged branches (they merge into that branch, not `main`). CI runs the tests for the app the change
    touches; nothing deploys from a pull request.
 5. **Merge to `main`.** CI runs the tests again and, for the web app, deploys if they pass. Phones
    get the update the next time the app is opened online.
