@@ -55,7 +55,7 @@ test('the browser bar colour follows the theme', async ({ page }) => {
 });
 
 test('every colour in the CSS matches design/tokens.json, in both themes', async ({ page }) => {
-  const tokens = require('../design/tokens.json').color.tokens;
+  const tokens = require('../../design/tokens.json').color.tokens;
   await open(page);
   for (const theme of ['light', 'dark']) {
     await page.emulateMedia({ colorScheme: theme });

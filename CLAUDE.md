@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**vijf** is a Dutch flashcard PWA built on a five-box Leitner system. The app is a static site with no build step and no runtime dependencies. `package.json` exists only for the Playwright tests.
+**vijf** is a Dutch flashcard app built on a five-box Leitner system. `web/` holds the PWA: a static site with no build step and no runtime dependencies (`web/package.json` exists only for the Playwright tests). `apple/` holds the native iOS and watchOS apps. `design/tokens.json` is shared by all of them.
 
 - **[SPEC.md](SPEC.md)** says what the app does. Read it before changing features, and update it in the same change when behaviour changes.
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** covers the workflow, the commands, how deploying works, and a decisions log. When making a new process or architecture decision, add an entry there.
@@ -12,26 +12,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+Web (run npm/npx from `web/`):
+
 ```bash
-python3 -m http.server 8000          # run the app at http://localhost:8000
-npm test                             # all tests, Pixel 7 Chromium + iPhone 15 WebKit
+python3 -m http.server 8000 --directory web   # from the repo root: the app at http://localhost:8000
+npm test                                      # all tests, Pixel 7 Chromium + iPhone 15 WebKit
 npx playwright test tests/decks.spec.js -g "creating a deck" --project=android-chrome   # one test
 ```
 
 A normal reload picks up edits to `index.html`. Changes to icons or the manifest need a hard reload, because those are served cache-first.
 
-## Tests
+## Web tests
 
-- `tests/*.spec.js` are Playwright end-to-end tests, **one file per `SPEC.md` section**. When behaviour changes, update the matching test in the same change; when adding a feature, add tests for its acceptance criteria.
+- `web/tests/*.spec.js` are Playwright end-to-end tests, **one file per `SPEC.md` section**. When behaviour changes, update the matching test in the same change; when adding a feature, add tests for its acceptance criteria.
 - Use the helpers in `tests/helpers.js`: `open(page, data(...))` seeds `localStorage` and loads the app, `saved(page)` reads the stored state back, and `swipeLeft()` drags a deck row.
 - The service worker is blocked in tests (`serviceWorkers: 'block'`), so they always run against the current files.
 - `tests/migration.spec.js` protects existing users' progress. Don't loosen it to make a change pass; fix `migrate()` instead.
 
 ## Branches and deploying
 
-Work on a branch: every push to `main` deploys to GitHub Pages once the tests pass. CI (`.github/workflows/deploy.yml`) runs the tests on every push and pull request.
+Work on a branch and open a pull request: a push to `main` that touches `web/` or `design/` deploys to GitHub Pages once the tests pass. CI has one workflow per app (`.github/workflows/web.yml`, …), each triggered only by its own folder or `design/`.
 
-## Architecture
+## Web app architecture (`web/`)
 
 - **`index.html` is the entire app.** It holds the inline CSS, the markup shell (`<div id="app">`) and one IIFE of ES5-style JavaScript (`var`, `function`, no arrow functions or modules). Keep to that style.
 - **Rendering:** each view is a function that returns an HTML string (`decksView`, `homeView` for one deck's boxes, `studyView`, `editView`, `summaryView`, `addView`, `backupView`). `render()` replaces `app.innerHTML` wholesale based on the module-level `view` variable, and falls back to `decks` if a deck view has no valid `deckId`. `launch()` picks the start screen. Any user text, including deck names, must go through `esc()` before being interpolated.
@@ -47,5 +49,5 @@ Work on a branch: every push to `main` deploys to GitHub Pages once the tests pa
 
 - `sw.js` precaches every asset. Page navigations are **network-first**, with the cache as the offline fallback. Everything else (icons, manifest) is **cache-first**.
 - **Don't bump `CACHE` by hand.** The deploy workflow rewrites the `const CACHE = …` line to `'vijf-<short sha>'` on every deploy, so keep that line's format intact or the workflow's `grep` check fails. In the repo the value stays `'vijf-dev'`.
-- The workflow publishes only `index.html`, `manifest.webmanifest`, `sw.js` and `icons/`. A new shipped file must be added to the workflow's copy step **and** to `ASSETS` in `sw.js`.
+- The workflow publishes only `web/index.html`, `web/manifest.webmanifest`, `web/sw.js` and `web/icons/`. A new shipped file must be added to the workflow's copy step **and** to `ASSETS` in `sw.js`.
 - All paths are relative (`./…`) because the site is served from the `/vijf/` subpath.
