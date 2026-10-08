@@ -135,3 +135,9 @@ guidelines, plus screen mockups for phone, web and watch), and copied into `desi
 The PWA's CSS variables mirror that file, a test fails if they drift, and the iOS and watch
 apps will build from the same tokens. Dark mode follows the device. The system font stays,
 because on Apple devices it is SF Pro, which keeps web and native identical.
+
+### 15. Study sessions run in rounds
+The first version of the position counter grew its total on every "Not yet" (3 / 12 → 4 / 13),
+which read like the box had gained cards. Now a session runs in rounds: every answer moves the
+position forward, the total of a round never changes, and the "Not yet" cards come back as the
+next, shorter round with its own total (1 / 3).

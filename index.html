@@ -430,7 +430,7 @@
   function studyView() {
     if (!session || !session.queue.length) return summaryView();
     var card = state.cards.find(function (c) { return c.id === session.queue[0]; });
-    if (!card) { session.queue.shift(); return studyView(); }
+    if (!card) { advance(session); return studyView(); }
     if (session.editing) return editView(card);
     var readonly = session.box === 5;
     var cog = '<button class="cog" data-act="edit" aria-label="Edit card">' + COG + '</button>';
@@ -534,27 +534,36 @@
       var j = Math.floor(Math.random() * (i + 1));
       var t = ids[i]; ids[i] = ids[j]; ids[j] = t;
     }
-    /* total counts the cards in the round, including ones "Not yet" sent around again,
-       so the position shown is total - queue.length + 1. */
-    session = { box: n, queue: ids, total: ids.length, up: 0, held: 0 };
+    /* A study session runs in rounds. queue holds the rest of the current round and total its
+       size, so the position shown is total - queue.length + 1. "Not yet" cards collect in retry
+       and become the next round; no answer ever changes the current round's total. */
+    session = { box: n, queue: ids, retry: [], total: ids.length, up: 0, held: 0 };
     go('study');
+  }
+
+  /* Moves past the current card; when the round runs out, the "Not yet" cards start the next. */
+  function advance(s) {
+    s.queue.shift();
+    if (!s.queue.length && s.retry.length) {
+      s.queue = s.retry;
+      s.retry = [];
+      s.total = s.queue.length;
+    }
   }
 
   function rate(liked) {
     var id = session.queue[0];
     var card = state.cards.find(function (c) { return c.id === id; });
-    if (!card) { session.queue.shift(); render(); return; }
+    if (!card) { advance(session); render(); return; }
     if (liked) {
       card.box = Math.min(card.box + 1, 5);
       card.reviewedAt = Date.now();
       session.up++;
-      session.queue.shift();
     } else {
       session.held++;
-      session.total++;
-      session.queue.shift();
-      session.queue.push(id);
+      session.retry.push(id);
     }
+    advance(session);
     save();
     render();
   }
@@ -579,8 +588,8 @@
     var s = session, gone = currentCard();
     var at = state.cards.indexOf(gone);
     state.cards.splice(at, 1);
-    s.queue.shift();
     s.total--;
+    advance(s);
     s.editing = false;
     save(); render();
     undoToast('Card deleted', function () {
@@ -682,7 +691,7 @@
     var act = el.getAttribute('data-act');
     if (act === 'yes') rate(true);
     else if (act === 'no') rate(false);
-    else if (act === 'next') { session.queue.shift(); render(); }
+    else if (act === 'next') { advance(session); render(); }
     else if (act === 'edit') { session.editing = true; render(); }
     else if (act === 'edit-cancel') { session.editing = false; render(); }
     else if (act === 'edit-save') {

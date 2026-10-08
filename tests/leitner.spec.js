@@ -20,7 +20,7 @@ test('Not yet keeps the card in its box and brings it back later in the session'
   await page.click('[data-go=box1]');
   await page.getByRole('button', { name: /Not yet/ }).click();
 
-  await expect(remaining(page)).toHaveText('2 / 2');
+  await expect(remaining(page)).toHaveText('1 / 1');
   await expect(page.locator('.face:not(.face--back) .word')).toHaveText('busy');
   expect((await saved(page)).cards[0].box).toBe(1);
 
@@ -66,14 +66,43 @@ test('a study session only includes cards from the open deck', async ({ page }) 
   await expect(remaining(page)).toHaveText('1 / 2');
 });
 
-test('the counter shows the position in the round, and Not yet adds to the total', async ({ page }) => {
+test('no answer ever changes the total: Not yet cards come back as the next round', async ({ page }) => {
   await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), card(2, 1, 'b', 'b', 1), card(3, 1, 'c', 'c', 1)]));
   await page.click('[data-go=box1]');
+  const know = () => page.getByRole('button', { name: /I know it/ }).click();
+  const notYet = () => page.getByRole('button', { name: /Not yet/ }).click();
+
   await expect(remaining(page)).toHaveText('1 / 3');
-  await page.getByRole('button', { name: /I know it/ }).click();
+  await know();
   await expect(remaining(page)).toHaveText('2 / 3');
-  await page.getByRole('button', { name: /Not yet/ }).click();
-  await expect(remaining(page)).toHaveText('3 / 4');
-  await page.getByRole('button', { name: /I know it/ }).click();
-  await expect(remaining(page)).toHaveText('4 / 4');
+  await notYet();
+  await expect(remaining(page)).toHaveText('3 / 3');
+  await notYet();
+  // round 2: the two Not yet cards
+  await expect(remaining(page)).toHaveText('1 / 2');
+  await know();
+  await expect(remaining(page)).toHaveText('2 / 2');
+  await notYet();
+  // round 3: the one card still not known
+  await expect(remaining(page)).toHaveText('1 / 1');
+  await know();
+  await expect(page.getByText('Moved up to box 2: 3. Not yet: 3.')).toBeVisible();
+});
+
+test('Not yet cards come back in the order they were answered', async ({ page }) => {
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), card(2, 1, 'b', 'b', 1), card(3, 1, 'c', 'c', 1)]));
+  await page.click('[data-go=box1]');
+  const word = page.locator('.face:not(.face--back) .word');
+  const firstRound = [];
+  for (let i = 0; i < 3; i++) {
+    firstRound.push(await word.textContent());
+    await page.getByRole('button', { name: /Not yet/ }).click();
+  }
+  const secondRound = [];
+  for (let i = 0; i < 3; i++) {
+    await expect(remaining(page)).toHaveText(`${i + 1} / 3`);
+    secondRound.push(await word.textContent());
+    await page.getByRole('button', { name: /I know it/ }).click();
+  }
+  expect(secondRound).toEqual(firstRound);
 });
