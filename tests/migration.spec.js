@@ -1,6 +1,6 @@
 // SPEC.md → Data → Migration. These protect existing users' progress: never weaken them.
 const { test, expect } = require('@playwright/test');
-const { deck, card, data, open, saved, toast } = require('./helpers');
+const { deck, card, data, open, saved, toast, openBackup } = require('./helpers');
 
 // Saved data as the app wrote it before decks existed.
 const v1 = () => ({
@@ -54,9 +54,8 @@ test('data already in the current shape is left unchanged', async ({ page }) => 
 });
 
 test('restoring a back-up from before decks puts its cards in Start', async ({ page }) => {
-  await open(page, data([deck(1, 'Eten')], [card(1, 1, 'a', 'a')]));
-  await page.getByRole('button', { name: /Alles/ }).click();
-  await page.getByRole('button', { name: /Back-up maken/ }).click();
+  await open(page, data([deck(1, 'Eten'), deck(2, 'Werk')], [card(1, 1, 'a', 'a')]));
+  await openBackup(page);
   await page.fill('#f-json', JSON.stringify(v1()));
   await page.getByRole('button', { name: /Terugzetten/ }).click();
 

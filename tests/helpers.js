@@ -38,6 +38,17 @@ function toast(page) {
   return page.locator('.toast').last();
 }
 
+/* Goes from the deck list to the back-up screen. */
+async function openBackup(page) {
+  await page.getByRole('button', { name: /^Back-up/ }).click();
+}
+
+/* Opens a deck and starts studying one of its boxes. */
+async function study(page, deckName, box) {
+  if (await page.locator('.slot--deck').count()) await deckRow(page, deckName).click();
+  await page.click(`[data-go=box${box}]`);
+}
+
 /* Drags a deck row to the left by `distance` pixels, like a finger swipe. */
 async function swipeLeft(page, row, distance = 130) {
   const box = await row.boundingBox();
@@ -49,4 +60,4 @@ async function swipeLeft(page, row, distance = 130) {
   await page.mouse.up();
 }
 
-module.exports = { KEY, deck, card, data, open, saved, deckRow, toast, swipeLeft };
+module.exports = { KEY, deck, card, data, open, saved, deckRow, toast, openBackup, study, swipeLeft };

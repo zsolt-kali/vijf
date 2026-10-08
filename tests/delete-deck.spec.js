@@ -1,6 +1,6 @@
 // SPEC.md → Decks → Deleting and Undo
 const { test, expect } = require('@playwright/test');
-const { deck, card, data, open, saved, deckRow, swipeLeft } = require('./helpers');
+const { deck, card, data, open, saved, deckRow, openBackup, swipeLeft } = require('./helpers');
 
 const threeDecks = () => data(
   [deck(1, 'Start'), deck(2, 'Eten'), deck(3, 'Werk')],
@@ -87,14 +87,14 @@ test('a second delete replaces the undo; only the latest can be undone', async (
   expect((await saved(page)).decks.map((d) => d.name)).toEqual(['Start', 'Werk']);
 });
 
-test('wiping everything cancels a pending undo', async ({ page }) => {
+test('restoring a back-up cancels a pending undo', async ({ page }) => {
   await open(page, threeDecks());
   await swipeLeft(page, deckRow(page, 'Eten'));
   await page.locator('[data-del-deck="2"]').click();
 
-  page.once('dialog', (d) => d.accept());
-  await page.getByRole('button', { name: /Alles/ }).click();
-  await page.getByRole('button', { name: /Alles wissen/ }).click();
+  await openBackup(page);
+  await page.fill('#f-json', JSON.stringify(data([deck(1, 'Reizen')], [])));
+  await page.getByRole('button', { name: /Terugzetten/ }).click();
   await expect(undoToast(page)).toHaveCount(0);
 });
 
