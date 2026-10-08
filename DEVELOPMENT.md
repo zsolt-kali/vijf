@@ -123,3 +123,8 @@ The all-cards list was removed to keep the app small and focused on studying, an
 moved to its own button on the deck list. "Delete everything" was dropped as too risky for what
 it offered. Restoring a back-up still replaces all data.
 *Trade-off:* to fix a word you have to study its box until it comes up; there's no search.
+
+### 13. English-only interface
+The interface was Dutch with English subtitles, which doubled every label and made the screens
+busy. It is now English only, short and plain; only the words being learned are Dutch. A single
+language also keeps the upcoming iOS and watch apps simpler.

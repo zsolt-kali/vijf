@@ -40,7 +40,7 @@ function toast(page) {
 
 /* Goes from the deck list to the back-up screen. */
 async function openBackup(page) {
-  await page.getByRole('button', { name: /^Back-up/ }).click();
+  await page.getByRole('button', { name: /^Backup/ }).click();
 }
 
 /* Opens a deck and starts studying one of its boxes. */

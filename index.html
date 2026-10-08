@@ -270,7 +270,7 @@
   }
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch (e) { toast('Opslaan mislukt'); }
+    catch (e) { toast('Could not save'); }
   }
 
   function deck() { return state.decks.find(function (d) { return d.id === deckId; }) || null; }
@@ -294,7 +294,7 @@
     clearUndo();
     undoEl = document.createElement('div');
     undoEl.className = 'toast toast--undo';
-    undoEl.innerHTML = '<span></span><button type="button">Ongedaan maken</button>';
+    undoEl.innerHTML = '<span></span><button type="button">Undo</button>';
     undoEl.firstChild.textContent = msg;
     undoEl.lastChild.addEventListener('click', function () { clearUndo(); onUndo(); });
     document.body.appendChild(undoEl);
@@ -321,13 +321,13 @@
       '<div class="tally">' + tally + '</div></div>';
   }
   function crumbs() {
-    return '<span class="crumbs"><button data-go="decks">Stapels</button><span>/</span>' +
+    return '<span class="crumbs"><button data-go="decks">Decks</button><span>/</span>' +
       '<button class="here" data-go="home">' + esc(deck().name) + '</button></span>';
   }
 
   function decksView() {
     var n = state.decks.length;
-    var h = header('<b>' + n + '</b><br>' + (n === 1 ? 'stapel' : 'stapels'));
+    var h = header('<b>' + n + '</b><br>' + (n === 1 ? 'deck' : 'decks'));
     if (n) {
       h += '<div class="tray">';
       state.decks.forEach(function (d) {
@@ -335,7 +335,7 @@
         var learned = cs.filter(function (c) { return c.box === 5; }).length;
         h += '<div class="swipe">' +
           '<button class="swipe__del" data-del-deck="' + d.id + '" tabindex="-1" ' +
-          'aria-label="Delete deck ' + esc(d.name) + '">Verwijder<small>delete</small></button>' +
+          'aria-label="Delete deck ' + esc(d.name) + '">Delete</button>' +
           '<button class="slot slot--deck" data-deck="' + d.id + '" data-empty="' + (cs.length ? 0 : 1) + '">' +
           '<span><span class="lbl">' + esc(d.name) + '</span>' +
           '<span class="sub">' + cs.length + (cs.length === 1 ? ' card' : ' cards') + '</span></span>' +
@@ -343,30 +343,29 @@
       });
       h += '</div>';
     } else {
-      h += '<div class="empty"><div class="eyebrow">Leeg</div>' +
+      h += '<div class="empty"><div class="eyebrow">Empty</div>' +
         '<p>Make a deck for each topic, like food or work.</p></div>';
     }
-    h += '<div class="make"><input type="text" id="f-deck-name" placeholder="Nieuwe stapel · new deck" ' +
+    h += '<div class="make"><input type="text" id="f-deck-name" placeholder="New deck" ' +
       'autocomplete="off" aria-label="New deck name">' +
-      '<button class="btn btn--fill" data-act="make-deck">Maken<small>create</small></button></div>';
+      '<button class="btn btn--fill" data-act="make-deck">Create</button></div>';
     if (!state.cards.length) {
       h += '<div class="row"><button class="btn btn--ghost" data-act="starter">' +
-        'Start met 12 voorbeeldwoorden<small>load a starter set</small></button></div>';
+        'Load 12 starter words</button></div>';
     }
     /* Always shown: restoring onto a new phone starts from an empty app. */
-    h += '<div class="row"><button class="btn" data-go="backup">Back-up<small>save or restore</small></button></div>';
-    h += '<p class="note">Each deck has its own five boxes. The number on the right is how many ' +
-      'cards in that deck are learned.' + (n ? ' Swipe a deck left to delete it.' : '') + '</p>';
+    h += '<div class="row"><button class="btn" data-go="backup">Backup</button></div>';
+    h += '<p class="note">Each deck has its own five boxes. The number on the right shows how many ' +
+      'cards you have learned.' + (n ? ' Swipe a deck left to delete it.' : '') + '</p>';
     return h;
   }
 
   function homeView() {
-    var names = ['Nieuw', 'Wankel', 'Op weg', 'Bijna', 'Geleerd'];
-    var subs = ['brand new', 'shaky', 'getting there', 'nearly there', 'mastered'];
+    var names = ['New', 'Shaky', 'Getting there', 'Nearly', 'Learned'];
     var total = cardsIn(deckId).length;
-    var h = '<div class="bar"><button data-go="decks">← Stapels</button>' +
+    var h = '<div class="bar"><button data-go="decks">← Decks</button>' +
       '<span class="here">' + esc(deck().name) + '</span></div>' +
-      header('<b>' + inBox(5).length + '</b> / ' + total + '<br>geleerd') + '<div class="tray">';
+      header('<b>' + inBox(5).length + '</b> / ' + total + '<br>learned') + '<div class="tray">';
     for (var i = 1; i <= 5; i++) {
       var n = inBox(i).length, edges = '';
       for (var e = 0; e < Math.min(n, 20); e++) edges += '<i></i>';
@@ -374,20 +373,19 @@
         '" data-full="' + (i === 5 && n ? 1 : 0) + '">' +
         '<span class="num">' + i + '</span><span>' +
         '<span class="lbl">' + names[i - 1] + '</span>' +
-        '<span class="sub">' + subs[i - 1] + '</span>' +
         (n ? '<span class="edges">' + edges + '</span>' : '') +
         '</span><span class="cnt">' + n + '</span></button>';
     }
     h += '</div>';
     if (!total) {
-      h += '<div class="empty" style="margin-top:22px"><div class="eyebrow">Leeg</div>' +
-        '<p>Add your first word and it lands in box 1.</p></div>';
+      h += '<div class="empty" style="margin-top:22px"><div class="eyebrow">Empty</div>' +
+        '<p>Add your first word. It starts in box 1.</p></div>';
     }
     h += '<div class="row">' +
-      '<button class="btn btn--fill" data-go="add">Woord toevoegen<small>add words</small></button></div>';
-    h += '<p class="note">Tap a box to study it. <b>Ken ik</b> moves a card up one box; ' +
-      '<b>Nog niet</b> leaves it where it is. Nothing ever moves back down. ' +
-      'Use the cog while studying to fix or delete a card.</p>';
+      '<button class="btn btn--fill" data-go="add">Add words</button></div>';
+    h += '<p class="note">Tap a box to study it. <b>I know it</b> moves a card up one box; ' +
+      '<b>Not yet</b> keeps it where it is. Cards never move down. ' +
+      'Use the cog on a card to fix or delete it.</p>';
     return h;
   }
 
@@ -397,26 +395,26 @@
     if (!card) { session.queue.shift(); return studyView(); }
     if (session.editing) return editView(card);
     var readonly = session.box === 5;
-    var cog = '<button class="btn btn--cog" data-act="edit" aria-label="Bewerken · edit card">' + COG + '</button>';
+    var cog = '<button class="btn btn--cog" data-act="edit" aria-label="Edit card">' + COG + '</button>';
 
     var h = '<div class="bar">' + crumbs() +
-      '<span>Doos ' + session.box + ' · ' + session.queue.length + ' over</span></div>' +
+      '<span class="pos">' + (session.total - session.queue.length + 1) + ' / ' + session.total + '</span></div>' +
       '<div class="stage"><div class="flip" id="flip">' +
-      '<div class="face"><span class="hint">Jouw taal</span>' +
+      '<div class="face"><span class="hint">Your language</span>' +
       '<div class="mid"><div class="word">' + esc(card.native) + '</div></div>' +
-      '<span class="hint">Tik om te draaien · tap to flip</span></div>' +
-      '<div class="face face--back"><span class="hint">Nederlands</span>' +
+      '<span class="hint">Tap to flip</span></div>' +
+      '<div class="face face--back"><span class="hint">Dutch</span>' +
       '<div class="mid"><div class="word">' + esc(card.dutch) + '</div></div>' +
-      '<span class="hint">' + (readonly ? 'Geleerd — blijft in doos 5' : 'Wist je het?') +
+      '<span class="hint">' + (readonly ? 'Learned. Stays in box 5' : 'Did you know it?') +
       '</span></div></div></div>';
 
     if (readonly) {
       h += '<div class="rate">' +
-        '<button class="btn btn--fill" data-act="next">Volgende<small>next card</small></button>' + cog + '</div>';
+        '<button class="btn btn--fill" data-act="next">Next</button>' + cog + '</div>';
     } else {
       h += '<div class="rate">' +
-        '<button class="btn no" data-act="no">Nog niet<small>stays in box ' + session.box + '</small></button>' +
-        '<button class="btn yes" data-act="yes">Ken ik<small>→ box ' + (session.box + 1) + '</small></button>' +
+        '<button class="btn no" data-act="no">Not yet<small>stays in box ' + session.box + '</small></button>' +
+        '<button class="btn yes" data-act="yes">I know it<small>→ box ' + (session.box + 1) + '</small></button>' +
         cog + '</div>';
     }
     return h;
@@ -424,30 +422,30 @@
 
   /* Shown in place of the study card while session.editing is set. */
   function editView(card) {
-    return '<div class="bar">' + crumbs() + '<span>Bewerken</span></div>' +
+    return '<div class="bar">' + crumbs() + '<span>Edit</span></div>' +
       '<div class="edit">' +
-      '<label class="field"><span class="eyebrow">Jouw taal · your language</span>' +
+      '<label class="field"><span class="eyebrow">Your language</span>' +
       '<input type="text" id="f-edit-native" value="' + esc(card.native) + '" autocomplete="off" autocapitalize="none"></label>' +
-      '<label class="field"><span class="eyebrow">Nederlands · Dutch</span>' +
+      '<label class="field"><span class="eyebrow">Dutch</span>' +
       '<input type="text" id="f-edit-dutch" value="' + esc(card.dutch) + '" autocomplete="off" autocapitalize="none"></label>' +
       '</div>' +
       '<div class="rate">' +
-      '<button class="btn" data-act="edit-cancel">Annuleren<small>cancel</small></button>' +
-      '<button class="btn btn--fill" data-act="edit-save">Bewaren<small>save</small></button></div>' +
+      '<button class="btn" data-act="edit-cancel">Cancel</button>' +
+      '<button class="btn btn--fill" data-act="edit-save">Save</button></div>' +
       '<div class="row"><button class="btn btn--danger" data-act="edit-delete">' +
-      'Kaart verwijderen<small>delete card</small></button></div>';
+      'Delete card</button></div>';
   }
 
   function summaryView() {
-    var h = '<div class="bar">' + crumbs() + '<span>Klaar</span></div>' +
-      '<h2>Ronde afgerond.</h2>';
+    var h = '<div class="bar">' + crumbs() + '<span>Done</span></div>' +
+      '<h2>Round complete.</h2>';
     if (session) {
-      h += '<p class="note" style="margin-top:0">' + session.up + ' cards moved up to box ' +
-        Math.min(session.box + 1, 5) + '. ' + session.held + ' stayed in box ' + session.box + '.</p>';
+      h += '<p class="note" style="margin-top:0">Moved up to box ' + Math.min(session.box + 1, 5) + ': ' +
+        session.up + '. Not yet: ' + session.held + '.</p>';
     }
     h += '<div class="row"><button class="btn btn--fill" data-go="home">' +
-      'Terug naar de dozen<small>back to boxes</small></button>' +
-      '<button class="btn" data-go="decks">Andere stapel<small>other deck</small></button></div>';
+      'Back to boxes</button>' +
+      '<button class="btn" data-go="decks">Other deck</button></div>';
     return h;
   }
 
@@ -456,34 +454,33 @@
       return '<option value="' + d.id + '"' + (d.id === deckId ? ' selected' : '') + '>' +
         esc(d.name) + '</option>';
     }).join('');
-    return '<div class="bar"><button data-go="home">← Dozen</button><span>Toevoegen</span></div>' +
-      '<label class="field"><span class="eyebrow">Stapel · deck</span>' +
+    return '<div class="bar"><button data-go="home">← Boxes</button><span>Add</span></div>' +
+      '<label class="field"><span class="eyebrow">Deck</span>' +
       '<select id="f-deck">' + opts + '</select></label>' +
-      '<h2 style="margin-top:28px">Nieuw woord</h2>' +
-      '<label class="field"><span class="eyebrow">Jouw taal · your language</span>' +
+      '<h2 style="margin-top:28px">New word</h2>' +
+      '<label class="field"><span class="eyebrow">Your language</span>' +
       '<input type="text" id="f-native" autocomplete="off" autocapitalize="none"></label>' +
-      '<label class="field"><span class="eyebrow">Nederlands · Dutch</span>' +
+      '<label class="field"><span class="eyebrow">Dutch</span>' +
       '<input type="text" id="f-dutch" autocomplete="off" autocapitalize="none"></label>' +
       '<div class="row" style="margin-top:4px"><button class="btn btn--fill" data-act="save-one">' +
-      'Bewaren in doos 1<small>save to box 1</small></button></div>' +
-      '<h2 style="margin-top:34px">Meerdere tegelijk</h2>' +
-      '<label class="field"><span class="eyebrow">Eén per regel · your word = dutch word</span>' +
+      'Save to box 1</button></div>' +
+      '<h2 style="margin-top:34px">Several at once</h2>' +
+      '<label class="field"><span class="eyebrow">One per line: your word = Dutch word</span>' +
       '<textarea id="f-bulk" placeholder="the house = het huis&#10;tomorrow = morgen"></textarea></label>' +
       '<div class="row" style="margin-top:0"><button class="btn" data-act="save-bulk">' +
-      'Lijst toevoegen<small>import list</small></button></div>';
+      'Import list</button></div>';
   }
 
   function backupView() {
-    return '<div class="bar"><button data-go="decks">← Stapels</button><span>Back-up</span></div>' +
-      '<h2>Back-up</h2>' +
-      '<p class="note" style="margin-top:0">Cards live on this device only. Copy this text somewhere ' +
-      'safe, especially before clearing your browser data. Paste it back here and tap restore to ' +
-      'bring your decks, cards and boxes back on any device. Restoring replaces everything here.</p>' +
-      '<label class="field"><span class="eyebrow">Jouw gegevens · your data</span>' +
+    return '<div class="bar"><button data-go="decks">← Decks</button><span>Backup</span></div>' +
+      '<h2>Backup</h2>' +
+      '<p class="note" style="margin-top:0">Your cards live only on this device. Copy this text ' +
+      'somewhere safe. To restore, paste it here and tap Restore. This replaces everything.</p>' +
+      '<label class="field"><span class="eyebrow">Your data</span>' +
       '<textarea id="f-json">' + esc(JSON.stringify(state)) + '</textarea></label>' +
       '<div class="row" style="margin-top:0">' +
-      '<button class="btn" data-act="copy">Kopiëren<small>copy</small></button>' +
-      '<button class="btn btn--fill" data-act="restore">Terugzetten<small>restore</small></button></div>';
+      '<button class="btn" data-act="copy">Copy</button>' +
+      '<button class="btn btn--fill" data-act="restore">Restore</button></div>';
   }
 
   function render() {
@@ -495,12 +492,14 @@
 
   function startBox(n) {
     var ids = inBox(n).map(function (c) { return c.id; });
-    if (!ids.length) { toast('Doos ' + n + ' is leeg'); return; }
+    if (!ids.length) { toast('Box ' + n + ' is empty'); return; }
     for (var i = ids.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
       var t = ids[i]; ids[i] = ids[j]; ids[j] = t;
     }
-    session = { box: n, queue: ids, up: 0, held: 0 };
+    /* total counts the cards in the round, including ones "Not yet" sent around again,
+       so the position shown is total - queue.length + 1. */
+    session = { box: n, queue: ids, total: ids.length, up: 0, held: 0 };
     go('study');
   }
 
@@ -515,6 +514,7 @@
       session.queue.shift();
     } else {
       session.held++;
+      session.total++;
       session.queue.shift();
       session.queue.push(id);
     }
@@ -543,12 +543,13 @@
     var at = state.cards.indexOf(gone);
     state.cards.splice(at, 1);
     s.queue.shift();
+    s.total--;
     s.editing = false;
     save(); render();
-    undoToast('Kaart verwijderd', function () {
+    undoToast('Card deleted', function () {
       state.cards.splice(Math.min(at, state.cards.length), 0, gone);
-      if (session === s && view === 'study') s.queue.unshift(gone.id);
-      save(); render(); toast('Teruggezet');
+      if (session === s && view === 'study') { s.queue.unshift(gone.id); s.total++; }
+      save(); render(); toast('Restored');
     });
   }
 
@@ -616,10 +617,10 @@
       state.cards = state.cards.filter(function (c) { return c.deckId !== gone; });
       if (deckId === gone) deckId = null;
       save(); render();
-      undoToast('Stapel verwijderd', function () {
+      undoToast('Deck deleted', function () {
         state.decks.splice(Math.min(at, state.decks.length), 0, deckGone);
         state.cards = state.cards.concat(cardsGone);
-        save(); render(); toast('Teruggezet');
+        save(); render(); toast('Restored');
       });
       return;
     }
@@ -650,35 +651,35 @@
     else if (act === 'edit-save') {
       var en = document.getElementById('f-edit-native').value.trim();
       var ed = document.getElementById('f-edit-dutch').value.trim();
-      if (!en || !ed) { toast('Vul beide velden in'); return; }
+      if (!en || !ed) { toast('Fill in both fields'); return; }
       var edited = currentCard();
       edited.native = en; edited.dutch = ed;
       session.editing = false;
-      save(); render(); toast('Opgeslagen');
+      save(); render(); toast('Saved');
     }
     else if (act === 'edit-delete') deleteCard();
     else if (act === 'starter') {
       var start = findDeck(state, 'Start') || makeDeck(state, 'Start');
       STARTER.forEach(function (p) { addCard(p[0], p[1], start.id); });
-      save(); open(start.id); toast('12 woorden in doos 1');
+      save(); open(start.id); toast('12 words added to box 1');
     }
     else if (act === 'make-deck') {
       var name = document.getElementById('f-deck-name').value.trim();
-      if (!name) { toast('Geef de stapel een naam'); return; }
-      if (findDeck(state, name)) { toast('Die stapel bestaat al'); return; }
+      if (!name) { toast('Give the deck a name'); return; }
+      if (findDeck(state, name)) { toast('That deck already exists'); return; }
       var made = makeDeck(state, name);
-      save(); open(made.id); toast('Stapel gemaakt');
+      save(); open(made.id); toast('Deck created');
     }
     else if (act === 'save-one') {
       var n = document.getElementById('f-native').value.trim();
       var d = document.getElementById('f-dutch').value.trim();
-      if (!n || !d) { toast('Vul beide velden in'); return; }
+      if (!n || !d) { toast('Fill in both fields'); return; }
       deckId = chosenDeck();
       addCard(n, d, deckId); save();
       document.getElementById('f-native').value = '';
       document.getElementById('f-dutch').value = '';
       document.getElementById('f-native').focus();
-      toast('Toegevoegd aan doos 1');
+      toast('Added to box 1');
     }
     else if (act === 'save-bulk') {
       var raw = document.getElementById('f-bulk').value, count = 0;
@@ -690,14 +691,14 @@
         if (parts.length < 2) return;
         if (addCard(parts[0].trim(), parts[1].trim(), deckId)) count++;
       });
-      if (!count) { toast('Geen regels herkend'); return; }
-      save(); render(); toast(count + ' woorden toegevoegd');
+      if (!count) { toast('No valid lines found'); return; }
+      save(); render(); toast(count + ' words added');
     }
     else if (act === 'copy') {
       var ta = document.getElementById('f-json');
       ta.select(); ta.setSelectionRange(0, 999999);
-      try { document.execCommand('copy'); toast('Gekopieerd'); }
-      catch (e) { toast('Selecteer en kopieer handmatig'); }
+      try { document.execCommand('copy'); toast('Copied'); }
+      catch (e) { toast('Select the text and copy it'); }
     }
     else if (act === 'restore') {
       try {
@@ -705,8 +706,8 @@
         if (!data) throw new Error('bad');
         clearUndo();
         state = data;
-        save(); launch(); toast('Teruggezet');
-      } catch (e) { toast('Ongeldige back-up'); }
+        save(); launch(); toast('Restored');
+      } catch (e) { toast('Invalid backup'); }
     }
   });
 

@@ -52,7 +52,7 @@ test('undo restores the deck in its place with its cards and boxes', async ({ pa
   await open(page, threeDecks());
   await swipeLeft(page, deckRow(page, 'Eten'));
   await page.locator('[data-del-deck="2"]').click();
-  await undoToast(page).getByRole('button', { name: 'Ongedaan maken' }).click();
+  await undoToast(page).getByRole('button', { name: 'Undo' }).click();
 
   const s = await saved(page);
   expect(s.decks.map((d) => d.name)).toEqual(['Start', 'Eten', 'Werk']);
@@ -83,7 +83,7 @@ test('a second delete replaces the undo; only the latest can be undone', async (
   await page.locator('[data-del-deck="3"]').click();
 
   await expect(undoToast(page)).toHaveCount(1);
-  await undoToast(page).getByRole('button', { name: 'Ongedaan maken' }).click();
+  await undoToast(page).getByRole('button', { name: 'Undo' }).click();
   expect((await saved(page)).decks.map((d) => d.name)).toEqual(['Start', 'Werk']);
 });
 
@@ -94,7 +94,7 @@ test('restoring a back-up cancels a pending undo', async ({ page }) => {
 
   await openBackup(page);
   await page.fill('#f-json', JSON.stringify(data([deck(1, 'Reizen')], [])));
-  await page.getByRole('button', { name: /Terugzetten/ }).click();
+  await page.getByRole('button', { name: /Restore/ }).click();
   await expect(undoToast(page)).toHaveCount(0);
 });
 
@@ -105,5 +105,5 @@ test('deleting the last deck shows the empty deck list', async ({ page }) => {
     await page.locator('.swipe.open .swipe__del').click();
   }
   await expect(page.getByText('Make a deck for each topic')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Start met 12 voorbeeldwoorden/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Load 12 starter words/ })).toBeVisible();
 });

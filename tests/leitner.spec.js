@@ -4,28 +4,28 @@ const { deck, card, data, open, saved, toast } = require('./helpers');
 
 const remaining = (page) => page.locator('.bar > span').last();
 
-test('Ken ik moves a card up one box and records the review', async ({ page }) => {
+test('I know it moves a card up one box and records the review', async ({ page }) => {
   await open(page, data([deck(1, 'Start')], [card(1, 1, 'the house', 'het huis', 2)]));
   await page.click('[data-go=box2]');
-  await page.getByRole('button', { name: /Ken ik/ }).click();
+  await page.getByRole('button', { name: /I know it/ }).click();
 
   const s = await saved(page);
   expect(s.cards[0].box).toBe(3);
   expect(s.cards[0].reviewedAt).toEqual(expect.any(Number));
-  await expect(page.getByRole('heading', { name: 'Ronde afgerond.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Round complete.' })).toBeVisible();
 });
 
-test('Nog niet keeps the card in its box and brings it back later in the session', async ({ page }) => {
+test('Not yet keeps the card in its box and brings it back later in the session', async ({ page }) => {
   await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 1)]));
   await page.click('[data-go=box1]');
-  await page.getByRole('button', { name: /Nog niet/ }).click();
+  await page.getByRole('button', { name: /Not yet/ }).click();
 
-  await expect(remaining(page)).toHaveText('Doos 1 · 1 over');
+  await expect(remaining(page)).toHaveText('2 / 2');
   await expect(page.locator('.face:not(.face--back) .word')).toHaveText('busy');
   expect((await saved(page)).cards[0].box).toBe(1);
 
-  await page.getByRole('button', { name: /Ken ik/ }).click();
-  await expect(page.getByText('1 cards moved up to box 2. 1 stayed in box 1.')).toBeVisible();
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await expect(page.getByText('Moved up to box 2: 1. Not yet: 1.')).toBeVisible();
 });
 
 test('tapping the card flips it to show the Dutch word', async ({ page }) => {
@@ -37,22 +37,22 @@ test('tapping the card flips it to show the Dutch word', async ({ page }) => {
   await expect(page.locator('.face--back .word')).toHaveText('druk');
 });
 
-test('box 5 is review only: Volgende, no rating, cards stay in box 5', async ({ page }) => {
+test('box 5 is review only: Next, no rating, cards stay in box 5', async ({ page }) => {
   await open(page, data([deck(1, 'Start')], [card(1, 1, 'tomorrow', 'morgen', 5)]));
   await page.click('[data-go=box5]');
 
-  await expect(page.getByRole('button', { name: /Ken ik/ })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /Nog niet/ })).toHaveCount(0);
-  await page.getByRole('button', { name: /Volgende/ }).click();
+  await expect(page.getByRole('button', { name: /I know it/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Not yet/ })).toHaveCount(0);
+  await page.getByRole('button', { name: /Next/ }).click();
 
-  await expect(page.getByRole('heading', { name: 'Ronde afgerond.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Round complete.' })).toBeVisible();
   expect((await saved(page)).cards[0].box).toBe(5);
 });
 
 test('tapping an empty box shows a toast and stays on the boxes', async ({ page }) => {
   await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 1)]));
   await page.click('[data-go=box3]');
-  await expect(toast(page)).toHaveText('Doos 3 is leeg');
+  await expect(toast(page)).toHaveText('Box 3 is empty');
   await expect(page.locator('[data-go=box1]')).toBeVisible();
 });
 
@@ -63,5 +63,17 @@ test('a study session only includes cards from the open deck', async ({ page }) 
   ));
   await page.locator('[data-deck="1"]').click();
   await page.click('[data-go=box1]');
-  await expect(remaining(page)).toHaveText('Doos 1 · 2 over');
+  await expect(remaining(page)).toHaveText('1 / 2');
+});
+
+test('the counter shows the position in the round, and Not yet adds to the total', async ({ page }) => {
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), card(2, 1, 'b', 'b', 1), card(3, 1, 'c', 'c', 1)]));
+  await page.click('[data-go=box1]');
+  await expect(remaining(page)).toHaveText('1 / 3');
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await expect(remaining(page)).toHaveText('2 / 3');
+  await page.getByRole('button', { name: /Not yet/ }).click();
+  await expect(remaining(page)).toHaveText('3 / 4');
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await expect(remaining(page)).toHaveText('4 / 4');
 });

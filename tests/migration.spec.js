@@ -57,9 +57,9 @@ test('restoring a back-up from before decks puts its cards in Start', async ({ p
   await open(page, data([deck(1, 'Eten'), deck(2, 'Werk')], [card(1, 1, 'a', 'a')]));
   await openBackup(page);
   await page.fill('#f-json', JSON.stringify(v1()));
-  await page.getByRole('button', { name: /Terugzetten/ }).click();
+  await page.getByRole('button', { name: /Restore/ }).click();
 
-  await expect(toast(page)).toHaveText('Teruggezet');
+  await expect(toast(page)).toHaveText('Restored');
   const s = await saved(page);
   expect(s.decks.map((d) => d.name)).toEqual(['Start']);
   expect(s.cards.map((c) => c.box)).toEqual([3, 5, 1]);
