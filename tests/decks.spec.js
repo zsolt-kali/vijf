@@ -5,12 +5,12 @@ const { deck, card, data, open, saved, deckRow, toast } = require('./helpers');
 test('a new user sees an empty deck list with the starter set button', async ({ page }) => {
   await open(page);
   await expect(page.getByText('Make a deck for each topic')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Start met 12 voorbeeldwoorden/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Load 12 starter words/ })).toBeVisible();
 });
 
 test('the starter set creates a Start deck with 12 words in box 1 and opens it', async ({ page }) => {
   await open(page);
-  await page.getByRole('button', { name: /Start met 12 voorbeeldwoorden/ }).click();
+  await page.getByRole('button', { name: /Load 12 starter words/ }).click();
 
   const s = await saved(page);
   expect(s.decks.map((d) => d.name)).toEqual(['Start']);
@@ -22,7 +22,7 @@ test('the starter set creates a Start deck with 12 words in box 1 and opens it',
 test('creating a deck saves it and opens it', async ({ page }) => {
   await open(page);
   await page.fill('#f-deck-name', 'Eten');
-  await page.getByRole('button', { name: /Maken/ }).click();
+  await page.getByRole('button', { name: /Create/ }).click();
 
   await expect(page.locator('.bar .here')).toHaveText('Eten');
   expect((await saved(page)).decks.map((d) => d.name)).toEqual(['Eten']);
@@ -39,12 +39,12 @@ test('deck names cannot be empty or duplicate (case-insensitive)', async ({ page
   await open(page, data([deck(1, 'Eten'), deck(2, 'Werk')], []));
 
   await page.fill('#f-deck-name', '   ');
-  await page.getByRole('button', { name: /Maken/ }).click();
-  await expect(toast(page)).toHaveText('Geef de stapel een naam');
+  await page.getByRole('button', { name: /Create/ }).click();
+  await expect(toast(page)).toHaveText('Give the deck a name');
 
   await page.fill('#f-deck-name', ' eten ');
-  await page.getByRole('button', { name: /Maken/ }).click();
-  await expect(toast(page)).toHaveText('Die stapel bestaat al');
+  await page.getByRole('button', { name: /Create/ }).click();
+  await expect(toast(page)).toHaveText('That deck already exists');
 
   expect((await saved(page)).decks).toHaveLength(2);
 });
@@ -85,7 +85,7 @@ test('inside a deck, boxes and tally count only that deck', async ({ page }) => 
 
 test('the back button on a deck returns to the deck list', async ({ page }) => {
   await open(page, data([deck(1, 'Start')], []));
-  await page.getByRole('button', { name: '← Stapels' }).click();
+  await page.getByRole('button', { name: '← Decks' }).click();
   await expect(deckRow(page, 'Start')).toBeVisible();
 });
 
@@ -97,6 +97,6 @@ test('the study breadcrumb links to the deck list and to the deck', async ({ pag
   await expect(page.locator('[data-go=box1]')).toBeVisible();
 
   await page.click('[data-go=box1]');
-  await page.locator('.crumbs').getByRole('button', { name: 'Stapels' }).click();
+  await page.locator('.crumbs').getByRole('button', { name: 'Decks' }).click();
   await expect(deckRow(page, 'Start')).toBeVisible();
 });

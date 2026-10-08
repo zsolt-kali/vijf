@@ -10,44 +10,48 @@ no account, works offline once loaded.
 
 ## Decks
 
-- Cards are grouped into **decks** (*stapels*), one per topic. Each deck has its own five boxes.
+- Cards are grouped into **decks**, one per topic. Each deck has its own five boxes.
 - The user creates a deck by name. Names can't be empty and must be unique (case-insensitive).
 - Every card belongs to exactly one deck.
 - On launch the app shows the deck list. If there is exactly one deck, it opens straight into
   that deck instead.
-- **Deleting:** swiping a deck row left on the deck list reveals a red **Verwijder** (delete)
+- **Deleting:** swiping a deck row left on the deck list reveals a red **Delete**
   button on the right. Tapping it deletes the deck **and all its cards** immediately. A short
   swipe (under half the button width) springs back, a vertical move scrolls the page instead,
   and tapping anywhere else closes an open row.
-- **Undo:** after a delete, a toast "Stapel verwijderd · Ongedaan maken" shows for 5 seconds.
-  Tapping **Ongedaan maken** (undo) restores the deck in its original position with all its
+- **Undo:** after a delete, a toast "Deck deleted · Undo" shows for 5 seconds.
+  Tapping **Undo** restores the deck in its original position with all its
   cards and their boxes. Only the most recent delete can be undone: a second delete replaces
-  the toast, and restoring a back-up cancels it.
+  the toast, and restoring a backup cancels it.
 - Decks can't be renamed, and cards can't be moved between decks (yet).
 
 ## Leitner rules
 
 - Every new card starts in **box 1** of the chosen deck.
 - Studying is per box within a deck: the user picks a box and goes through all its cards in random order.
-- **Ken ik** (I know it) moves the card up one box and removes it from the session.
-- **Nog niet** (not yet) leaves the card in its box and puts it at the end of the session queue,
+- **I know it** moves the card up one box and removes it from the session.
+- **Not yet** leaves the card in its box and puts it at the end of the session queue,
   so it comes back until the user knows it.
 - Cards **never move down**.
-- **Box 5** ("Geleerd") is the end. Studying box 5 is review only: one **Volgende** (next)
-  button, no rating, cards stay in box 5.
-- When the queue is empty, a summary shows how many cards moved up and how many "Nog niet"
-  answers were given. The count is per answer, so a card answered "Nog niet" twice counts twice.
+- **Box 5** ("Learned") is the end. Studying box 5 is review only: one **Next** button, no
+  rating, cards stay in box 5.
+- **Position counter:** the study screen shows the current card's position in the round as
+  **3 / 12**. The total starts at the number of cards in the box. **Not yet** adds one to the
+  total (the card comes round again), deleting the current card removes one, and undoing that
+  delete adds it back, so the position never jumps.
+- When the queue is empty, a summary shows how many cards moved up and how many "Not yet"
+  answers were given. The count is per answer, so a card answered "Not yet" twice counts twice.
 
 ## Screens
 
 | Screen | Contents |
 |---|---|
-| **Decks** (Stapels) | Wordmark and the number of decks. One row per deck, in creation order: name, card count, and learned (box 5) out of total. Empty decks are greyed out. Swiping a row left reveals its delete button (see Decks). A name field with **Maken** creates a deck and opens it; Enter also works. With zero cards: a button that loads the 12-word starter set into a deck called **Start** and opens it. Always: a **Back-up** button, so a back-up can be restored on a fresh install. |
-| **Deck** (Dozen) | A back button to the deck list and the deck name. Wordmark, plus a tally of this deck's cards in box 5 out of this deck's total. Five box rows: number, Dutch name (Nieuw, Wankel, Op weg, Bijna, Geleerd), English subtitle, card count, and up to 20 tick marks. Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Button: add words. With zero cards in the deck: an empty-state note. |
-| **Study** | Breadcrumb "Stapels / *deck*" (both tappable), box number and cards left. The card shows the native word on the front and the Dutch word on the back (yellow); tap to flip. Buttons are Nog niet / Ken ik plus a cog (⚙), or Volgende plus the cog in box 5. The cog opens the edit form (see Editing a card). Tapping an empty box shows a toast instead of opening this screen. |
-| **Summary** | Breadcrumb, "Ronde afgerond." with the moved-up and stayed counts, and buttons back to the boxes or to another deck. |
+| **Decks** | Wordmark and the number of decks. One row per deck, in creation order: name, card count, and learned (box 5) out of total. Empty decks are greyed out. Swiping a row left reveals its delete button (see Decks). A name field with **Create** creates a deck and opens it; Enter also works. With zero cards: a button that loads the 12-word starter set into a deck called **Start** and opens it. Always: a **Backup** button, so a backup can be restored on a fresh install. |
+| **Deck** | A back button to the deck list and the deck name. Wordmark, plus a tally of this deck's cards in box 5 out of this deck's total. Five box rows: number, name (New, Shaky, Getting there, Nearly, Learned), card count, and up to 20 tick marks. Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Button: add words. With zero cards in the deck: an empty-state note. |
+| **Study** | Breadcrumb "Decks / *deck*" (both tappable) and the position counter (e.g. 3 / 12). The card shows the native word on the front ("Your language") and the Dutch word on the back ("Dutch", yellow); tap to flip. Buttons are **Not yet** ("stays in box n") / **I know it** ("→ box n+1") plus a cog (⚙), or **Next** plus the cog in box 5. The cog opens the edit form (see Editing a card). Tapping an empty box shows a toast instead of opening this screen. |
+| **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
-| **Back-up** | Opened from the deck list; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. |
+| **Backup** | Opened from the deck list; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. |
 
 ### Bulk import format
 
@@ -61,18 +65,17 @@ Cards are edited and deleted from the study screen. There is no list of all card
 is reached by studying its box.
 
 - The **cog** (⚙) on the study screen replaces the card with an edit form: both meanings
-  (*Jouw taal*, *Nederlands*) prefilled, **Annuleren** (cancel), **Bewaren** (save), and a red
-  **Kaart verwijderen** (delete card).
+  (*Your language*, *Dutch*) prefilled, **Cancel**, **Save**, and a red **Delete card**.
 - **Save** updates both meanings and returns to the same card, still current in the session.
   The card keeps its box and `reviewedAt`. Both fields are required; an empty one shows a toast
   and nothing is saved. Enter in either field also saves.
 - **Cancel** returns to the card unchanged.
 - **Delete** removes the card immediately and moves on to the next card, or to the summary if it
-  was the last one. A toast "Kaart verwijderd · Ongedaan maken" shows for 5 seconds; undo puts the
+  was the last one. A toast "Card deleted · Undo" shows for 5 seconds; undo puts the
   card back in its box and, if the session is still on screen, makes it the current card again.
   This shares the single undo slot with deck deletes (see Decks).
 - There is no way to delete everything at once. Decks can be deleted one by one, and restoring
-  a back-up replaces all data.
+  a backup replaces all data.
 
 ## Data
 
@@ -92,24 +95,25 @@ Stored in `localStorage` under the key **`leitner-dutch-v1`**:
 }
 ```
 
-- `box` is 1–5. `reviewedAt` is set when a card moves up and is not set on "Nog niet".
-- The back-up text is exactly this JSON. Restore accepts any object with a `cards` array.
+- `box` is 1–5. `reviewedAt` is set when a card moves up and is not set on "Not yet".
+- The backup text is exactly this JSON. Restore accepts any object with a `cards` array.
   There is no deeper validation.
-- Changing the key or the card shape breaks existing data and old back-ups, so add a migration
+- Changing the key or the card shape breaks existing data and old backups, so add a migration
   instead.
 
 ### Migration
 
-Saved data and restored back-ups both go through `migrate()` in `index.html`:
+Saved data and restored backups both go through `migrate()` in `index.html`:
 
 - A missing `decks`, `nextId` or `nextDeckId` is filled in.
 - Any card without a valid `deckId` goes into a deck called **Start**, which is created if it
-  doesn't exist. The card keeps its box. This is how data and back-ups from before decks
+  doesn't exist. The card keeps its box. This is how data and backups from before decks
   existed are carried over without losing progress.
 
 ## Language and look
 
-- Labels are Dutch with a small English subtitle; toasts are Dutch only.
+- The interface is in **English** only, with short, plain wording. Only the words being learned are Dutch.
+  Small subtitles appear only where they add information (e.g. "stays in box 1").
 - The palette is a fixed set of CSS variables (ink, paper, signal yellow, deep blue), with a
   square, bordered style. There is no dark mode.
 - `prefers-reduced-motion` disables the card flip and box animations.
