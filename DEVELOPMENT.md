@@ -83,6 +83,12 @@ Each app has its own workflow, which runs only when that app's folder or `design
   `VijfKit` tests, then builds the iPhone app and runs its tests on a simulator (30-minute limit).
   It doesn't deploy; installing on devices is done from Xcode (TestFlight is a later decision).
 
+**Order of runs.** Each workflow runs one at a time per branch. On `main` a running workflow is
+never cancelled: the next one waits. GitHub keeps at most one waiting run per group (a newer
+one replaces it), so when several merges land together the in-between ones are skipped and the
+newest commit always deploys last. Deploys share one group across the repo, so they never
+overlap. On pull requests, pushing a new commit cancels the older run.
+
 Repo setting this relies on: **Settings → Pages → Source = GitHub Actions**.
 
 Live site: https://zsolt-kali.github.io/vijf/
