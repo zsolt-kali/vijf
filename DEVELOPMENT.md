@@ -116,3 +116,10 @@ iPhone 15**, the two engines people install the app with. There's one test file 
 ### 11. Tests gate the deploy
 Tests run on every push and pull request; `main` only deploys when they pass. A change that
 breaks existing behaviour can't reach the live app.
+
+### 12. Edit cards from the study screen; no all-cards list, no "delete everything"
+Cards are fixed where they're met: a cog on the study card opens an edit form with delete.
+The all-cards list was removed to keep the app small and focused on studying, and back-up
+moved to its own button on the deck list. "Delete everything" was dropped as too risky for what
+it offered. Restoring a back-up still replaces all data.
+*Trade-off:* to fix a word you have to study its box until it comes up; there's no search.
