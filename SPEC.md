@@ -159,10 +159,16 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
 
 - **Study only**, watchOS 11 and later. It comes with the iPhone app and has no editing,
   adding, deleting or backup; that happens on the phone.
-- **Screens:** a list of every deck and box that has cards ("Start · Box 1 · New", count); then
-  the study screen: the position counter top-right, the card filling the screen (tap to flip;
-  Dutch on yellow), and **Not yet** (red) / **I know it** (green) side by side, or **Next** in
-  box 5. Rounds, the counter and the summary follow the Leitner rules above.
+- **Screens**, in the same order as on the phone: deck → boxes → study.
+  - **Decks:** each deck with its card count and learned (box 5) out of total; decks without
+    cards are greyed out. With exactly one deck the watch opens straight into it.
+  - **Boxes:** the deck's five boxes (New, Shaky, Getting there, Nearly, Learned) with card
+    counts; empty boxes are greyed out and can't be opened. A filled box 5 has a yellow number.
+  - **Study:** the position counter top-right, the card filling the screen (tap to flip; Dutch
+    on yellow), and **Not yet** (red) / **I know it** (green) side by side, or **Next** in box 5.
+    Rounds, the counter and the summary follow the Leitner rules above.
+  - With no decks yet, the watch asks you to open vijf on the iPhone.
+  - If a deck you have open is deleted on the phone, the watch goes back to the deck list.
 - Always dark (watchOS), using the dark value of every colour token.
 - **Offline:** the watch keeps its own copy of the decks, so it works without the phone nearby.
 - **Sync** (WatchConnectivity):

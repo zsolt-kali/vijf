@@ -27,23 +27,6 @@ final class WatchModel {
         link.start()
     }
 
-    struct BoxItem: Identifiable {
-        let deck: Deck
-        let box: Int
-        let count: Int
-        var id: String { "\(deck.id)-\(box)" }
-    }
-
-    /// Every deck and box that has cards, in deck order then box order.
-    var boxes: [BoxItem] {
-        library.decks.flatMap { deck in
-            (1...5).compactMap { box in
-                let n = library.cards(inDeck: deck.id, box: box).count
-                return n > 0 ? BoxItem(deck: deck, box: box, count: n) : nil
-            }
-        }
-    }
-
     func receive(_ phone: Library) {
         lastFromPhone = phone
         sendUnsent()
