@@ -6,24 +6,52 @@
 <title>vijf — Dutch flashcards</title>
 <meta name="description" content="A five-box Leitner system for learning Dutch words.">
 <link rel="manifest" href="./manifest.webmanifest">
-<meta name="theme-color" content="#14181F">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#eae9e5">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101318">
+<meta name="color-scheme" content="light dark">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <link rel="icon" href="./icons/favicon.png" type="image/png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="vijf">
 <style>
+  /* Colour tokens from the vijf design system (design/tokens.json). Dark values follow the
+     device setting. Never use a literal colour in a rule below; pair every fill with its on-* token. */
   :root {
-    --ink: #14181F;
-    --paper: #EAEAE5;
-    --card: #FFFFFF;
-    --signal: #FFC917;
+    --paper: #eae9e5;
+    --card: #ffffff;
+    --ink: #14181f;
+    --on-ink: #eae9e5;
+    --on-ink-accent: #ffc917;
+    --mute: #65655e;
+    --line: #c9c9c2;
+    --signal: #ffc917;
+    --on-signal: #14181f;
     --deep: #003082;
-    --mute: #82827C;
-    --line: #C9C9C2;
-    --danger: #C8102E;
+    --success: #1e7a3c;
+    --on-success: #ffffff;
+    --danger: #c8102e;
+    --on-danger: #ffffff;
+    color-scheme: light;
     --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #101318;
+      --card: #1b2028;
+      --ink: #ecece6;
+      --on-ink: #14181f;
+      --on-ink-accent: #0a3a9e;
+      --mute: #9a9a93;
+      --line: #343a44;
+      --deep: #7fa6ff;
+      --success: #5bd08a;
+      --on-success: #14181f;
+      --danger: #ff6b75;
+      --on-danger: #14181f;
+      color-scheme: dark;
+    }
   }
   * , *::before, *::after { box-sizing: border-box; }
   html { background: var(--paper); }
@@ -69,9 +97,9 @@
   .slot .num {
     font-family: var(--mono); font-size: 13px; font-weight: 700; text-align: center;
     align-self: stretch; display: flex; align-items: center; justify-content: center;
-    background: var(--ink); color: var(--paper); margin: -14px 0; padding: 14px 0;
+    background: var(--ink); color: var(--on-ink); margin: -14px 0; padding: 14px 0;
   }
-  .slot[data-full="1"] .num { background: var(--signal); color: var(--ink); }
+  .slot[data-full="1"] .num { background: var(--signal); color: var(--on-signal); }
   .slot .lbl { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
   .slot .sub {
     font-family: var(--mono); font-size: 10px; color: var(--mute);
@@ -79,7 +107,7 @@
   }
   .slot .cnt { font-family: var(--mono); font-size: 22px; font-weight: 700; min-width: 34px; text-align: right; }
   .slot[data-empty="1"] { border-color: var(--line); }
-  .slot[data-empty="1"] .num { background: var(--line); color: #fff; }
+  .slot[data-empty="1"] .num { background: var(--line); color: var(--mute); }
   .slot[data-empty="1"] .cnt, .slot[data-empty="1"] .lbl { color: var(--mute); }
   .slot--deck { grid-template-columns: 1fr auto; padding-left: 16px; }
   .slot--deck .lbl, .slot--deck .sub { display: block; }
@@ -90,7 +118,7 @@
   .swipe.open .slot--deck { width: calc(100% - 96px); }
   .swipe__del {
     position: absolute; top: 0; right: 0; bottom: 0; width: 96px;
-    background: var(--danger); color: #fff; border: none; cursor: pointer;
+    background: var(--danger); color: var(--on-danger); border: none; cursor: pointer;
     font: inherit; font-size: 14px; font-weight: 700;
   }
   .swipe__del small {
@@ -107,10 +135,10 @@
     padding: 14px 12px; border: 1.5px solid var(--ink); background: transparent;
     color: var(--ink); cursor: pointer; border-radius: 0;
   }
-  .btn:active { background: var(--ink); color: var(--paper); }
+  .btn:active { background: var(--ink); color: var(--on-ink); }
   .btn:focus-visible { outline: 3px solid var(--deep); outline-offset: 2px; }
-  .btn--fill { background: var(--ink); color: var(--paper); }
-  .btn--fill:active { background: var(--deep); }
+  .btn--fill { background: var(--ink); color: var(--on-ink); }
+  .btn--fill:active { opacity: 0.85; }
   .btn--ghost { border-color: var(--line); color: var(--mute); font-weight: 500; }
   .btn small {
     display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
@@ -143,25 +171,35 @@
   .face {
     position: absolute; inset: 0;
     backface-visibility: hidden; -webkit-backface-visibility: hidden;
-    background: var(--card); border: 1.5px solid var(--ink); padding: 22px;
+    background: var(--card); color: var(--ink); border: 1.5px solid var(--ink); padding: 22px;
     display: flex; flex-direction: column; justify-content: space-between;
   }
-  .face--back { transform: rotateY(180deg); background: var(--signal); }
+  .face--back { transform: rotateY(180deg); background: var(--signal); color: var(--on-signal); border-color: var(--on-signal); }
   .word { font-size: 38px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; word-break: break-word; }
   .hint {
     font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--mute);
   }
-  .face--back .hint { color: rgba(20,24,31,0.55); }
+  .face--back .hint { color: var(--on-signal); }
   .mid { flex: 1; display: flex; align-items: center; }
 
   .rate { display: flex; gap: 8px; }
   .rate .btn { padding: 16px 10px; }
-  .rate .yes { background: var(--ink); color: var(--paper); }
-  .rate .btn--cog { flex: 0 0 56px; padding: 0; display: flex; align-items: center; justify-content: center; }
-  .btn--cog svg { width: 22px; height: 22px; }
+  .rate .no { background: var(--danger); border-color: var(--danger); color: var(--on-danger); }
+  .rate .yes { background: var(--success); border-color: var(--success); color: var(--on-success); }
+  .rate .no:active, .rate .yes:active { opacity: 0.85; }
+  /* The edit cog sits inside each card face, top-right, in a 44px tap target. */
+  .cog {
+    position: absolute; top: 8px; right: 8px; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; padding: 0; color: var(--mute); cursor: pointer;
+  }
+  .face--back .cog { color: var(--on-signal); }
+  .cog svg { width: 22px; height: 22px; }
+  .cog:focus-visible { outline: 3px solid var(--deep); outline-offset: -4px; }
+  .face--back .cog:focus-visible { outline-color: var(--on-signal); }
   .btn--danger { border-color: var(--danger); color: var(--danger); }
-  .btn--danger:active { background: var(--danger); color: #fff; }
+  .btn--danger:active { background: var(--danger); color: var(--on-danger); }
   .edit { background: var(--card); border: 1.5px solid var(--ink); padding: 22px 22px 8px; margin-bottom: 18px; }
 
   label.field { display: block; margin-bottom: 14px; }
@@ -178,7 +216,7 @@
     background-size: 6px 6px; background-repeat: no-repeat;
   }
   textarea { min-height: 130px; font-size: 15px; font-family: var(--mono); }
-  input:focus, textarea:focus, select:focus { outline: 3px solid var(--signal); outline-offset: -1px; }
+  input:focus, textarea:focus, select:focus { outline: 3px solid var(--deep); outline-offset: -1px; }
 
   .note { font-size: 13px; line-height: 1.5; color: var(--mute); margin-top: 18px; }
   .empty { border: 1.5px dashed var(--line); padding: 26px 20px; text-align: center; }
@@ -186,13 +224,13 @@
   h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 16px; }
   .toast {
     position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom));
-    transform: translateX(-50%); background: var(--ink); color: var(--paper);
+    transform: translateX(-50%); background: var(--ink); color: var(--on-ink);
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
     text-transform: uppercase; padding: 11px 16px; z-index: 50;
   }
   .toast--undo { display: flex; align-items: center; gap: 16px; white-space: nowrap; padding: 8px 8px 8px 16px; }
   .toast--undo button {
-    font: inherit; font-weight: 700; color: var(--signal); background: none;
+    font: inherit; font-weight: 700; color: var(--on-ink-accent); background: none;
     border: none; cursor: pointer; padding: 6px 8px; letter-spacing: inherit; text-transform: inherit;
   }
   @media (prefers-reduced-motion: reduce) {
@@ -395,27 +433,26 @@
     if (!card) { session.queue.shift(); return studyView(); }
     if (session.editing) return editView(card);
     var readonly = session.box === 5;
-    var cog = '<button class="btn btn--cog" data-act="edit" aria-label="Edit card">' + COG + '</button>';
+    var cog = '<button class="cog" data-act="edit" aria-label="Edit card">' + COG + '</button>';
 
     var h = '<div class="bar">' + crumbs() +
       '<span class="pos">' + (session.total - session.queue.length + 1) + ' / ' + session.total + '</span></div>' +
       '<div class="stage"><div class="flip" id="flip">' +
       '<div class="face"><span class="hint">Your language</span>' +
       '<div class="mid"><div class="word">' + esc(card.native) + '</div></div>' +
-      '<span class="hint">Tap to flip</span></div>' +
+      '<span class="hint">Tap to flip</span>' + cog + '</div>' +
       '<div class="face face--back"><span class="hint">Dutch</span>' +
       '<div class="mid"><div class="word">' + esc(card.dutch) + '</div></div>' +
       '<span class="hint">' + (readonly ? 'Learned. Stays in box 5' : 'Did you know it?') +
-      '</span></div></div></div>';
+      '</span>' + cog + '</div></div></div>';
 
     if (readonly) {
       h += '<div class="rate">' +
-        '<button class="btn btn--fill" data-act="next">Next</button>' + cog + '</div>';
+        '<button class="btn btn--fill" data-act="next">Next</button></div>';
     } else {
       h += '<div class="rate">' +
         '<button class="btn no" data-act="no">Not yet<small>stays in box ' + session.box + '</small></button>' +
-        '<button class="btn yes" data-act="yes">I know it<small>→ box ' + (session.box + 1) + '</small></button>' +
-        cog + '</div>';
+        '<button class="btn yes" data-act="yes">I know it<small>→ box ' + (session.box + 1) + '</small></button></div>';
     }
     return h;
   }

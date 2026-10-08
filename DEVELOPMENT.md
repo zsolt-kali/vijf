@@ -128,3 +128,10 @@ it offered. Restoring a back-up still replaces all data.
 The interface was Dutch with English subtitles, which doubled every label and made the screens
 busy. It is now English only, short and plain; only the words being learned are Dutch. A single
 language also keeps the upcoming iOS and watch apps simpler.
+
+### 14. One design system for every app
+The look is defined once, in the vijf design system on claude.ai (tokens, components and
+guidelines, plus screen mockups for phone, web and watch), and copied into `design/tokens.json`.
+The PWA's CSS variables mirror that file, a test fails if they drift, and the iOS and watch
+apps will build from the same tokens. Dark mode follows the device. The system font stays,
+because on Apple devices it is SF Pro, which keeps web and native identical.
