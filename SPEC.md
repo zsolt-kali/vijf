@@ -107,7 +107,7 @@ Stored in `localStorage` under the key **`leitner-dutch-v1`**:
 
 ### Migration
 
-Saved data and restored backups both go through `migrate()` in `index.html`:
+Saved data and restored backups both go through `migrate()` in `web/index.html`:
 
 - A missing `decks`, `nextId` or `nextDeckId` is filled in.
 - Any card without a valid `deckId` goes into a deck called **Start**, which is created if it

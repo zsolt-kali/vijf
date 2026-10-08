@@ -6,27 +6,35 @@ What the app *does* is in [SPEC.md](SPEC.md); planned work is in GitHub Issues.
 ## Workflow
 
 1. **Issue.** Describe the feature or bug in a GitHub issue, with acceptance criteria.
-2. **Branch.** Work on a branch, never directly on `main`, because every push to `main` goes live.
+2. **Branch.** Work on a branch, never directly on `main`, because every push to `main` can go live.
 3. **Build and test locally** (commands below). Update `SPEC.md` and the tests in the same change
    whenever behaviour changes.
-4. **Push the branch.** CI runs the tests on it, but doesn't deploy.
-5. **Merge to `main`** with `Closes #N` in the commit or pull request, which closes the issue.
-   CI runs the tests again and deploys if they pass. Phones get the update the next time the app
-   is opened online.
+4. **Pull request** with `Closes #N` in its description. CI runs the tests for the app the change
+   touches; nothing deploys from a pull request.
+5. **Merge to `main`.** CI runs the tests again and, for the web app, deploys if they pass. Phones
+   get the update the next time the app is opened online.
 
-## Commands
+## Layout
 
-One-time setup (needs Node.js LTS from nodejs.org):
+```
+web/       the PWA and its Playwright tests (its own package.json)
+apple/     the iOS and watchOS apps
+design/    tokens.json, shared by every app
+```
+
+## Web commands
+
+Run these from `web/`. One-time setup (needs Node.js LTS from nodejs.org):
 
 ```bash
 npm install
 npx playwright install chromium webkit
 ```
 
-Run the app locally at http://localhost:8000:
+Run the app locally at http://localhost:8000 (from the repo root):
 
 ```bash
-python3 -m http.server 8000
+python3 -m http.server 8000 --directory web
 ```
 
 Run all tests (they start their own server on port 4173):
@@ -46,14 +54,14 @@ npx playwright test --project=iphone-safari
 Open the HTML report after a failed run with `npm run test:report`. In CI, the report is
 attached to the failed run as the `playwright-report` artifact.
 
-## How deploying works
+## CI and deploying
 
-`.github/workflows/deploy.yml` has two jobs:
+Each app has its own workflow, which runs only when that app's folder or `design/` changes:
 
-- **test** runs on every push and pull request, on any branch.
-- **deploy** runs only for pushes to `main`, and only after **test** passes. It copies the app
-  files (`index.html`, `manifest.webmanifest`, `sw.js`, `icons/`) to a folder, stamps the
-  service worker's `CACHE` with the commit ID, and publishes that folder to GitHub Pages.
+- **`.github/workflows/web.yml`**: **test** runs on every pull request and every push to `main`
+  (15-minute limit). **deploy** runs only for pushes to `main`, after **test** passes. It copies
+  `web/index.html`, `web/manifest.webmanifest`, `web/sw.js` and `web/icons/` to a folder, stamps
+  the service worker's `CACHE` with the commit ID, and publishes that folder to GitHub Pages.
 
 Repo setting this relies on: **Settings → Pages → Source = GitHub Actions**.
 
@@ -141,3 +149,12 @@ The first version of the position counter grew its total on every "Not yet" (3 /
 which read like the box had gained cards. Now a session runs in rounds: every answer moves the
 position forward, the total of a round never changes, and the "Not yet" cards come back as the
 next, shorter round with its own total (1 / 3).
+
+### 16. One repo, a folder per app, a workflow per app
+The web app moved to `web/` so the iOS and watch apps can live beside it in `apple/`, sharing
+`SPEC.md`, `design/tokens.json` and the issue list. Each app has its own workflow, triggered only
+by its own folder (or `design/`), so an iOS change never redeploys the web app and a web fix never
+waits for a macOS build. Tests run once per pull request instead of once per push and once per
+pull request, and every job has a time limit so a hung download fails in minutes.
+*Considered:* a separate repo for the native apps; rejected because the spec, tokens and backup
+format must stay in step across all three apps.

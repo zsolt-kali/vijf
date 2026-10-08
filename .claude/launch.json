@@ -4,7 +4,13 @@
     {
       "name": "vijf",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8000"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8000",
+        "--directory",
+        "web"
+      ],
       "port": 8000
     }
   ]
