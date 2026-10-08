@@ -63,6 +63,12 @@ Each app has its own workflow, which runs only when that app's folder or `design
   `web/index.html`, `web/manifest.webmanifest`, `web/sw.js` and `web/icons/` to a folder, stamps
   the service worker's `CACHE` with the commit ID, and publishes that folder to GitHub Pages.
 
+**Order of runs.** Each workflow runs one at a time per branch. On `main` a running workflow is
+never cancelled: the next one waits. GitHub keeps at most one waiting run per group (a newer
+one replaces it), so when several merges land together the in-between ones are skipped and the
+newest commit always deploys last. Deploys share one group across the repo, so they never
+overlap. On pull requests, pushing a new commit cancels the older run.
+
 Repo setting this relies on: **Settings → Pages → Source = GitHub Actions**.
 
 Live site: https://zsolt-kali.github.io/vijf/
