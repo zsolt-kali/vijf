@@ -13,9 +13,10 @@ on:
 permissions:
   contents: read
 
+# One run at a time per branch; on main runs wait their turn instead of being cancelled.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:

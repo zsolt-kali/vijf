@@ -13,9 +13,12 @@ on:
 permissions:
   contents: read
 
+# One run at a time per branch. On main nothing is cancelled: runs wait their turn, and if
+# several pile up GitHub keeps only the newest waiting one, so the last deploy is always the
+# latest commit. On pull requests an older run is cancelled when a newer commit arrives.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
@@ -47,6 +50,10 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Never two deploys at once, and a running deploy is never cut off.
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
     permissions:
       contents: read
       pages: write
