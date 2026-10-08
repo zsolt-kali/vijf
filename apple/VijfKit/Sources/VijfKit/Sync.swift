@@ -48,6 +48,15 @@ public enum Sync {
         return result
     }
 
+    /// Boxes the watch holds higher than the phone's copy, as reviews to send (again). Sent each
+    /// time the phone's library arrives, so an answer that never reached the phone is not lost.
+    public static func unsent(phone: Library, watch: Library, now: Int64) -> [Review] {
+        phone.cards.compactMap { p in
+            guard let w = watch.card(p.id), w.box > p.box else { return nil }
+            return Review(cardId: p.id, box: w.box, at: w.reviewedAt ?? now)
+        }
+    }
+
     /// Records a watch answer as a review to send, or nil for "Not yet" (nothing to sync).
     public static func review(afterAnswering cardId: Int, known: Bool, in library: Library, now: Int64) -> Review? {
         guard known, let card = library.card(cardId) else { return nil }

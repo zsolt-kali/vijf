@@ -25,6 +25,8 @@ final class AppModel {
     var path: [Route] = []
     var study: StudySession?
     private(set) var toast: Toast?
+    /// Called after every saved change; the watch sync uses it to send the new library.
+    var onChange: ((Library) -> Void)?
 
     private let url: URL
 
@@ -51,6 +53,7 @@ final class AppModel {
         edit(&library)
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? Backup.encode(library).write(to: url, options: .atomic)
+        onChange?(library)
     }
 
     // MARK: Toasts
@@ -168,6 +171,13 @@ final class AppModel {
             }
             show("Restored")
         }
+    }
+
+    // MARK: Watch
+
+    /// The watch's "I know it" answers; a card keeps the higher of the two boxes.
+    func applyReviews(_ reviews: [Sync.Review]) {
+        change { Sync.apply(reviews, to: &$0) }
     }
 
     // MARK: Backup

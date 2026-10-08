@@ -67,4 +67,12 @@ import Testing
         #expect(Sync.reviews(fromUserInfo: Sync.userInfo(for: reviews)) == reviews)
         #expect(Sync.reviews(fromUserInfo: [:]).isEmpty)
     }
+
+    @Test func boxesThePhoneHasNotSeenAreSentAgain() {
+        let phone = library([card(1, box: 1), card(2, box: 3), card(3, box: 1)])
+        var watch = library([card(1, box: 2), card(2, box: 2), card(4, box: 5)])
+        watch.cards[0].reviewedAt = 77
+        // card 1 is ahead on the watch; card 2 is ahead on the phone; card 4 was deleted on the phone
+        #expect(Sync.unsent(phone: phone, watch: watch, now: 1) == [.init(cardId: 1, box: 2, at: 77)])
+    }
 }
