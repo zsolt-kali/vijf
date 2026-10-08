@@ -54,6 +54,22 @@ npx playwright test --project=iphone-safari
 Open the HTML report after a failed run with `npm run test:report`. In CI, the report is
 attached to the failed run as the `playwright-report` artifact.
 
+## Apple commands
+
+Needs Xcode (Mac App Store). From `apple/`:
+
+```bash
+(cd VijfKit && swift test)
+xcodebuild test -project Vijf.xcodeproj -scheme Vijf -destination 'platform=iOS Simulator,name=iPhone 17'
+```
+
+Or open `apple/Vijf.xcodeproj` in Xcode and press ⌘R (run) or ⌘U (test). To install on your own
+iPhone: select the Vijf target → Signing & Capabilities → Team = your Apple ID, then run with the
+phone connected. With a free Apple ID the install expires after 7 days.
+
+After changing a colour in `design/tokens.json`, run `python3 apple/scripts/generate_tokens.py`
+from the repo root; the web app's CSS needs the same change (both are checked by tests).
+
 ## CI and deploying
 
 Each app has its own workflow, which runs only when that app's folder or `design/` changes:
@@ -62,6 +78,10 @@ Each app has its own workflow, which runs only when that app's folder or `design
   (15-minute limit). **deploy** runs only for pushes to `main`, after **test** passes. It copies
   `web/index.html`, `web/manifest.webmanifest`, `web/sw.js` and `web/icons/` to a folder, stamps
   the service worker's `CACHE` with the commit ID, and publishes that folder to GitHub Pages.
+
+- **`.github/workflows/apple.yml`**: on a macOS runner with the latest stable Xcode, runs the
+  `VijfKit` tests, then builds the iPhone app and runs its tests on a simulator (30-minute limit).
+  It doesn't deploy; installing on devices is done from Xcode (TestFlight is a later decision).
 
 Repo setting this relies on: **Settings → Pages → Source = GitHub Actions**.
 
@@ -158,3 +178,14 @@ waits for a macOS build. Tests run once per pull request instead of once per pus
 pull request, and every job has a time limit so a hung download fails in minutes.
 *Considered:* a separate repo for the native apps; rejected because the spec, tokens and backup
 format must stay in step across all three apps.
+
+### 17. Native iPhone app: SwiftUI, a shared rules package, the backup JSON as storage
+The iPhone app is SwiftUI (iOS 18+). Every rule lives in the `VijfKit` Swift package, which the
+watch app will reuse and which is tested with plain `swift test`. The app saves the same JSON as
+the web app's backup, so data moves between the two by copy and paste, and `Backup.decode`
+mirrors the web app's `migrate()`. The Xcode project is hand-written with folder-synchronized
+groups, so it stays small and needs no generator. Colours are generated from
+`design/tokens.json`. Signing starts with a free Apple ID (installs expire after 7 days); the paid
+developer program, for TestFlight, is a later decision.
+*Considered:* SwiftData (a second storage format to keep in step with the backup JSON), and
+XcodeGen or Tuist (another tool to install for one small project).

@@ -22,6 +22,14 @@ npx playwright test tests/decks.spec.js -g "creating a deck" --project=android-c
 
 A normal reload picks up edits to `index.html`. Changes to icons or the manifest need a hard reload, because those are served cache-first.
 
+Apple (from `apple/`):
+
+```bash
+(cd VijfKit && swift test)                      # rules and data, on macOS, no simulator
+xcodebuild test -project Vijf.xcodeproj -scheme Vijf -destination 'platform=iOS Simulator,name=iPhone 17'
+python3 scripts/generate_tokens.py              # after changing a colour in design/tokens.json
+```
+
 ## Web tests
 
 - `web/tests/*.spec.js` are Playwright end-to-end tests, **one file per `SPEC.md` section**. When behaviour changes, update the matching test in the same change; when adding a feature, add tests for its acceptance criteria.
@@ -44,6 +52,13 @@ Work on a branch and open a pull request: a push to `main` that touches `web/` o
 - **Undo:** `undoToast(msg, onUndo)` is the single undo slot, shared by deck and card deletes. A newer undo replaces the old one; call `clearUndo()` before replacing `state` wholesale (restore does).
 - **Look:** colours come only from the CSS custom properties at the top of `index.html`, which mirror `design/tokens.json` (the vijf design system; `tests/look.spec.js` fails if they drift). Never write a literal colour in a rule; a fill pairs with its `on-*` token (`--danger` + `--on-danger`). Dark mode is the `prefers-color-scheme: dark` block.
 - **UI language:** English only, short and plain. Only the words being learned are Dutch. A `<small>` subtitle is used only when it adds information (e.g. `Not yet<small>stays in box 1</small>`), never as a translation.
+
+## Apple apps (`apple/`)
+
+- **`VijfKit`** (Swift package) holds every rule and the data format, with Swift Testing tests that mirror `SPEC.md`: `Library` (decks, cards, answers, undo records), `StudySession` (rounds and the counter), `Backup` (lenient decode + `migrate`, mirroring the web app), `BulkImport`, `Tokens` (generated from `design/tokens.json`; `TokensTests` catches drift). Put new rules here, not in views.
+- **`Vijf/`** is the SwiftUI iPhone app. `AppModel` (`@Observable`, `@MainActor`) owns the `Library`, saves it to Application Support as backup JSON after every change, and handles navigation (`Route`), the active `StudySession` and toasts with undo. Views only call `AppModel`. Colours come from `VJ` in `Theme.swift`; never use literal colours.
+- **`Vijf.xcodeproj`** is hand-written and uses folder-synchronized groups: new files in `Vijf/` or `VijfTests/` are picked up automatically, so don't add per-file entries. `VijfTests/` tests `AppModel` (undo, launch, restore).
+- Keep the backup JSON field names identical to the web app's (`cards`, `nextId`, `decks`, `nextDeckId`; card `id`, `deckId`, `native`, `dutch`, `box`, `createdAt`, `reviewedAt` in milliseconds).
 
 ## Service worker and the deploy
 

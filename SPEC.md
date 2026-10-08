@@ -1,7 +1,10 @@
 # vijf — specification
 
-What the app does today. Ideas and bugs go in GitHub Issues, not here.
+What the apps do today. Ideas and bugs go in GitHub Issues, not here.
 Update this file in the same commit as any behaviour change.
+
+The rules here apply to every app: the **web app** (`web/`) and the **iPhone app** (`apple/`).
+Where an app differs, the **Platforms** section says so.
 
 ## Purpose
 
@@ -127,13 +130,29 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
   Red and green always carry their words, so they never rely on colour alone.
 - `prefers-reduced-motion` disables the card flip and box animations.
 
-## Platform
+## Platforms
+
+### Web (`web/`)
 
 - An installable PWA (`manifest.webmanifest`, standalone display, icons in `icons/`).
 - Offline support comes from a service worker (`sw.js`). The page is network-first, so an
   online phone always gets the latest version; icons and the manifest are cache-first.
 - Deployed to GitHub Pages under `/vijf/` by a GitHub Actions workflow, which stamps the cache
   version with the commit ID. All paths are relative.
+
+### iPhone (`apple/`)
+
+- A native SwiftUI app, iOS 18 and later, iPhone, portrait. Same screens, rules, wording and
+  colours as the web app; the rules and data live in the `VijfKit` package, shared with the
+  planned watch app.
+- Data is saved on the device as the same JSON as the web app's backup. **Backup** shows that
+  text with **Copy** and **Share**, and restores from pasted text, so a backup moves between the
+  web app and the iPhone app in either direction (including backups from before decks existed).
+- Platform conventions where they help: the system back button and title instead of the web
+  app's breadcrumb (the position counter sits top-right), the system swipe action to delete a
+  deck, and add words as a sheet.
+- Differences from the web app: on the Add sheet, picking another deck adds the words there
+  but doesn't switch to that deck; the cog is the system "gearshape" symbol.
 
 ## Non-goals
 
