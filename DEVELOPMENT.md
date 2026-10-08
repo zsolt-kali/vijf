@@ -63,7 +63,9 @@ Needs Xcode (Mac App Store). From `apple/`:
 xcodebuild test -project Vijf.xcodeproj -scheme Vijf -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
 
-Or open `apple/Vijf.xcodeproj` in Xcode and press ⌘R (run) or ⌘U (test). To install on your own
+Or open `apple/Vijf.xcodeproj` in Xcode and press ⌘R (run) or ⌘U (test). The **VijfWatch**
+scheme runs the watch app on a watch simulator; running **Vijf** on a phone or simulator with a
+paired watch installs both. To install on your own
 iPhone: select the Vijf target → Signing & Capabilities → Team = your Apple ID, then run with the
 phone connected. With a free Apple ID the install expires after 7 days.
 
@@ -195,3 +197,13 @@ groups, so it stays small and needs no generator. Colours are generated from
 developer program, for TestFlight, is a later decision.
 *Considered:* SwiftData (a second storage format to keep in step with the backup JSON), and
 XcodeGen or Tuist (another tool to install for one small project).
+
+### 18. Apple Watch: study only, synced directly with the phone
+The watch app only studies; managing cards stays on the phone. They sync over WatchConnectivity
+with no server, so decision 2 (data stays on your devices) still holds. The phone sends its whole
+library (small, and always the current state); the watch sends back only its "I know it" answers,
+each with the card's new box. Because cards never move down, every merge is "keep the higher
+box", which needs no conflict handling and is safe to repeat, so the watch can simply re-send
+anything the phone might have missed.
+*Considered:* iCloud/CloudKit sync (needs the paid developer program, and its timing is out of
+our control), and syncing every answer including "Not yet" (they don't change the card).

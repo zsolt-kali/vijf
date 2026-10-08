@@ -87,3 +87,20 @@ import VijfKit
         #expect(model.library.card(1)?.box == 3)
     }
 }
+
+@MainActor
+@Suite struct WatchReviewTests {
+    @Test func watchAnswersRaiseBoxesAndAreSaved() throws {
+        let url = URL.temporaryDirectory.appending(path: "vijf-\(UUID().uuidString).json")
+        let model = AppModel(url: url)
+        model.addStarterSet()
+        let id = try #require(model.library.cards.first?.id)
+        var sent: Library?
+        model.onChange = { sent = $0 }
+
+        model.applyReviews([Sync.Review(cardId: id, box: 3, at: 42)])
+        #expect(model.library.card(id)?.box == 3)
+        #expect(sent?.card(id)?.box == 3)
+        #expect(AppModel(url: url).library.card(id)?.box == 3)
+    }
+}

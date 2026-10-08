@@ -3,11 +3,13 @@ import SwiftUI
 @main
 struct VijfApp: App {
     @State private var model = AppModel()
+    private let sync = PhoneSync()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(model)
+                .task { sync.start(with: model) }
         }
     }
 }
