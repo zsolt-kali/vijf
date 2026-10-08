@@ -177,3 +177,16 @@ test('the card-delete undo disappears after 5 seconds and the delete stays', asy
   await expect(page.locator('.toast--undo')).toHaveCount(0);
   expect((await saved(page)).cards).toEqual([]);
 });
+
+test('deleting the last card of a round starts the next round with the Not yet cards', async ({ page }) => {
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), card(2, 1, 'b', 'b', 1)]));
+  await study(page, 'Start', 1);
+  const first = await front(page).textContent();
+  await page.getByRole('button', { name: /Not yet/ }).click();
+  await expect(remaining(page)).toHaveText('2 / 2');
+
+  await cog(page).click();
+  await page.getByRole('button', { name: /Delete card/ }).click();
+  await expect(remaining(page)).toHaveText('1 / 1');
+  await expect(front(page)).toHaveText(first);
+});

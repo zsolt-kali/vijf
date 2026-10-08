@@ -30,15 +30,19 @@ no account, works offline once loaded.
 - Every new card starts in **box 1** of the chosen deck.
 - Studying is per box within a deck: the user picks a box and goes through all its cards in random order.
 - **I know it** moves the card up one box and removes it from the session.
-- **Not yet** leaves the card in its box and puts it at the end of the session queue,
-  so it comes back until the user knows it.
+- **Not yet** leaves the card in its box; it comes back in the next round (see below) until
+  the user knows it.
 - Cards **never move down**.
 - **Box 5** ("Learned") is the end. Studying box 5 is review only: one **Next** button, no
   rating, cards stay in box 5.
+- **Rounds:** round 1 shows every card in the box, in random order. The cards answered
+  **Not yet** in a round come back as the next round, in the order they were answered. This
+  repeats until every card is known; box 5 (Next only) has a single round.
 - **Position counter:** the study screen shows the current card's position in the round as
-  **3 / 12**. The total starts at the number of cards in the box. **Not yet** adds one to the
-  total (the card comes round again), deleting the current card removes one, and undoing that
-  delete adds it back, so the position never jumps.
+  **3 / 12**, where 12 is the size of the round. Every answer moves the position forward by one;
+  **no answer ever changes the total**. A new round starts at 1 with its own total (e.g. 1 / 3).
+  Deleting the current card removes it from the round (the total drops by one, the position
+  stays); undoing the delete adds it back.
 - When the queue is empty, a summary shows how many cards moved up and how many "Not yet"
   answers were given. The count is per answer, so a card answered "Not yet" twice counts twice.
 
