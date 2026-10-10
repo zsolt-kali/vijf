@@ -60,6 +60,20 @@ import VijfKit
         #expect(model.library.cards(inDeck: eten.id).count == 1)
     }
 
+    @Test func deletingACardFoundBySearchCanBeUndone() throws {
+        let model = freshModel()
+        model.addStarterSet()
+        let hit = try #require(Search.cards(matching: "brood", in: model.library).first)
+
+        model.deleteCard(hit.card.id)
+        #expect(model.library.card(hit.card.id) == nil)
+        #expect(model.toast?.undo != nil)
+
+        model.undoToast()
+        #expect(model.library.card(hit.card.id) == hit.card)
+        #expect(model.library.cards.count == 12)
+    }
+
     @Test func deckNamesAreValidated() {
         let model = freshModel()
         #expect(model.makeDeck(named: "  ") == "Give the deck a name")

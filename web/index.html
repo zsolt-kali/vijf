@@ -157,6 +157,53 @@
     color: var(--ink); max-width: 190px; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap;
   }
+  /* The deck list's "⋯" button and its menu (New deck, Backup). While it is open the rest of
+     the screen fades back, and any tap outside it closes it. */
+  .top { position: relative; }
+  .more {
+    width: 44px; height: 44px; padding: 0; font: inherit; font-size: 20px; font-weight: 800;
+    line-height: 1; background: transparent; color: var(--ink); border: 1.5px solid var(--ink);
+    border-radius: 0; cursor: pointer;
+  }
+  .more[aria-expanded="true"], .more:active { background: var(--ink); color: var(--on-ink); }
+  .more:focus-visible { outline: 3px solid var(--deep); outline-offset: 2px; }
+  .menu {
+    position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; min-width: 180px;
+    display: flex; flex-direction: column; background: var(--card); border: 1.5px solid var(--ink);
+  }
+  .menu button {
+    font: inherit; font-size: 15px; font-weight: 700; text-align: left; padding: 14px 16px;
+    background: none; border: none; border-bottom: 1px solid var(--line); color: var(--ink); cursor: pointer;
+  }
+  .menu button:last-child { border-bottom: none; }
+  .menu button:active { background: var(--ink); color: var(--on-ink); }
+  .menu button:focus-visible { outline: 3px solid var(--deep); outline-offset: -3px; }
+  .top--open ~ * { opacity: 0.35; }
+
+  /* Search across all decks. Results replace the deck rows while there is a query. */
+  .search { position: relative; margin-bottom: 14px; }
+  .search input { padding-right: 48px; }
+  .search__clear {
+    position: absolute; top: 0; right: 0; width: 44px; height: 100%; padding: 0;
+    background: none; border: none; font: inherit; font-size: 22px; color: var(--mute); cursor: pointer;
+  }
+  .search__clear[hidden] { display: none; }
+  input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
+  .found { margin-bottom: 8px; }
+  .slot--hit { grid-template-columns: 1fr auto; padding-left: 16px; }
+  .slot--hit .lbl { display: block; }
+  .slot--hit .nl { display: block; font-size: 15px; margin-top: 3px; }
+  .slot--hit .nl span { color: var(--mute); }
+  .slot--hit .bx {
+    font-family: var(--mono); font-size: 13px; font-weight: 700; padding: 4px 8px;
+    background: var(--ink); color: var(--on-ink);
+  }
+  .slot--hit .bx[data-full="1"] { background: var(--signal); color: var(--on-signal); }
+  mark {
+    background: none; color: inherit; text-decoration: underline 2px var(--deep);
+    text-underline-offset: 3px;
+  }
+
   .make { display: flex; gap: 8px; margin-top: 22px; }
   .make input { flex: 1; min-width: 0; }
   .make .btn { flex: 0 0 auto; }
@@ -204,8 +251,8 @@
 
   label.field { display: block; margin-bottom: 14px; }
   label.field .eyebrow { display: block; margin-bottom: 5px; }
-  input[type="text"], textarea, select {
-    width: 100%; font: inherit; font-size: 17px; padding: 12px;
+  input[type="text"], input[type="search"], textarea, select {
+    width: 100%; -webkit-appearance: none; appearance: none; font: inherit; font-size: 17px; padding: 12px;
     border: 1.5px solid var(--ink); background-color: var(--card); color: var(--ink); border-radius: 0;
   }
   select {
@@ -249,6 +296,9 @@
   var view = 'decks';
   var deckId = null;
   var session = null;
+  var query = '';        /* the deck list's search text */
+  var menuOpen = false;  /* the deck list's "⋯" menu */
+  var foundId = null;    /* the card opened from search, shown in the edit form */
 
   /* Settings cog, from Feather Icons (MIT). */
   var COG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
@@ -344,8 +394,8 @@
     undoEl = null;
   }
 
-  function go(v) { view = v; render(); }
-  function open(id) { deckId = id; go('home'); }
+  function go(v) { view = v; menuOpen = false; render(); }
+  function open(id) { deckId = id; query = ''; go('home'); }
 
   /* Opens straight into the only deck, otherwise shows the deck list. */
   function launch() {
@@ -365,37 +415,112 @@
 
   function decksView() {
     var n = state.decks.length;
-    var h = header('<b>' + n + '</b><br>' + (n === 1 ? 'deck' : 'decks'));
+    var h = '<div class="top' + (menuOpen ? ' top--open' : '') + '">' +
+      '<div class="wordmark">vijf<span>.</span></div>' +
+      '<button class="more" data-act="menu" aria-label="More" aria-haspopup="true" ' +
+      'aria-expanded="' + menuOpen + '">⋯</button>' +
+      (menuOpen ? '<div class="menu" role="menu">' +
+        '<button role="menuitem" data-go="newdeck">New deck</button>' +
+        '<button role="menuitem" data-go="backup">Backup</button></div>' : '') + '</div>';
     if (n) {
-      h += '<div class="tray">';
-      state.decks.forEach(function (d) {
-        var cs = cardsIn(d.id);
-        var learned = cs.filter(function (c) { return c.box === 5; }).length;
-        h += '<div class="swipe">' +
-          '<button class="swipe__del" data-del-deck="' + d.id + '" tabindex="-1" ' +
-          'aria-label="Delete deck ' + esc(d.name) + '">Delete</button>' +
-          '<button class="slot slot--deck" data-deck="' + d.id + '" data-empty="' + (cs.length ? 0 : 1) + '">' +
-          '<span><span class="lbl">' + esc(d.name) + '</span>' +
-          '<span class="sub">' + cs.length + (cs.length === 1 ? ' card' : ' cards') + '</span></span>' +
-          '<span class="cnt">' + learned + '<small>/' + cs.length + '</small></span></button></div>';
-      });
-      h += '</div>';
+      h += '<div class="search"><input type="search" id="f-search" value="' + esc(query) + '" ' +
+        'placeholder="Search all cards" aria-label="Search all cards" autocomplete="off" ' +
+        'autocapitalize="none" spellcheck="false">' +
+        '<button class="search__clear" data-act="search-clear" aria-label="Clear search"' +
+        (query.trim() ? '' : ' hidden') + '>×</button></div>' +
+        '<div id="list">' + listHtml() + '</div>';
     } else {
       h += '<div class="empty"><div class="eyebrow">Empty</div>' +
-        '<p>Make a deck for each topic, like food or work.</p></div>';
+        '<p>Make a deck for each topic, like food or work.</p></div>' +
+        '<div class="make"><input type="text" id="f-deck-name" placeholder="New deck" ' +
+        'autocomplete="off" aria-label="New deck name">' +
+        '<button class="btn btn--fill" data-act="make-deck">Create</button></div>';
     }
-    h += '<div class="make"><input type="text" id="f-deck-name" placeholder="New deck" ' +
-      'autocomplete="off" aria-label="New deck name">' +
-      '<button class="btn btn--fill" data-act="make-deck">Create</button></div>';
     if (!state.cards.length) {
       h += '<div class="row"><button class="btn btn--ghost" data-act="starter">' +
         'Load 12 starter words</button></div>';
     }
-    /* Always shown: restoring onto a new phone starts from an empty app. */
-    h += '<div class="row"><button class="btn" data-go="backup">Backup</button></div>';
-    h += '<p class="note">Each deck has its own five boxes. The number on the right shows how many ' +
-      'cards you have learned.' + (n ? ' Swipe a deck left to delete it.' : '') + '</p>';
     return h;
+  }
+
+  /* Below the search field: the decks, or the cards matching the search. */
+  function listHtml() {
+    return query.trim() ? resultsHtml() : decksHtml();
+  }
+
+  function decksHtml() {
+    var h = '<div class="tray">';
+    state.decks.forEach(function (d) {
+      var cs = cardsIn(d.id);
+      var learned = cs.filter(function (c) { return c.box === 5; }).length;
+      h += '<div class="swipe">' +
+        '<button class="swipe__del" data-del-deck="' + d.id + '" tabindex="-1" ' +
+        'aria-label="Delete deck ' + esc(d.name) + '">Delete</button>' +
+        '<button class="slot slot--deck" data-deck="' + d.id + '" data-empty="' + (cs.length ? 0 : 1) + '">' +
+        '<span><span class="lbl">' + esc(d.name) + '</span>' +
+        '<span class="sub">' + cs.length + (cs.length === 1 ? ' card' : ' cards') + '</span></span>' +
+        '<span class="cnt">' + learned + '<small>/' + cs.length + '</small></span></button></div>';
+    });
+    return h + '</div><p class="note">Each deck has its own five boxes. The number on the right ' +
+      'shows how many cards you have learned. Swipe a deck left to delete it.</p>';
+  }
+
+  function resultsHtml() {
+    var hits = search();
+    var h = '<div class="eyebrow found">' + (hits.length ?
+      hits.length + (hits.length === 1 ? ' card' : ' cards') : 'No cards match') + '</div>';
+    if (!hits.length) return h;
+    h += '<div class="tray">';
+    hits.forEach(function (hit) {
+      var c = hit.card;
+      h += '<button class="slot slot--hit" data-card="' + c.id + '">' +
+        '<span><span class="lbl">' + marked(c.native) + '</span>' +
+        '<span class="nl">' + marked(c.dutch) + ' <span>· ' + esc(hit.deck.name) + '</span></span></span>' +
+        '<span class="bx" data-full="' + (c.box === 5 ? 1 : 0) + '" aria-label="Box ' + c.box + '">' +
+        c.box + '</span></button>';
+    });
+    return h + '</div>';
+  }
+
+  /* Search ignores case and accents: "cafe" finds "café". fold() lowers a string and drops its
+     accents, remembering for each folded character where it came from, so a match can be
+     marked in the original text. */
+  function fold(s) {
+    var text = '', at = [];
+    for (var i = 0; i < s.length; i++) {
+      var f = s[i].normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+      for (var k = 0; k < f.length; k++) { text += f[k]; at.push(i); }
+    }
+    return { text: text, at: at };
+  }
+  /* Where the search text occurs in s, as [start, end) in s, or null. */
+  function match(s) {
+    var q = fold(query.trim()).text, f = fold(s);
+    var i = q ? f.text.indexOf(q) : -1;
+    return i < 0 ? null : [f.at[i], f.at[i + q.length - 1] + 1];
+  }
+  function marked(s) {
+    var m = match(s);
+    if (!m) return esc(s);
+    return esc(s.slice(0, m[0])) + '<mark>' + esc(s.slice(m[0], m[1])) + '</mark>' + esc(s.slice(m[1]));
+  }
+  /* Matching cards in every deck, in deck order and then in the order they were added. */
+  function search() {
+    var hits = [];
+    state.decks.forEach(function (d) {
+      cardsIn(d.id).forEach(function (c) {
+        if (match(c.native) || match(c.dutch)) hits.push({ card: c, deck: d });
+      });
+    });
+    return hits;
+  }
+
+  function newDeckView() {
+    return '<div class="bar"><button data-go="decks">← Decks</button><span>New deck</span></div>' +
+      '<label class="field"><span class="eyebrow">Name</span>' +
+      '<input type="text" id="f-deck-name" autocomplete="off" autofocus></label>' +
+      '<div class="row" style="margin-top:4px"><button class="btn btn--fill" data-act="make-deck">' +
+      'Create</button></div>';
   }
 
   function homeView() {
@@ -457,9 +582,11 @@
     return h;
   }
 
-  /* Shown in place of the study card while session.editing is set. */
+  /* Shown in place of the study card while session.editing is set, and for a card opened
+     from search (view 'card'), where the back button returns to the results. */
   function editView(card) {
-    return '<div class="bar">' + crumbs() + '<span>Edit</span></div>' +
+    var back = view === 'card' ? '<button data-act="edit-cancel">← Search</button>' : crumbs();
+    return '<div class="bar">' + back + '<span>Edit</span></div>' +
       '<div class="edit">' +
       '<label class="field"><span class="eyebrow">Your language</span>' +
       '<input type="text" id="f-edit-native" value="' + esc(card.native) + '" autocomplete="off" autocapitalize="none"></label>' +
@@ -520,11 +647,18 @@
       '<button class="btn btn--fill" data-act="restore">Restore</button></div>';
   }
 
+  function foundCard() { return state.cards.find(function (c) { return c.id === foundId; }) || null; }
+
   function render() {
-    var v = { decks: decksView, home: homeView, study: studyView, add: addView, backup: backupView };
-    if (!v[view] || (/^(home|study|add)$/.test(view) && !deck())) view = 'decks';
+    var v = { decks: decksView, home: homeView, study: studyView, add: addView, backup: backupView,
+      newdeck: newDeckView, card: function () { return editView(foundCard()); } };
+    if (!v[view] || (/^(home|study|add)$/.test(view) && !deck()) || (view === 'card' && !foundCard())) {
+      view = 'decks';
+    }
     app.innerHTML = v[view]();
     window.scrollTo(0, 0);
+    var auto = app.querySelector('[autofocus]');
+    if (auto) auto.focus();
   }
 
   function startBox(n) {
@@ -599,6 +733,17 @@
     });
   }
 
+  /* Deletes the card opened from search and goes back to the results; undo puts it back. */
+  function deleteFound() {
+    var gone = foundCard(), at = state.cards.indexOf(gone);
+    state.cards.splice(at, 1);
+    save(); go('decks');
+    undoToast('Card deleted', function () {
+      state.cards.splice(Math.min(at, state.cards.length), 0, gone);
+      save(); render(); toast('Restored');
+    });
+  }
+
   /* Swipe-to-delete on deck rows. A horizontal drag past half the button width opens
      the row; a vertical move lets the page scroll instead. */
   var SWIPE = 96, drag = null, swallowClick = false;
@@ -643,15 +788,29 @@
   app.addEventListener('pointerup', endDrag);
   app.addEventListener('pointercancel', endDrag);
 
+  /* Typing in the search field redraws only the list below it, so the field keeps focus. */
+  app.addEventListener('input', function (ev) {
+    if (ev.target.id !== 'f-search') return;
+    query = ev.target.value;
+    document.getElementById('list').innerHTML = listHtml();
+    app.querySelector('.search__clear').hidden = !query.trim();
+  });
+
+  /* Escape closes the menu wherever the focus is (opening it re-renders, so focus is lost). */
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && menuOpen) { menuOpen = false; render(); }
+  });
+
   app.addEventListener('keydown', function (ev) {
     if (ev.key !== 'Enter') return;
+    if (ev.target.id === 'f-search') { ev.target.blur(); return; }
     if (ev.target.id === 'f-deck-name') app.querySelector('[data-act="make-deck"]').click();
     if (/^f-edit-/.test(ev.target.id)) app.querySelector('[data-act="edit-save"]').click();
   });
 
   app.addEventListener('click', function (ev) {
     if (swallowClick) { swallowClick = false; return; }
-    var el = ev.target.closest('[data-go],[data-act],[data-del-deck],[data-deck],#flip');
+    var el = ev.target.closest('[data-go],[data-act],[data-del-deck],[data-deck],[data-card],#flip');
 
     var delDeck = el && el.getAttribute('data-del-deck');
     if (delDeck) {
@@ -674,12 +833,18 @@
     /* While a row is swiped open, any other tap just closes it. */
     if (app.querySelector('.swipe.open')) { closeSwipes(); return; }
 
+    /* While the menu is open, a tap on anything but its items just closes it. */
+    if (menuOpen && !(el && el.closest('.menu'))) { menuOpen = false; render(); return; }
+
     if (!el) return;
 
     if (el.id === 'flip') { el.classList.toggle('turned'); return; }
 
     var openDeck = el.getAttribute('data-deck');
     if (openDeck) { open(parseInt(openDeck, 10)); return; }
+
+    var openCard = el.getAttribute('data-card');
+    if (openCard) { foundId = parseInt(openCard, 10); go('card'); return; }
 
     var goTo = el.getAttribute('data-go');
     if (goTo) {
@@ -689,21 +854,35 @@
     }
 
     var act = el.getAttribute('data-act');
-    if (act === 'yes') rate(true);
+    var fromSearch = view === 'card';
+    if (act === 'menu') { menuOpen = true; render(); }
+    else if (act === 'search-clear') {
+      query = ''; render();
+      document.getElementById('f-search').focus();
+    }
+    else if (act === 'yes') rate(true);
     else if (act === 'no') rate(false);
     else if (act === 'next') { advance(session); render(); }
     else if (act === 'edit') { session.editing = true; render(); }
-    else if (act === 'edit-cancel') { session.editing = false; render(); }
+    else if (act === 'edit-cancel') {
+      if (fromSearch) go('decks');
+      else { session.editing = false; render(); }
+    }
     else if (act === 'edit-save') {
       var en = document.getElementById('f-edit-native').value.trim();
       var ed = document.getElementById('f-edit-dutch').value.trim();
       if (!en || !ed) { toast('Fill in both fields'); return; }
-      var edited = currentCard();
+      var edited = fromSearch ? foundCard() : currentCard();
       edited.native = en; edited.dutch = ed;
-      session.editing = false;
-      save(); render(); toast('Saved');
+      save();
+      if (fromSearch) go('decks');
+      else { session.editing = false; render(); }
+      toast('Saved');
     }
-    else if (act === 'edit-delete') deleteCard();
+    else if (act === 'edit-delete') {
+      if (fromSearch) deleteFound();
+      else deleteCard();
+    }
     else if (act === 'starter') {
       var start = findDeck(state, 'Start') || makeDeck(state, 'Start');
       STARTER.forEach(function (p) { addCard(p[0], p[1], start.id); });
@@ -752,6 +931,7 @@
         if (!data) throw new Error('bad');
         clearUndo();
         state = data;
+        query = '';
         save(); launch(); toast('Restored');
       } catch (e) { toast('Invalid backup'); }
     }

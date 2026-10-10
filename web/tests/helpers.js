@@ -38,9 +38,15 @@ function toast(page) {
   return page.locator('.toast').last();
 }
 
+/* Opens the deck list's "⋯" menu and picks an item. */
+async function menu(page, item) {
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: item }).click();
+}
+
 /* Goes from the deck list to the back-up screen. */
 async function openBackup(page) {
-  await page.getByRole('button', { name: /^Backup/ }).click();
+  await menu(page, 'Backup');
 }
 
 /* Opens a deck and starts studying one of its boxes. */
@@ -60,4 +66,4 @@ async function swipeLeft(page, row, distance = 130) {
   await page.mouse.up();
 }
 
-module.exports = { KEY, deck, card, data, open, saved, deckRow, toast, openBackup, study, swipeLeft };
+module.exports = { KEY, deck, card, data, open, saved, deckRow, toast, menu, openBackup, study, swipeLeft };

@@ -134,6 +134,17 @@ final class AppModel {
         return saved
     }
 
+    /// Deletes a card opened from search. Undo puts it back in its place.
+    func deleteCard(_ id: Int) {
+        var removed: Library.DeletedCard?
+        change { removed = $0.deleteCard(id) }
+        guard let removed else { return }
+        showUndo("Card deleted") { [weak self] in
+            self?.change { $0.restore(removed) }
+            self?.show("Restored")
+        }
+    }
+
     // MARK: Studying
 
     func startStudy(deck: Int, box: Int) {
