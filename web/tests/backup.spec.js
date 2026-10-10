@@ -7,9 +7,10 @@ const sample = () => data(
   [card(1, 2, 'bread', 'brood', 2), card(2, 1, 'house', 'huis', 3), card(3, 1, 'busy', 'druk', 1)],
 );
 
-test('the Backup button is on the deck list even with no cards', async ({ page }) => {
+test('Backup is in the deck list menu even with no decks', async ({ page }) => {
   await open(page);
-  await expect(page.getByRole('button', { name: /^Backup/ })).toBeVisible();
+  await openBackup(page);
+  await expect(page.locator('#f-json')).toBeVisible();
 });
 
 test('there is no all-cards screen and no delete-everything button', async ({ page }) => {

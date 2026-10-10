@@ -1,16 +1,20 @@
 import SwiftUI
 import VijfKit
 
-/// Fixing or deleting the card being studied (SPEC.md → Editing a card).
+/// Fixing or deleting the card being studied, or one found by search (SPEC.md → Editing a card,
+/// Search).
 struct EditCardView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     let card: Card
+    /// Opened from search rather than from a study session.
+    var fromSearch = false
     @State private var native: String
     @State private var dutch: String
 
-    init(card: Card) {
+    init(card: Card, fromSearch: Bool = false) {
         self.card = card
+        self.fromSearch = fromSearch
         _native = State(initialValue: card.native)
         _dutch = State(initialValue: card.dutch)
     }
@@ -31,7 +35,7 @@ struct EditCardView: View {
                 Button("Save", action: save).buttonStyle(.vj(.fill))
             }
             Button("Delete card") {
-                model.deleteCurrentCard()
+                if fromSearch { model.deleteCard(card.id) } else { model.deleteCurrentCard() }
                 dismiss()
             }
             .buttonStyle(.vj(.danger))

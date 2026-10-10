@@ -15,7 +15,9 @@ no account, works offline once loaded.
 ## Decks
 
 - Cards are grouped into **decks**, one per topic. Each deck has its own five boxes.
-- The user creates a deck by name. Names can't be empty and must be unique (case-insensitive).
+- The user creates a deck by name (**New deck** in the deck list's **⋯** menu; with no decks yet,
+  the name field is on the deck list itself). Names can't be empty and must be unique
+  (case-insensitive).
 - Every card belongs to exactly one deck.
 - On launch the app shows the deck list. If there is exactly one deck, it opens straight into
   that deck instead.
@@ -54,12 +56,13 @@ no account, works offline once loaded.
 
 | Screen | Contents |
 |---|---|
-| **Decks** | Wordmark and the number of decks. One row per deck, in creation order: name, card count, and learned (box 5) out of total. Empty decks are greyed out. Swiping a row left reveals its delete button (see Decks). A name field with **Create** creates a deck and opens it; Enter also works. With zero cards: a button that loads the 12-word starter set into a deck called **Start** and opens it. Always: a **Backup** button, so a backup can be restored on a fresh install. |
+| **Decks** | Wordmark and a **⋯** button (no deck count). The ⋯ menu holds **New deck** and **Backup**; tapping anywhere else (or Escape) closes it. Below the header: the search field (see Search), then one row per deck, in creation order: name, card count, and learned (box 5) out of total. Empty decks are greyed out. Swiping a row left reveals its delete button (see Decks). With zero decks there is no search field; instead an empty-state note and a name field with **Create**, which creates a deck and opens it (Enter also works). With zero cards: a button that loads the 12-word starter set into a deck called **Start** and opens it. Backup stays in the menu even with no decks, so a backup can be restored on a fresh install. |
+| **New deck** | Opened from the ⋯ menu; the back button returns to the deck list. A name field (focused) and **Create**, which creates the deck and opens it; Enter also works. |
 | **Deck** | A back button to the deck list and the deck name. Wordmark, plus a tally of this deck's cards in box 5 out of this deck's total. Five box rows: number, name (New, Shaky, Getting there, Nearly, Learned), card count, and up to 20 tick marks. Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Button: add words. With zero cards in the deck: an empty-state note. |
 | **Study** | Breadcrumb "Decks / *deck*" (both tappable) and the position counter (e.g. 3 / 12). The card shows the native word on the front ("Your language") and the Dutch word on the back ("Dutch", yellow); tap to flip. Below the card: **Not yet** (red, "stays in box n") and **I know it** (green, "→ box n+1"), or **Next** alone in box 5. The **cog** (⚙) sits inside the card, top-right, on both faces; tapping it opens the edit form (see Editing a card) without flipping the card. Tapping an empty box shows a toast instead of opening this screen. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
-| **Backup** | Opened from the deck list; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. |
+| **Backup** | Opened from the deck list's ⋯ menu; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. |
 
 ### Bulk import format
 
@@ -67,10 +70,29 @@ One card per line, native first and then Dutch. The separator can be `=`, `|`, t
 with spaces around it allowed. If none of those appear, a comma is used. Lines with fewer
 than two parts are skipped, and so are blank lines. Any parts after the second are ignored.
 
+## Search
+
+The deck list has a search field, **Search all cards**, above the decks whenever there is at
+least one deck.
+
+- It matches either side of a card (your language or Dutch), anywhere in the word, ignoring case
+  and accents: "cafe" finds "café", "DRUK" finds "druk". Spaces around the text are ignored, and
+  blank text shows the decks.
+- While there is text, the deck rows are replaced by the matching cards from every deck, in deck
+  order and then in the order they were added. Above them, the count ("3 cards", "1 card", or
+  "No cards match"). Each result shows the word in your language, the Dutch word and the deck
+  name, and the card's box number on the right (yellow for box 5). The matching part is
+  underlined in blue on whichever side it was found.
+- A **×** button in the field clears it and brings the decks back.
+- Tapping a result opens that card's edit form (see Editing a card). Save, Cancel and the back
+  button (**← Search**) return to the results, with the search text kept. **Delete card**
+  removes it with the same 5-second undo.
+- Opening or creating a deck clears the search.
+
 ## Editing a card
 
-Cards are edited and deleted from the study screen. There is no list of all cards, so a card
-is reached by studying its box.
+Cards are edited and deleted from the study screen, or from a search result (see Search).
+There is no list of all cards.
 
 - The **cog** (⚙) inside the study card replaces the card with an edit form: both meanings
   (*Your language*, *Dutch*) prefilled, **Cancel**, **Save**, and a red **Delete card**.
@@ -151,7 +173,8 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
   web app and the iPhone app in either direction (including backups from before decks existed).
 - Platform conventions where they help: the system back button and title instead of the web
   app's breadcrumb (the position counter sits top-right), the system swipe action to delete a
-  deck, and add words as a sheet.
+  deck, add words as a sheet, the system menu for **⋯**, **New deck** as a system prompt with a
+  name field (Cancel / Create) instead of a screen, and a search result's edit form as a sheet.
 - Differences from the web app: on the Add sheet, picking another deck adds the words there
   but doesn't switch to that deck; the cog is the system "gearshape" symbol.
 

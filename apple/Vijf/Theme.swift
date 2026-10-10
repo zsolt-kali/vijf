@@ -135,9 +135,12 @@ struct VJField: View {
     }
 }
 
-/// The app's header: the wordmark with its blue dot, and a tally on the right.
-struct Header: View {
-    let tally: Text
+/// The app's header: the wordmark with its blue dot, and something on the right: a tally, or
+/// the deck list's "⋯" menu.
+struct Header<Trailing: View>: View {
+    let trailing: Trailing
+
+    init(@ViewBuilder trailing: () -> Trailing) { self.trailing = trailing() }
 
     var body: some View {
         VStack(spacing: 10) {
@@ -145,9 +148,21 @@ struct Header: View {
                 (Text("vijf").foregroundStyle(VJ.ink) + Text(".").foregroundStyle(VJ.deep))
                     .font(.vjWordmark).tracking(-1.5)
                 Spacer()
-                tally.font(.vjMono(11)).foregroundStyle(VJ.mute).multilineTextAlignment(.trailing).lineSpacing(2).fixedSize()
+                trailing
             }
             Rectangle().fill(VJ.ink).frame(height: 2)
         }
     }
+}
+
+struct Tally: View {
+    let text: Text
+
+    var body: some View {
+        text.font(.vjMono(11)).foregroundStyle(VJ.mute).multilineTextAlignment(.trailing).lineSpacing(2).fixedSize()
+    }
+}
+
+extension Header where Trailing == Tally {
+    init(tally: Text) { self.init { Tally(text: tally) } }
 }

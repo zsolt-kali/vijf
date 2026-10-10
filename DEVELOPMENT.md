@@ -208,3 +208,14 @@ box", which needs no conflict handling and is safe to repeat, so the watch can s
 anything the phone might have missed.
 *Considered:* iCloud/CloudKit sync (needs the paid developer program, and its timing is out of
 our control), and syncing every answer including "Not yet" (they don't change the card).
+
+### 19. Search all cards; New deck and Backup in a "⋯" menu
+Fixing a word meant studying its box until it came up (decision 12). The deck list now has a
+search field that finds cards in every deck and opens them in the existing edit form, so there
+is still no all-cards list. To keep the deck list clean, New deck and Backup moved into a "⋯"
+menu and the deck count was dropped from the header. Search stays on the page because it's used
+often; the rarer actions take two taps. With no decks yet, the name field stays on the page so a
+new user has an obvious first step.
+*Considered:* one "Tools" button for all three (search would cost two taps every time), and a
+hamburger (☰), which usually means navigation and isn't an iOS pattern; "⋯" means "more actions
+here" on both platforms. The watch stays study-only, without search.

@@ -14,7 +14,7 @@ vijf is a five-box Leitner flashcard app for learning Dutch words. It runs as a 
 
 - `paper` is the page, `card` the raised surface, `ink` the text and every 1.5px outline. Primary buttons are an `ink` fill with `on-ink` text.
 - `signal` yellow means **learned**: the back of the study card and the number of a filled box 5. Text on it is always `on-signal`, in both themes.
-- `deep` blue is for **progress and focus**: the tick marks in a box row, the wordmark's dot, the focus ring.
+- `deep` blue is for **progress and focus**: the tick marks in a box row, the wordmark's dot, the focus ring, and the underline that marks a search match (not yellow, which would read as "learned").
 - `success` and `danger` are reserved for the two answers: **I know it** is a `success` fill and **Not yet** a `danger` fill, with `on-success` / `on-danger` text. `danger` is also the swipe-to-delete fill and the outline of **Delete card**. Never use them for decoration.
 - Red and green are close in lightness, so they never carry meaning alone: each button keeps its words, and the two keep their fixed order (Not yet left, I know it right).
 - Empty or inactive elements use `line` borders and `mute` text.
@@ -43,7 +43,7 @@ vijf is a five-box Leitner flashcard app for learning Dutch words. It runs as a 
   learned) in `signal` yellow on an `ink` square. It is the app icon and, drawn as shapes, the
   watch-face complication.
 - One interface icon: the **cog** (Feather "settings", MIT), stroke 2, `icon-size`, in `mute` (on the yellow back, `on-signal`). It sits inside the study card, top-right, `space-gap` from the corner, in a `tap-min` square.
-- No other icons and no emoji. Arrows in text use the "→" and "←" characters.
+- No other icons and no emoji. Arrows in text use the "→" and "←" characters; the deck list's menu button is the "⋯" character and the search field's clear button "×", both in text, not icons. No magnifying glass: the placeholder "Search all cards" says what the field does.
 
 ## Platforms
 
@@ -60,7 +60,9 @@ web CSS or the Swift colours drift from it.
   Square corners and 1.5pt outlines. Platform conventions where they help: the system back button
   and title instead of the breadcrumb (the counter sits top-right), the system swipe action to
   delete a deck in `danger`, add words as a sheet, and the SF Symbol "gearshape" as the cog.
-- **watchOS:** study only, always dark (each token's dark value). Deck list → the deck's boxes →
+  The "⋯" button opens the system menu (rounded, as iOS draws it) and New deck is a system
+  prompt with a name field; the button itself stays square.
+- **watchOS:** study only, always dark (each token's dark value). No search or menu. Deck list → the deck's boxes →
   study. The card fills the screen without a border, tap flips it, and **Not yet** / **I know it**
   sit side by side below it as 44pt `danger` / `success` fills. The position counter ("3 / 12")
   sits in the top bar. No cog: editing happens on the phone.
