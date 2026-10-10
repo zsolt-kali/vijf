@@ -235,16 +235,18 @@
   .rate .no { background: var(--danger); border-color: var(--danger); color: var(--on-danger); }
   .rate .yes { background: var(--success); border-color: var(--success); color: var(--on-success); }
   .rate .no:active, .rate .yes:active { opacity: 0.85; }
-  /* The edit cog sits inside each card face, top-right, in a 44px tap target. */
-  .cog {
+  /* The edit cog sits inside each card face, top-right, in a 44px tap target. The speaker that
+     reads the Dutch word sits beside it, on the back only. */
+  .cog, .speak {
     position: absolute; top: 8px; right: 8px; width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
     background: none; border: none; padding: 0; color: var(--mute); cursor: pointer;
   }
-  .face--back .cog { color: var(--on-signal); }
-  .cog svg { width: 22px; height: 22px; }
-  .cog:focus-visible { outline: 3px solid var(--deep); outline-offset: -4px; }
-  .face--back .cog:focus-visible { outline-color: var(--on-signal); }
+  .speak { right: 52px; }
+  .face--back .cog, .face--back .speak { color: var(--on-signal); }
+  .cog svg, .speak svg { width: 22px; height: 22px; }
+  .cog:focus-visible, .speak:focus-visible { outline: 3px solid var(--deep); outline-offset: -4px; }
+  .face--back .cog:focus-visible, .face--back .speak:focus-visible { outline-color: var(--on-signal); }
   .btn--danger { border-color: var(--danger); color: var(--danger); }
   .btn--danger:active { background: var(--danger); color: var(--on-danger); }
   .edit { background: var(--card); border: 1.5px solid var(--ink); padding: 22px 22px 8px; margin-bottom: 18px; }
@@ -312,6 +314,13 @@
     '1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 ' +
     '0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 
+  /* Speaker, from Feather Icons "volume-2" (MIT). */
+  var SPEAKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>' +
+    '<path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+  var CAN_SPEAK = 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
+
   var STARTER = [
     ['the house','het huis'],['the water','het water'],['the bread','het brood'],
     ['tomorrow','morgen'],['always','altijd'],['together','samen'],
@@ -369,6 +378,18 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m];
     });
   }
+  /* Reads a Dutch word aloud with the device's own voice, a Dutch one when it has one.
+     A new tap restarts it. */
+  function speak(text) {
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'nl-NL';
+    var nl = speechSynthesis.getVoices().find(function (v) { return /^nl\b/i.test(v.lang); });
+    if (nl) u.voice = nl;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }
+  function hush() { if (CAN_SPEAK) speechSynthesis.cancel(); }
+
   function toast(msg) {
     var t = document.createElement('div');
     t.className = 'toast'; t.textContent = msg;
@@ -559,6 +580,8 @@
     if (session.editing) return editView(card);
     var readonly = session.box === 5;
     var cog = '<button class="cog" data-act="edit" aria-label="Edit card">' + COG + '</button>';
+    var speaker = CAN_SPEAK ?
+      '<button class="speak" data-act="speak" aria-label="Say the Dutch word">' + SPEAKER + '</button>' : '';
 
     var h = '<div class="bar">' + crumbs() +
       '<span class="pos">' + (session.total - session.queue.length + 1) + ' / ' + session.total + '</span></div>' +
@@ -569,7 +592,7 @@
       '<div class="face face--back"><span class="hint">Dutch</span>' +
       '<div class="mid"><div class="word">' + esc(card.dutch) + '</div></div>' +
       '<span class="hint">' + (readonly ? 'Learned. Stays in box 5' : 'Did you know it?') +
-      '</span>' + cog + '</div></div></div>';
+      '</span>' + speaker + cog + '</div></div></div>';
 
     if (readonly) {
       h += '<div class="rate">' +
@@ -655,6 +678,7 @@
     if (!v[view] || (/^(home|study|add)$/.test(view) && !deck()) || (view === 'card' && !foundCard())) {
       view = 'decks';
     }
+    hush();
     app.innerHTML = v[view]();
     window.scrollTo(0, 0);
     var auto = app.querySelector('[autofocus]');
@@ -863,6 +887,7 @@
     else if (act === 'yes') rate(true);
     else if (act === 'no') rate(false);
     else if (act === 'next') { advance(session); render(); }
+    else if (act === 'speak') speak(currentCard().dutch);
     else if (act === 'edit') { session.editing = true; render(); }
     else if (act === 'edit-cancel') {
       if (fromSearch) go('decks');

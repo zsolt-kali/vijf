@@ -43,6 +43,7 @@ vijf is a five-box Leitner flashcard app for learning Dutch words. It runs as a 
   learned) in `signal` yellow on an `ink` square. It is the app icon and, drawn as shapes, the
   watch-face complication.
 - One interface icon: the **cog** (Feather "settings", MIT), stroke 2, `icon-size`, in `mute` (on the yellow back, `on-signal`). It sits inside the study card, top-right, `space-gap` from the corner, in a `tap-min` square.
+- A second interface icon, the **speaker** (Feather "volume-2", MIT), with the same stroke, size and colour rules as the cog. It sits on the back of the study card only, just left of the cog, in its own `tap-min` square.
 - No other icons and no emoji. Arrows in text use the "→" and "←" characters; the deck list's menu button is the "⋯" character and the search field's clear button "×", both in text, not icons. No magnifying glass: the placeholder "Search all cards" says what the field does.
 
 ## Platforms
@@ -59,13 +60,13 @@ web CSS or the Swift colours drift from it.
   (`VJ` in `Theme.swift`). `sans` is `Font.system`, `mono` is `Font.system(design: .monospaced)`.
   Square corners and 1.5pt outlines. Platform conventions where they help: the system back button
   and title instead of the breadcrumb (the counter sits top-right), the system swipe action to
-  delete a deck in `danger`, add words as a sheet, and the SF Symbol "gearshape" as the cog.
+  delete a deck in `danger`, add words as a sheet, and the SF Symbols "gearshape" as the cog and "speaker.wave.2" as the speaker.
   The "⋯" button opens the system menu (rounded, as iOS draws it) and New deck is a system
   prompt with a name field; the button itself stays square.
 - **watchOS:** study only, always dark (each token's dark value). No search or menu. Deck list → the deck's boxes →
   study. The card fills the screen without a border, tap flips it, and **Not yet** / **I know it**
   sit side by side below it as 44pt `danger` / `success` fills. The position counter ("3 / 12")
-  sits in the top bar. No cog: editing happens on the phone.
+  sits in the top bar. No cog: editing happens on the phone. No speaker either.
 - **Watch complication:** the mark, drawn as shapes. On tinted faces the top bar takes the face's
   accent colour and the other bars stay white; on full-colour faces the top bar is `signal` yellow
   and the rest light, as in the icon. Inline complications show the word "vijf".
