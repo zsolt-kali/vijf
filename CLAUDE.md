@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **vijf** is a Dutch flashcard app built on a five-box Leitner system. `web/` holds the PWA: a static site with no build step and no runtime dependencies (`web/package.json` exists only for the Playwright tests). `apple/` holds the native iOS and watchOS apps. `design/tokens.json` is shared by all of them.
 
 - **[SPEC.md](SPEC.md)** says what the app does. Read it before changing features, and update it in the same change when behaviour changes.
+- **[design/](design/README.md)** is the design system: `tokens.json` (every colour, type style and size), `brand.md` (wording, colour meanings, shape, platforms) and `components/*.md`. Read `brand.md` and the relevant component note before any visual or wording change.
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** covers the workflow, the commands, how deploying works, and a decisions log. When making a new process or architecture decision, add an entry there.
 - Feature ideas and bugs live in GitHub Issues (`gh issue …`).
 
