@@ -169,9 +169,12 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
     Rounds, the counter and the summary follow the Leitner rules above.
   - With no decks yet, the watch asks you to open vijf on the iPhone.
   - If a deck you have open is deleted on the phone, the watch goes back to the deck list.
-- **Complication:** vijf can be added to a watch face. It shows the vijf mark (circular: "v";
-  corner and inline: "vijf"; rectangular: "vijf / Study Dutch"), follows the face's tint, and
-  opens the app when tapped. It shows no counts.
+- **Complication:** vijf can be added to a watch face and opens the app when tapped. It shows the
+  app icon's mark, five bars narrowing downward (one per box) with the top bar highlighted:
+  circular (the mark), corner (the mark, labelled "vijf"), rectangular (the mark beside
+  "vijf / Study Dutch") and inline (the text "vijf"). On tinted faces the top bar takes the
+  face's accent colour and the rest are white; on full-colour faces the top bar is vijf yellow
+  and the rest light, as in the icon. It shows no counts.
 - Always dark (watchOS), using the dark value of every colour token.
 - **Offline:** the watch keeps its own copy of the decks, so it works without the phone nearby.
 - **Sync** (WatchConnectivity):

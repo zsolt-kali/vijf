@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A1000000000000000000B001 /* VijfKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000C001 /* VijfKit */; };
+		A1000000000000000000B005 /* VijfKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000C003 /* VijfKit */; };
 		A1000000000000000000B002 /* VijfKit in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000C002 /* VijfKit */; };
 		A1000000000000000000B003 /* VijfWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A1000000000000000000F003 /* VijfWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A1000000000000000000B004 /* VijfComplication.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A1000000000000000000F004 /* VijfComplication.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -133,6 +134,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1000000000000000000B005 /* VijfKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,6 +253,9 @@
 				A1000000000000000000D004 /* VijfComplication */,
 			);
 			name = VijfComplication;
+			packageProductDependencies = (
+				A1000000000000000000C003 /* VijfKit */,
+			);
 			productName = VijfComplication;
 			productReference = A1000000000000000000F004 /* VijfComplication.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -684,6 +689,11 @@
 			productName = VijfKit;
 		};
 		A1000000000000000000C002 /* VijfKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1000000000000000000C101 /* XCLocalSwiftPackageReference "VijfKit" */;
+			productName = VijfKit;
+		};
+		A1000000000000000000C003 /* VijfKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A1000000000000000000C101 /* XCLocalSwiftPackageReference "VijfKit" */;
 			productName = VijfKit;
