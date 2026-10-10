@@ -74,6 +74,12 @@ import VijfKit
         #expect(model.library.cards.count == 12)
     }
 
+    @Test func theDutchWordIsReadInDutch() {
+        let u = DutchVoice.utterance(for: "het huis")
+        #expect(u.speechString == "het huis")
+        #expect(u.voice?.language.hasPrefix("nl") ?? true)
+    }
+
     @Test func deckNamesAreValidated() {
         let model = freshModel()
         #expect(model.makeDeck(named: "  ") == "Give the deck a name")

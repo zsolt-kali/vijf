@@ -15,7 +15,8 @@ struct StudyView: View {
         Group {
             if let session, let id = session.currentCardId, let card = model.library.card(id) {
                 VStack(spacing: 18) {
-                    FlashCard(card: card, flipped: flipped, reviewOnly: session.isReviewOnly) { editing = card }
+                    FlashCard(card: card, flipped: flipped, reviewOnly: session.isReviewOnly,
+                              edit: { editing = card }, speak: { DutchVoice.shared.say(card.dutch) })
                         .onTapGesture { withAnimation(reduceMotion ? nil : .spring(duration: 0.5)) { flipped.toggle() } }
                     if session.isReviewOnly {
                         Button("Next") { answer { model.next() } }.buttonStyle(.vj(.fill))
@@ -46,21 +47,25 @@ struct StudyView: View {
         .navigationTitle(model.library.deck(deckId)?.name ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editing) { card in EditCardView(card: card) }
+        .onDisappear { DutchVoice.shared.stop() }
     }
 
     private func answer(_ action: () -> Void) {
+        DutchVoice.shared.stop()
         action()
         flipped = false
     }
 }
 
 /// The two-sided card: your language on white, Dutch on yellow. The cog sits inside the card,
-/// top-right, on both faces, and opens the editor without flipping the card.
+/// top-right, on both faces, and opens the editor without flipping the card. On the Dutch side
+/// a speaker beside it reads the word aloud.
 private struct FlashCard: View {
     let card: Card
     let flipped: Bool
     let reviewOnly: Bool
     let edit: () -> Void
+    let speak: () -> Void
 
     var body: some View {
         ZStack {
@@ -91,13 +96,22 @@ private struct FlashCard: View {
         .background(back ? VJ.signal : VJ.card)
         .overlay(Rectangle().strokeBorder(back ? VJ.onSignal : VJ.ink, lineWidth: VJ.stroke))
         .overlay(alignment: .topTrailing) {
-            Button(action: edit) {
-                Image(systemName: "gearshape").font(.system(size: 20, weight: .regular))
-                    .frame(width: 44, height: 44)
+            HStack(spacing: 0) {
+                if back {
+                    Button(action: speak) {
+                        Image(systemName: "speaker.wave.2").font(.system(size: 20, weight: .regular))
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Say the Dutch word")
+                }
+                Button(action: edit) {
+                    Image(systemName: "gearshape").font(.system(size: 20, weight: .regular))
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Edit card")
             }
             .foregroundStyle(soft)
             .padding(8)
-            .accessibilityLabel("Edit card")
         }
     }
 }

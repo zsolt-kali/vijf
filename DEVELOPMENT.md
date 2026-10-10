@@ -219,3 +219,11 @@ new user has an obvious first step.
 *Considered:* one "Tools" button for all three (search would cost two taps every time), and a
 hamburger (☰), which usually means navigation and isn't an iOS pattern; "⋯" means "more actions
 here" on both platforms. The watch stays study-only, without search.
+
+### 20. Hearing a word: the device's own voice, on tap
+The Dutch side of the card can read the word aloud. It uses the speech built into the browser
+(`speechSynthesis`) and iOS (`AVSpeechSynthesizer`), so there are no audio files, no service and
+no new dependency, and it works offline where the device has a Dutch voice. It plays only when
+tapped, never on flip, so studying in public stays quiet.
+*Considered:* recorded audio or an online text-to-speech service (files to manage, or a network
+and a server, against decision 2), and reading the word automatically on flip.

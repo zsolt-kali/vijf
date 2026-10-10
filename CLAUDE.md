@@ -53,6 +53,7 @@ Work on a branch and open a pull request: a push to `main` that touches `web/` o
 - **Undo:** `undoToast(msg, onUndo)` is the single undo slot, shared by deck and card deletes. A newer undo replaces the old one; call `clearUndo()` before replacing `state` wholesale (restore does).
 - **Look:** colours come only from the CSS custom properties at the top of `index.html`, which mirror `design/tokens.json` (the vijf design system; `tests/look.spec.js` fails if they drift). Never write a literal colour in a rule; a fill pairs with its `on-*` token (`--danger` + `--on-danger`). Dark mode is the `prefers-color-scheme: dark` block.
 - **UI language:** English only, short and plain. Only the words being learned are Dutch. A `<small>` subtitle is used only when it adds information (e.g. `Not yet<small>stays in box 1</small>`), never as a translation.
+- **Speech:** the speaker on the card's back calls `speak()` (`speechSynthesis`, `nl-NL`); `render()` calls `hush()` so leaving a card stops it. Tests replace `speechSynthesis` with a recorder (`tests/speak.spec.js`). iPhone: `DutchVoice` in `Vijf/`.
 
 ## Apple apps (`apple/`)
 

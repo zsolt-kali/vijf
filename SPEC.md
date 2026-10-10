@@ -59,7 +59,7 @@ no account, works offline once loaded.
 | **Decks** | Wordmark and a **⋯** button (no deck count). The ⋯ menu holds **New deck** and **Backup**; tapping anywhere else (or Escape) closes it. Below the header: the search field (see Search), then one row per deck, in creation order: name, card count, and learned (box 5) out of total. Empty decks are greyed out. Swiping a row left reveals its delete button (see Decks). With zero decks there is no search field; instead an empty-state note and a name field with **Create**, which creates a deck and opens it (Enter also works). With zero cards: a button that loads the 12-word starter set into a deck called **Start** and opens it. Backup stays in the menu even with no decks, so a backup can be restored on a fresh install. |
 | **New deck** | Opened from the ⋯ menu; the back button returns to the deck list. A name field (focused) and **Create**, which creates the deck and opens it; Enter also works. |
 | **Deck** | A back button to the deck list and the deck name. Wordmark, plus a tally of this deck's cards in box 5 out of this deck's total. Five box rows: number, name (New, Shaky, Getting there, Nearly, Learned), card count, and up to 20 tick marks. Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Button: add words. With zero cards in the deck: an empty-state note. |
-| **Study** | Breadcrumb "Decks / *deck*" (both tappable) and the position counter (e.g. 3 / 12). The card shows the native word on the front ("Your language") and the Dutch word on the back ("Dutch", yellow); tap to flip. Below the card: **Not yet** (red, "stays in box n") and **I know it** (green, "→ box n+1"), or **Next** alone in box 5. The **cog** (⚙) sits inside the card, top-right, on both faces; tapping it opens the edit form (see Editing a card) without flipping the card. Tapping an empty box shows a toast instead of opening this screen. |
+| **Study** | Breadcrumb "Decks / *deck*" (both tappable) and the position counter (e.g. 3 / 12). The card shows the native word on the front ("Your language") and the Dutch word on the back ("Dutch", yellow); tap to flip. Below the card: **Not yet** (red, "stays in box n") and **I know it** (green, "→ box n+1"), or **Next** alone in box 5. The **cog** (⚙) sits inside the card, top-right, on both faces; tapping it opens the edit form (see Editing a card) without flipping the card. On the back, a **speaker** sits just left of the cog (see Hearing the Dutch word). Tapping an empty box shows a toast instead of opening this screen. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
 | **Backup** | Opened from the deck list's ⋯ menu; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. |
@@ -88,6 +88,17 @@ least one deck.
   button (**← Search**) return to the results, with the search text kept. **Delete card**
   removes it with the same 5-second undo.
 - Opening or creating a deck clears the search.
+
+## Hearing the Dutch word
+
+- The back of the study card (the Dutch side) has a **speaker** button, just left of the cog.
+  Tapping it reads the Dutch word aloud with the device's own Dutch voice, and does not flip the
+  card. Tapping it again starts the word over.
+- Nothing plays by itself. Answering, **Next**, or leaving the screen stops a word being read.
+- It works in every box, box 5 review too. It uses the device's built-in voices, so it needs no
+  network where the device has a Dutch voice.
+- Web: the browser's speech (`speechSynthesis`), asking for Dutch (`nl-NL`) and picking a Dutch
+  voice when the browser lists one. Without speech support in the browser there is no speaker.
 
 ## Editing a card
 
@@ -176,7 +187,9 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
   deck, add words as a sheet, the system menu for **⋯**, **New deck** as a system prompt with a
   name field (Cancel / Create) instead of a screen, and a search result's edit form as a sheet.
 - Differences from the web app: on the Add sheet, picking another deck adds the words there
-  but doesn't switch to that deck; the cog is the system "gearshape" symbol.
+  but doesn't switch to that deck; the cog is the system "gearshape" symbol and the speaker
+  "speaker.wave.2". The speaker plays even with the ring switch on silent, and lowers music
+  instead of stopping it.
 
 ### Apple Watch (`apple/VijfWatch`)
 
