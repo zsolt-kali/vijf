@@ -227,3 +227,11 @@ no new dependency, and it works offline where the device has a Dutch voice. It p
 tapped, never on flip, so studying in public stays quiet.
 *Considered:* recorded audio or an online text-to-speech service (files to manage, or a network
 and a server, against decision 2), and reading the word automatically on flip.
+
+### 21. Watch sync: always try, and show the result
+On 2026-10-11 the phone silently stopped sending its library to the watch while the watch's
+answers still reached the phone. The phone skipped sending whenever WatchConnectivity said the
+watch app wasn't installed, and ignored errors. Now it always tries (when paired), sends at launch,
+after every change and whenever it comes to the front, stamps every send with its time so it's
+delivered even when unchanged, and shows the last result on the Backup screen. The sync starts
+with the app instead of its first screen, so background launches receive the watch's answers.

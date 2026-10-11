@@ -214,12 +214,16 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
 - Always dark (watchOS), using the dark value of every colour token.
 - **Offline:** the watch keeps its own copy of the decks, so it works without the phone nearby.
 - **Sync** (WatchConnectivity):
-  - The phone is the source of truth for decks, words and deletions. After every change it
-    sends its whole library; the watch replaces its copy with it, except that a card keeps a
-    higher box the watch has reached.
+  - The phone is the source of truth for decks, words and deletions. It sends its whole library
+    when it starts, after every change, and whenever it comes to the front; the watch replaces
+    its copy with it, except that a card keeps a higher box the watch has reached. Each send
+    carries its time, so it is delivered even when nothing changed.
+  - The iPhone's **Backup** screen shows how the last send went: "Watch: sent 18:52", or
+    "Watch: not sent." with the reason (in red). Nothing is shown when no watch is paired.
   - Each **I know it** on the watch goes to the phone with the card's new box: straight away when
     the phone is reachable, otherwise queued until it is. The phone keeps the **higher** box.
-  - Whenever the phone's library arrives or the phone becomes reachable, the watch re-sends
+  - Whenever the phone's library arrives, the phone becomes reachable, or the watch app comes to
+    the front, the watch re-reads the phone's latest library and re-sends
     every box it holds higher than the phone, so an answer can't get lost. Applying an answer
     twice changes nothing.
   - Because cards never move down, studying on both devices before they sync loses nothing.

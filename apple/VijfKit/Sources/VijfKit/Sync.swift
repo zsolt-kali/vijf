@@ -66,10 +66,13 @@ public enum Sync {
     // MARK: Payloads (WatchConnectivity dictionaries carry property-list values)
 
     static let libraryKey = "library"
+    static let sentAtKey = "sentAt"
     static let reviewsKey = "reviews"
 
-    public static func context(for library: Library) -> [String: Any] {
-        [libraryKey: Backup.encode(library)]
+    /// The phone's library as an application context. The send time makes every context new, so
+    /// the system delivers it even when the library hasn't changed since the last one.
+    public static func context(for library: Library, sentAt: Int64) -> [String: Any] {
+        [libraryKey: Backup.encode(library), sentAtKey: sentAt]
     }
 
     public static func library(fromContext context: [String: Any]) -> Library? {

@@ -4,11 +4,15 @@ import VijfKit
 @main
 struct VijfWatchApp: App {
     @State private var model = WatchModel()
+    @Environment(\.scenePhase) private var phase
 
     var body: some Scene {
         WindowGroup {
             WatchRoot()
                 .environment(model)
+        }
+        .onChange(of: phase) {
+            if phase == .active { model.becameActive() }
         }
     }
 }

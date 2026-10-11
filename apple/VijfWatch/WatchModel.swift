@@ -33,6 +33,13 @@ final class WatchModel {
         save(Sync.merge(phone: phone, into: library))
     }
 
+    /// The app came to the front: pick up the phone's latest library and re-send any answer the
+    /// phone may have missed.
+    func becameActive() {
+        link.refresh()
+        sendUnsent()
+    }
+
     /// Re-sends every box the watch holds higher than the phone's last copy. Applying an answer
     /// twice is harmless (the higher box wins), so this runs whenever the phone may have missed one.
     func sendUnsent() {
@@ -96,6 +103,13 @@ private final class PhoneLink: NSObject, WCSessionDelegate, @unchecked Sendable 
 
     func session(_ session: WCSession, didReceiveApplicationContext context: [String: Any]) {
         deliver(context)
+    }
+
+    /// Re-reads the latest library the phone sent, in case a delivery was missed.
+    func refresh() {
+        let session = WCSession.default
+        guard WCSession.isSupported(), session.activationState == .activated else { return }
+        deliver(session.receivedApplicationContext)
     }
 
     func sessionReachabilityDidChange(_ session: WCSession) {

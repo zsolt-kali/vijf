@@ -14,6 +14,15 @@ struct BackupView: View {
                 Text("Your cards live only on this device. Copy this text somewhere safe, or share it. To restore, paste a backup below and tap Restore. This replaces everything.")
                     .font(.vjNote).foregroundStyle(VJ.mute)
 
+                if let status = model.watchSync {
+                    switch status {
+                    case .sent(let at):
+                        Eyebrow("Watch: sent \(at.formatted(date: .omitted, time: .shortened))")
+                    case .failed(let reason):
+                        Eyebrow("Watch: not sent. \(reason)", color: VJ.danger)
+                    }
+                }
+
                 VStack(alignment: .leading, spacing: 5) {
                     Eyebrow("Your data")
                     Text(model.backupText)
