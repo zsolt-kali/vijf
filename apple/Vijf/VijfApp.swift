@@ -2,14 +2,25 @@ import SwiftUI
 
 @main
 struct VijfApp: App {
-    @State private var model = AppModel()
+    @State private var model: AppModel
+    @Environment(\.scenePhase) private var phase
     private let sync = PhoneSync()
+
+    /// The watch sync starts with the app, not with its first screen: iOS can launch the app in
+    /// the background to hand over the watch's answers, and then no screen appears.
+    init() {
+        let model = AppModel()
+        _model = State(initialValue: model)
+        sync.start(with: model)
+    }
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(model)
-                .task { sync.start(with: model) }
+        }
+        .onChange(of: phase) {
+            if phase == .active { sync.push(model.library) }
         }
     }
 }

@@ -62,7 +62,9 @@ import Testing
 
     @Test func payloadsRoundTrip() {
         let l = library([card(1, box: 3)])
-        #expect(Sync.library(fromContext: Sync.context(for: l)) == l)
+        #expect(Sync.library(fromContext: Sync.context(for: l, sentAt: 1)) == l)
+        // Each send is a different context, so an unchanged library is still delivered again.
+        #expect(Sync.context(for: l, sentAt: 1)["sentAt"] as? Int64 != Sync.context(for: l, sentAt: 2)["sentAt"] as? Int64)
         let reviews = [Sync.Review(cardId: 1, box: 4, at: 9)]
         #expect(Sync.reviews(fromUserInfo: Sync.userInfo(for: reviews)) == reviews)
         #expect(Sync.reviews(fromUserInfo: [:]).isEmpty)

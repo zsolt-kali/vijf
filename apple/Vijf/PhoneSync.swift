@@ -4,9 +4,11 @@ import WatchConnectivity
 
 /// The phone's side of the watch sync (SPEC.md → Platforms → Apple Watch).
 ///
-/// After every change the phone sends its whole library as the application context (only the
-/// latest one is kept, so the watch always gets the current state). The watch sends back its
-/// "I know it" answers, which are applied with the highest-box rule from VijfKit.
+/// The phone sends its whole library as the application context (only the latest one is kept, so
+/// the watch always gets the current state): when the session activates, after every change, and
+/// whenever the app comes to the front. The watch sends back its "I know it" answers, which are
+/// applied with the highest-box rule from VijfKit. The outcome of the last send is kept on the
+/// model (`watchSync`) and shown on the Backup screen, so a stuck sync is visible.
 final class PhoneSync: NSObject, WCSessionDelegate, @unchecked Sendable {
     @MainActor private weak var model: AppModel?
 
@@ -18,11 +20,23 @@ final class PhoneSync: NSObject, WCSessionDelegate, @unchecked Sendable {
         model.onChange = { [weak self] library in self?.push(library) }
     }
 
+    /// No `isWatchAppInstalled` pre-check: it has wrongly said no after the watch app was
+    /// installed on its own, and the phone then stopped sending without a sign. Trying costs
+    /// nothing; a real failure is reported instead.
     func push(_ library: Library) {
+        guard WCSession.isSupported() else { return }
         let session = WCSession.default
-        guard WCSession.isSupported(), session.activationState == .activated,
-              session.isPaired, session.isWatchAppInstalled else { return }
-        try? session.updateApplicationContext(Sync.context(for: library))
+        guard session.activationState == .activated, session.isPaired else { return }
+        do {
+            try session.updateApplicationContext(Sync.context(for: library, sentAt: .nowMillis))
+            report(.sent(Date()))
+        } catch {
+            report(.failed(error.localizedDescription))
+        }
+    }
+
+    private func report(_ status: WatchSyncStatus) {
+        Task { @MainActor in self.model?.watchSync = status }
     }
 
     func session(_ session: WCSession, activationDidCompleteWith state: WCSessionActivationState, error: Error?) {

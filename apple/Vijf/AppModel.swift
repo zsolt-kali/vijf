@@ -8,6 +8,12 @@ enum Route: Hashable {
     case backup
 }
 
+/// How the last send of the library to the watch went (shown on the Backup screen).
+enum WatchSyncStatus: Equatable {
+    case sent(Date)
+    case failed(String)
+}
+
 /// A short confirmation at the bottom of the screen, optionally with Undo.
 struct Toast: Identifiable, Equatable {
     let id = UUID()
@@ -27,6 +33,8 @@ final class AppModel {
     private(set) var toast: Toast?
     /// Called after every saved change; the watch sync uses it to send the new library.
     var onChange: ((Library) -> Void)?
+    /// The last send to the watch, nil until one was tried (no watch paired: stays nil).
+    var watchSync: WatchSyncStatus?
 
     private let url: URL
 
