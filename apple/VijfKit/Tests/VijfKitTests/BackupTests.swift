@@ -18,6 +18,8 @@ import Testing
         #expect(l.nextId == 6)
         #expect(l.cards.map { [$0.id, $0.box, $0.deckId] } == [[1, 3, 1], [2, 5, 1], [5, 1, 1]])
         #expect(l.cards[0].reviewedAt == 2 && l.cards[2].reviewedAt == nil)
+        // data from before the daily rule has no seenAt: every card is due
+        #expect(l.cards.allSatisfy { $0.seenAt == nil && $0.isDue(dayStart: .nowMillis) })
     }
 
     @Test func aMissingNextIdIsRebuilt() throws {
@@ -39,6 +41,7 @@ import Testing
         l.addCard(native: "bread", dutch: "brood", to: d.id, now: 1_700_000_000_123)
         l.answer(1, known: true, now: 1_700_000_000_456)
         #expect(try Backup.decode(Backup.encode(l)) == l)
+        #expect(try Backup.decode(Backup.encode(l)).card(1)?.seenAt == 1_700_000_000_456)
     }
 
     @Test func theBackupUsesTheWebAppsFieldNames() throws {

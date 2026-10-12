@@ -12,11 +12,28 @@ public struct Card: Codable, Equatable, Identifiable, Sendable {
     public var createdAt: Int64
     /// Set when the card last moved up; untouched by "Not yet".
     public var reviewedAt: Int64?
+    /// Set on every answer, "I know it" or "Not yet". A card seen today isn't due again until
+    /// tomorrow (box 5 excepted). Missing in data from before this rule: the card is due.
+    public var seenAt: Int64?
 
     public init(id: Int, deckId: Int, native: String, dutch: String, box: Int = 1,
-                createdAt: Int64, reviewedAt: Int64? = nil) {
+                createdAt: Int64, reviewedAt: Int64? = nil, seenAt: Int64? = nil) {
         self.id = id; self.deckId = deckId; self.native = native; self.dutch = dutch
-        self.box = box; self.createdAt = createdAt; self.reviewedAt = reviewedAt
+        self.box = box; self.createdAt = createdAt; self.reviewedAt = reviewedAt; self.seenAt = seenAt
+    }
+
+    /// Whether a new study session shows this card: not answered since `dayStart` (the start of
+    /// today, see `Day.start`). Box 5 is read-only and always due.
+    public func isDue(dayStart: Int64) -> Bool {
+        box == 5 || (seenAt ?? .min) < dayStart
+    }
+}
+
+/// The daily rule's day: it starts at local midnight.
+public enum Day {
+    /// The start of the day containing `date`, in milliseconds since 1970.
+    public static func start(of date: Date = Date(), calendar: Calendar = .current) -> Int64 {
+        Int64(calendar.startOfDay(for: date).timeIntervalSince1970 * 1000)
     }
 }
 
@@ -53,6 +70,10 @@ public struct Library: Codable, Equatable, Sendable {
         cards.filter { $0.deckId == deckId && $0.box == box }
     }
     public func learnedCount(inDeck deckId: Int) -> Int { cards(inDeck: deckId, box: 5).count }
+    /// The box's cards a new session shows today.
+    public func dueCards(inDeck deckId: Int, box: Int, dayStart: Int64) -> [Card] {
+        cards(inDeck: deckId, box: box).filter { $0.isDue(dayStart: dayStart) }
+    }
 
     /// Case-insensitive lookup by trimmed name, as the web app's `findDeck`.
     public func deck(named name: String) -> Deck? {
@@ -156,10 +177,13 @@ public struct Library: Codable, Equatable, Sendable {
         cards.insert(d.card, at: min(d.index, cards.count))
     }
 
-    /// An answer while studying. "I know it" moves the card up one box (at most 5) and
-    /// records the time; "Not yet" changes nothing on the card.
+    /// An answer while studying. Both answers record the time as `seenAt`, so the card isn't
+    /// due again until tomorrow; "I know it" also moves it up one box (at most 5) and records
+    /// `reviewedAt`.
     public mutating func answer(_ id: Int, known: Bool, now: Int64) {
-        guard known, let i = cards.firstIndex(where: { $0.id == id }) else { return }
+        guard let i = cards.firstIndex(where: { $0.id == id }) else { return }
+        cards[i].seenAt = now
+        guard known else { return }
         cards[i].box = min(cards[i].box + 1, 5)
         cards[i].reviewedAt = now
     }

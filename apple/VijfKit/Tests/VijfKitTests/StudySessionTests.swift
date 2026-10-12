@@ -1,4 +1,5 @@
 // SPEC.md → Leitner rules: rounds and the position counter
+import Foundation
 import Testing
 @testable import VijfKit
 
@@ -9,6 +10,51 @@ import Testing
     }
 
     func counter(_ s: StudySession) -> String { "\(s.position) / \(s.total)" }
+
+    @Test func cardsSeenTodayWaitUntilTomorrow() throws {
+        let today: Int64 = 1_000_000
+        var l = library(4)
+        l.cards[0].seenAt = today + 5        // answered today: not due
+        l.cards[1].seenAt = today - 1        // answered yesterday: due
+        l.cards[2].seenAt = today            // answered at midnight: not due
+        let s = try #require(StudySession(library: l, deckId: 1, box: 1, dayStart: today))
+        #expect(Set(s.queue) == [2, 4])
+        #expect(s.total == 2)
+        #expect(l.dueCards(inDeck: 1, box: 1, dayStart: today).map(\.id) == [2, 4])
+        // tomorrow every card is due again
+        #expect(l.dueCards(inDeck: 1, box: 1, dayStart: today + 86_400_000).count == 4)
+    }
+
+    @Test func aBoxDoneForTodayHasNoSession() {
+        var l = library(2)
+        for i in l.cards.indices { l.cards[i].seenAt = 50 }
+        #expect(StudySession(library: l, deckId: 1, box: 1, dayStart: 10) == nil)
+    }
+
+    @Test func box5IsAlwaysOpen() throws {
+        var l = library(2, box: 5)
+        for i in l.cards.indices { l.cards[i].seenAt = 50 }
+        let s = try #require(StudySession(library: l, deckId: 1, box: 5, dayStart: 10))
+        #expect(s.total == 2)
+    }
+
+    @Test func notYetCardsStillComeBackWithinTheSession() throws {
+        var l = library(1)
+        var s = try #require(StudySession(library: l, deckId: 1, box: 1, dayStart: 10))
+        l.answer(1, known: false, now: 20)
+        s.answer(known: false)
+        #expect(s.currentCardId == 1)
+        // but a new session today doesn't show it
+        #expect(StudySession(library: l, deckId: 1, box: 1, dayStart: 10) == nil)
+    }
+
+    @Test func theDayStartsAtLocalMidnight() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = try #require(TimeZone(identifier: "Europe/Amsterdam"))
+        let evening = try #require(cal.date(from: DateComponents(year: 2026, month: 10, day: 12, hour: 23, minute: 59)))
+        let midnight = try #require(cal.date(from: DateComponents(year: 2026, month: 10, day: 12)))
+        #expect(Day.start(of: evening, calendar: cal) == Int64(midnight.timeIntervalSince1970 * 1000))
+    }
 
     @Test func anEmptyBoxHasNoSession() {
         #expect(StudySession(library: library(2, box: 1), deckId: 1, box: 3) == nil)

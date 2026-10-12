@@ -46,7 +46,7 @@ import Testing
         phone.answer(1, known: true, now: 10)            // phone: card 1 → 2
         watch.answer(2, known: true, now: 20)            // watch: card 2 → 2
         watch.answer(2, known: true, now: 30)            // watch: card 2 → 3
-        let reviews = [2].compactMap { Sync.review(afterAnswering: $0, known: true, in: watch, now: 30) }
+        let reviews = [2].compactMap { Sync.review(afterAnswering: $0, in: watch, now: 30) }
 
         Sync.apply(reviews, to: &phone)
         let watchAfter = Sync.merge(phone: phone, into: watch)
@@ -54,10 +54,42 @@ import Testing
         #expect(watchAfter.card(1)?.box == 2 && watchAfter.card(2)?.box == 3)
     }
 
-    @Test func notYetSendsNothing() {
+    @Test func everyAnswerIsSentWithTheCardsBox() {
         let l = library([card(1, box: 2)])
-        #expect(Sync.review(afterAnswering: 1, known: false, in: l, now: 1) == nil)
-        #expect(Sync.review(afterAnswering: 1, known: true, in: l, now: 1) == .init(cardId: 1, box: 2, at: 1))
+        #expect(Sync.review(afterAnswering: 1, in: l, now: 1) == .init(cardId: 1, box: 2, at: 1))
+        #expect(Sync.review(afterAnswering: 9, in: l, now: 1) == nil)
+    }
+
+    @Test func aCardSeenOnTheWatchIsNotDueOnThePhoneTheSameDay() {
+        var phone = library([card(1, box: 2)])
+        var watch = phone
+        watch.answer(1, known: false, now: 500)                     // Not yet on the watch
+        let review = Sync.review(afterAnswering: 1, in: watch, now: 500)!
+        Sync.apply([review], to: &phone)
+        #expect(phone.card(1)?.box == 2)
+        #expect(phone.card(1)?.seenAt == 500)
+        #expect(phone.card(1)?.reviewedAt == nil)
+        #expect(!phone.card(1)!.isDue(dayStart: 100))
+        // an older answer arriving late doesn't move seenAt back
+        Sync.apply([.init(cardId: 1, box: 2, at: 300)], to: &phone)
+        #expect(phone.card(1)?.seenAt == 500)
+    }
+
+    @Test func theWatchKeepsTheLaterSeenAt() {
+        var watch = library([card(1, box: 1), card(2, box: 1)])
+        watch.cards[0].seenAt = 80
+        var phone = library([card(1, box: 1), card(2, box: 1)])
+        phone.cards[1].seenAt = 90
+        let merged = Sync.merge(phone: phone, into: watch)
+        #expect(merged.card(1)?.seenAt == 80)
+        #expect(merged.card(2)?.seenAt == 90)
+    }
+
+    @Test func notYetAnswersThePhoneHasNotSeenAreSentAgain() {
+        let phone = library([card(1, box: 1), card(2, box: 1)])
+        var watch = phone
+        watch.cards[0].seenAt = 40
+        #expect(Sync.unsent(phone: phone, watch: watch, now: 1) == [.init(cardId: 1, box: 1, at: 40)])
     }
 
     @Test func payloadsRoundTrip() {

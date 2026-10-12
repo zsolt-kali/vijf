@@ -13,14 +13,15 @@ public struct StudySession: Equatable, Sendable {
     public private(set) var up = 0
     public private(set) var held = 0
 
-    /// Starts a session with the box's cards in random order; nil when the box is empty.
-    public init?(library: Library, deckId: Int, box: Int) {
+    /// Starts a session with the box's cards due today (see `Card.isDue`) in random order; nil
+    /// when there are none.
+    public init?(library: Library, deckId: Int, box: Int, dayStart: Int64 = Day.start()) {
         var g = SystemRandomNumberGenerator()
-        self.init(library: library, deckId: deckId, box: box, using: &g)
+        self.init(library: library, deckId: deckId, box: box, dayStart: dayStart, using: &g)
     }
 
-    public init?<G: RandomNumberGenerator>(library: Library, deckId: Int, box: Int, using g: inout G) {
-        let ids = library.cards(inDeck: deckId, box: box).map(\.id).shuffled(using: &g)
+    public init?<G: RandomNumberGenerator>(library: Library, deckId: Int, box: Int, dayStart: Int64 = Day.start(), using g: inout G) {
+        let ids = library.dueCards(inDeck: deckId, box: box, dayStart: dayStart).map(\.id).shuffled(using: &g)
         guard !ids.isEmpty else { return nil }
         self.deckId = deckId; self.box = box; self.queue = ids; self.total = ids.count
     }

@@ -56,11 +56,20 @@ import Testing
         #expect(l.card(1)?.box == 5)
     }
 
-    @Test func notYetChangesNothing() {
-        let card = Card(id: 1, deckId: 1, native: "a", dutch: "a", box: 3, createdAt: 0, reviewedAt: 7)
+    @Test func notYetOnlyRecordsThatTheCardWasSeen() {
+        var card = Card(id: 1, deckId: 1, native: "a", dutch: "a", box: 3, createdAt: 0, reviewedAt: 7)
         var l = Library(cards: [card], nextId: 2)
         l.answer(1, known: false, now: 10)
+        card.seenAt = 10
         #expect(l.card(1) == card)
+    }
+
+    @Test func bothAnswersRecordTheTimeSeen() {
+        var l = Library(cards: [Card(id: 1, deckId: 1, native: "a", dutch: "a", createdAt: 0)], nextId: 2)
+        l.answer(1, known: true, now: 10)
+        #expect(l.card(1)?.seenAt == 10)
+        l.answer(1, known: false, now: 20)
+        #expect(l.card(1)?.seenAt == 20 && l.card(1)?.reviewedAt == 10)
     }
 
     @Test func editingKeepsBoxAndReviewDate() {

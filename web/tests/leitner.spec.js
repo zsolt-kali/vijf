@@ -106,3 +106,63 @@ test('Not yet cards come back in the order they were answered', async ({ page })
   }
   expect(secondRound).toEqual(firstRound);
 });
+
+/* Each card comes up once a day. */
+const box = (page, n) => page.locator(`[data-go=box${n}]`);
+
+test('both answers record when the card was seen', async ({ page }) => {
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), card(2, 1, 'b', 'b', 1)]));
+  await page.click('[data-go=box1]');
+  await page.getByRole('button', { name: /Not yet/ }).click();
+  await page.getByRole('button', { name: /I know it/ }).click();
+  const s = await saved(page);
+  expect(s.cards[0].seenAt).toEqual(expect.any(Number));
+  expect(s.cards[1].seenAt).toEqual(expect.any(Number));
+});
+
+test('a card answered today is not shown again until tomorrow', async ({ page }) => {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const seen = (c, at) => Object.assign(c, { seenAt: at });
+  await open(page, data([deck(1, 'Start')], [
+    seen(card(1, 1, 'today', 'vandaag', 1), today.getTime() + 1000),
+    seen(card(2, 1, 'yesterday', 'gisteren', 1), today.getTime() - 1000),
+    card(3, 1, 'never', 'nooit', 1),
+  ]));
+  await expect(box(page, 1).locator('.sub')).toHaveText('2 left today');
+  await expect(box(page, 1).locator('.cnt')).toHaveText('3');
+  await page.click('[data-go=box1]');
+  await expect(remaining(page)).toHaveText('1 / 2');
+  await expect(page.locator('.face:not(.face--back) .word')).not.toHaveText('today');
+});
+
+test('a box studied through is done for today and cannot be opened', async ({ page }) => {
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 1), card(2, 1, 'house', 'huis', 2)]));
+  await expect(box(page, 1).locator('.sub')).toHaveCount(0);
+  await page.click('[data-go=box1]');
+  await page.getByRole('button', { name: /Not yet/ }).click();
+  await page.getByRole('button', { name: /Not yet/ }).click();   // the next round, still in the session
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await page.getByRole('button', { name: 'Back to boxes' }).click();
+
+  // the card moved up to box 2 is not due there today either
+  await expect(box(page, 1)).toHaveAttribute('data-empty', '1');
+  await expect(box(page, 2).locator('.sub')).toHaveText('1 left today');
+  await expect(box(page, 2).locator('.cnt')).toHaveText('2');
+  await page.click('[data-go=box2]');
+  await page.getByRole('button', { name: /Not yet/ }).click();
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await page.getByRole('button', { name: 'Back to boxes' }).click();
+
+  await expect(box(page, 3).locator('.sub')).toHaveText('Done for today');
+  await expect(box(page, 3)).toHaveAttribute('data-empty', '1');
+  await page.click('[data-go=box3]');
+  await expect(toast(page)).toHaveText('Done for today');
+  await expect(box(page, 3)).toBeVisible();
+});
+
+test('box 5 is always open, even after a review today', async ({ page }) => {
+  await open(page, data([deck(1, 'Start')], [Object.assign(card(1, 1, 'tomorrow', 'morgen', 5), { seenAt: Date.now() })]));
+  await expect(box(page, 5).locator('.sub')).toHaveCount(0);
+  await page.click('[data-go=box5]');
+  await expect(remaining(page)).toHaveText('1 / 1');
+});

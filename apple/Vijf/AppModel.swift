@@ -157,7 +157,7 @@ final class AppModel {
 
     func startStudy(deck: Int, box: Int) {
         guard let s = StudySession(library: library, deckId: deck, box: box) else {
-            show("Box \(box) is empty")
+            show(library.cards(inDeck: deck, box: box).isEmpty ? "Box \(box) is empty" : "Done for today")
             return
         }
         study = s
@@ -194,7 +194,7 @@ final class AppModel {
 
     // MARK: Watch
 
-    /// The watch's "I know it" answers; a card keeps the higher of the two boxes.
+    /// The watch's answers; a card keeps the higher of the two boxes and the later `seenAt`.
     func applyReviews(_ reviews: [Sync.Review]) {
         change { Sync.apply(reviews, to: &$0) }
     }
