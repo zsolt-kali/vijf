@@ -55,10 +55,18 @@ struct WatchStudyView: View {
             Text((back ? "Dutch" : "Your language").uppercased())
                 .font(.system(size: 9, design: .monospaced)).tracking(1.2)
             Spacer(minLength: 2)
-            Text(back ? card.dutch : card.native)
-                .font(.system(size: 26, weight: .heavy)).tracking(-1)
-                .minimumScaleFactor(0.6)
-                .lineLimit(3)
+            // The same sizes as before (26pt, shrinking to 60%); text that doesn't fit even
+            // then scrolls (Digital Crown or swipe) instead of ending in "…".
+            ViewThatFits(in: .vertical) {
+                word(back ? card.dutch : card.native, size: 26)
+                word(back ? card.dutch : card.native, size: 21)
+                word(back ? card.dutch : card.native, size: 15.6)
+                ScrollView {
+                    word(back ? card.dutch : card.native, size: 15.6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .id("\(card.id)-\(back)")   // a new card or a flip starts at the top
+            }
             Spacer(minLength: 2)
             Text((back ? (review ? "Learned" : "Did you know it?") : "Tap to flip").uppercased())
                 .font(.system(size: 9, design: .monospaced)).tracking(1.2)
@@ -68,6 +76,12 @@ struct WatchStudyView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(back ? VJ.signal : VJ.card, ignoresSafeAreaEdges: [])
         .contentShape(Rectangle())
+    }
+
+    private func word(_ text: String, size: CGFloat) -> some View {
+        Text(text)
+            .font(.system(size: size, weight: .heavy)).tracking(-size / 26)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func answerButton(_ title: String, fill: Color, text: Color, action: @escaping () -> Void) -> some View {
