@@ -32,6 +32,20 @@ import VijfKit
         #expect(model.toast?.message == "Restored")
     }
 
+    @Test func aBoxStudiedTodayIsDoneUntilTomorrow() throws {
+        let model = freshModel()
+        model.addStarterSet()
+        let deckId = try #require(model.library.decks.first?.id)
+        model.startStudy(deck: deckId, box: 1)
+        for _ in 0..<12 { model.answer(known: false) }
+        model.study = nil
+        model.startStudy(deck: deckId, box: 1)
+        #expect(model.study == nil)
+        #expect(model.toast?.message == "Done for today")
+        model.startStudy(deck: deckId, box: 2)
+        #expect(model.toast?.message == "Box 2 is empty")
+    }
+
     @Test func undoAfterLeavingTheSessionOnlyRestoresTheCard() throws {
         let model = freshModel()
         model.addStarterSet()

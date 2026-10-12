@@ -235,3 +235,11 @@ watch app wasn't installed, and ignored errors. Now it always tries (when paired
 after every change and whenever it comes to the front, stamps every send with its time so it's
 delivered even when unchanged, and shows the last result on the Backup screen. The sync starts
 with the app instead of its first screen, so background launches receive the watch's answers.
+
+### 22. Each card comes up once a day
+A big box couldn't be finished in one go, and reopening it started over with cards already seen
+that day; a card moved up could also come straight back in its next box. Now every answer sets
+`seenAt`, and a new session only shows cards not answered since local midnight (box 5 excepted).
+A missing `seenAt` means due, so old data and backups need no migration. The watch now sends
+"Not yet" answers too, and both sides keep the later `seenAt`. Longer gaps per box (classic
+Leitner: 1, 2, 4… days) and a "study anyway" option can come later without changing the data.

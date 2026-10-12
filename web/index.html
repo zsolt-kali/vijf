@@ -110,7 +110,7 @@
   .slot[data-empty="1"] .num { background: var(--line); color: var(--mute); }
   .slot[data-empty="1"] .cnt, .slot[data-empty="1"] .lbl { color: var(--mute); }
   .slot--deck { grid-template-columns: 1fr auto; padding-left: 16px; }
-  .slot--deck .lbl, .slot--deck .sub { display: block; }
+  .slot--deck .lbl, .slot .sub { display: block; }
 
   /* Swipe a deck row left to reveal its delete button. */
   .swipe { position: relative; overflow: hidden; }
@@ -373,6 +373,13 @@
   function deck() { return state.decks.find(function (d) { return d.id === deckId; }) || null; }
   function cardsIn(id) { return state.cards.filter(function (c) { return c.deckId === id; }); }
   function inBox(n) { return cardsIn(deckId).filter(function (c) { return c.box === n; }); }
+  /* Each card comes up once a day: one answered since local midnight (seenAt) waits until
+     tomorrow. Box 5 is read-only and always due. Cards without seenAt (older data) are due. */
+  function dayStart() { var d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function dueIn(n) {
+    var start = dayStart();
+    return inBox(n).filter(function (c) { return n === 5 || !(c.seenAt >= start); });
+  }
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (m) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m];
@@ -551,13 +558,16 @@
       '<span class="here">' + esc(deck().name) + '</span></div>' +
       header('<b>' + inBox(5).length + '</b> / ' + total + '<br>learned') + '<div class="tray">';
     for (var i = 1; i <= 5; i++) {
-      var n = inBox(i).length, edges = '';
+      var n = inBox(i).length, due = dueIn(i).length, edges = '';
       for (var e = 0; e < Math.min(n, 20); e++) edges += '<i></i>';
-      h += '<button class="slot" data-go="box' + i + '" data-empty="' + (n ? 0 : 1) +
+      /* A box done for today looks like an empty one but keeps its count. */
+      var today = n && due < n ? (due ? due + ' left today' : 'Done for today') : '';
+      h += '<button class="slot" data-go="box' + i + '" data-empty="' + (due ? 0 : 1) +
         '" data-full="' + (i === 5 && n ? 1 : 0) + '">' +
         '<span class="num">' + i + '</span><span>' +
         '<span class="lbl">' + names[i - 1] + '</span>' +
-        (n ? '<span class="edges">' + edges + '</span>' : '') +
+        (today ? '<span class="sub">' + today + '</span>' : '') +
+        (due ? '<span class="edges">' + edges + '</span>' : '') +
         '</span><span class="cnt">' + n + '</span></button>';
     }
     h += '</div>';
@@ -568,7 +578,7 @@
     h += '<div class="row">' +
       '<button class="btn btn--fill" data-go="add">Add words</button></div>';
     h += '<p class="note">Tap a box to study it. <b>I know it</b> moves a card up one box; ' +
-      '<b>Not yet</b> keeps it where it is. Cards never move down. ' +
+      '<b>Not yet</b> keeps it where it is. Cards never move down. Each card comes up once a day. ' +
       'Use the cog on a card to fix or delete it.</p>';
     return h;
   }
@@ -686,8 +696,8 @@
   }
 
   function startBox(n) {
-    var ids = inBox(n).map(function (c) { return c.id; });
-    if (!ids.length) { toast('Box ' + n + ' is empty'); return; }
+    var ids = dueIn(n).map(function (c) { return c.id; });
+    if (!ids.length) { toast(inBox(n).length ? 'Done for today' : 'Box ' + n + ' is empty'); return; }
     for (var i = ids.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
       var t = ids[i]; ids[i] = ids[j]; ids[j] = t;
@@ -713,6 +723,7 @@
     var id = session.queue[0];
     var card = state.cards.find(function (c) { return c.id === id; });
     if (!card) { advance(session); render(); return; }
+    card.seenAt = Date.now();
     if (liked) {
       card.box = Math.min(card.box + 1, 5);
       card.reviewedAt = Date.now();
@@ -730,7 +741,7 @@
     if (!native || !dutch) return false;
     state.cards.push({
       id: state.nextId++, deckId: toDeck, native: native, dutch: dutch,
-      box: 1, createdAt: Date.now(), reviewedAt: null
+      box: 1, createdAt: Date.now(), reviewedAt: null, seenAt: null
     });
     return true;
   }

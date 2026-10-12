@@ -64,3 +64,12 @@ test('restoring a back-up from before decks puts its cards in Start', async ({ p
   expect(s.decks.map((d) => d.name)).toEqual(['Start']);
   expect(s.cards.map((c) => c.box)).toEqual([3, 5, 1]);
 });
+
+test('cards saved before the daily rule (no seenAt) are all due today', async ({ page }) => {
+  const old = data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), card(2, 1, 'b', 'b', 2), card(3, 1, 'c', 'c', 2)]);
+  await open(page, old);
+  expect(await saved(page)).toEqual(old);
+  await expect(page.locator('.slot .sub')).toHaveCount(0);
+  await page.click('[data-go=box2]');
+  await expect(page.locator('.bar > span').last()).toHaveText('1 / 2');
+});

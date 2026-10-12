@@ -6,7 +6,7 @@ import WatchConnectivity
 ///
 /// The phone sends its whole library as the application context (only the latest one is kept, so
 /// the watch always gets the current state): when the session activates, after every change, and
-/// whenever the app comes to the front. The watch sends back its "I know it" answers, which are
+/// whenever the app comes to the front. The watch sends back its answers, which are
 /// applied with the highest-box rule from VijfKit. The outcome of the last send is kept on the
 /// model (`watchSync`) and shown on the Backup screen, so a stuck sync is visible.
 final class PhoneSync: NSObject, WCSessionDelegate, @unchecked Sendable {

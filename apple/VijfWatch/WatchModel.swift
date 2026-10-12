@@ -7,8 +7,8 @@ import WatchConnectivity
 /// the study session in progress, and the connection to the phone.
 ///
 /// The phone sends its whole library; the watch merges it in (VijfKit's `Sync.merge`), keeping
-/// any box it has moved further. Each "I know it" goes back to the phone as a review, queued by
-/// WatchConnectivity until the phone is reachable.
+/// any box it has moved further and any later answer. Each answer goes back to the phone as a
+/// review, queued by WatchConnectivity until the phone is reachable.
 @MainActor @Observable
 final class WatchModel {
     private(set) var library: Library
@@ -40,8 +40,8 @@ final class WatchModel {
         sendUnsent()
     }
 
-    /// Re-sends every box the watch holds higher than the phone's last copy. Applying an answer
-    /// twice is harmless (the higher box wins), so this runs whenever the phone may have missed one.
+    /// Re-sends every answer the phone's last copy doesn't have. Applying an answer twice is
+    /// harmless (the higher box and later time win), so this runs whenever the phone may have missed one.
     func sendUnsent() {
         guard let phone = lastFromPhone else { return }
         let unsent = Sync.unsent(phone: phone, watch: library, now: .nowMillis)
@@ -57,7 +57,7 @@ final class WatchModel {
         var l = library
         l.answer(id, known: known, now: .nowMillis)
         save(l)
-        if let review = Sync.review(afterAnswering: id, known: known, in: l, now: .nowMillis) {
+        if let review = Sync.review(afterAnswering: id, in: l, now: .nowMillis) {
             link.send([review])
         }
         study?.answer(known: known)

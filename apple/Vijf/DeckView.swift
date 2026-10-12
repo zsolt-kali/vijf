@@ -12,6 +12,7 @@ struct DeckView: View {
     var body: some View {
         let library = model.library
         let total = library.cards(inDeck: deckId).count
+        let today = Day.start()
         ScrollView {
             VStack(spacing: 8) {
                 Header(tally: Text("\(library.learnedCount(inDeck: deckId))").font(.vjMono(15, weight: .bold)).foregroundColor(VJ.ink)
@@ -19,7 +20,8 @@ struct DeckView: View {
                     .padding(.bottom, 14)
 
                 ForEach(1...5, id: \.self) { box in
-                    BoxRow(box: box, name: Self.boxNames[box - 1], count: library.cards(inDeck: deckId, box: box).count) {
+                    BoxRow(box: box, name: Self.boxNames[box - 1], count: library.cards(inDeck: deckId, box: box).count,
+                           due: library.dueCards(inDeck: deckId, box: box, dayStart: today).count) {
                         model.startStudy(deck: deckId, box: box)
                     }
                 }
@@ -36,7 +38,7 @@ struct DeckView: View {
 
                 Button("Add words") { adding = true }.buttonStyle(.vj(.fill)).padding(.top, 14)
 
-                Text("Tap a box to study it. **I know it** moves a card up one box; **Not yet** keeps it where it is. Cards never move down. Use the cog on a card to fix or delete it.")
+                Text("Tap a box to study it. **I know it** moves a card up one box; **Not yet** keeps it where it is. Cards never move down. Each card comes up once a day. Use the cog on a card to fix or delete it.")
                     .font(.vjNote).foregroundStyle(VJ.mute).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 10)
             }
             .padding(.horizontal, 16).padding(.bottom, 40)
@@ -52,10 +54,19 @@ private struct BoxRow: View {
     let box: Int
     let name: String
     let count: Int
+    /// Cards due today; box 5 always has all of them.
+    let due: Int
     let action: () -> Void
 
+    /// "3 left today" or "Done for today"; nothing when every card is due.
+    var today: String? {
+        guard count > 0, due < count else { return nil }
+        return due == 0 ? "Done for today" : "\(due) left today"
+    }
+
     var body: some View {
-        let empty = count == 0
+        // A box done for today looks like an empty one, but keeps its count.
+        let empty = due == 0
         let learned = box == 5 && !empty
         Button(action: action) {
             HStack(spacing: 12) {
@@ -66,6 +77,9 @@ private struct BoxRow: View {
                     .background(learned ? VJ.signal : empty ? VJ.line : VJ.ink)
                 VStack(alignment: .leading, spacing: 7) {
                     Text(name).font(.vjLabel).foregroundStyle(empty ? VJ.mute : VJ.ink)
+                    if let today {
+                        Text(today.uppercased()).font(.vjMono(10)).tracking(0.8).foregroundStyle(VJ.mute)
+                    }
                     if !empty {
                         HStack(spacing: 2) {
                             ForEach(0..<min(count, 20), id: \.self) { _ in
@@ -85,6 +99,6 @@ private struct BoxRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Box \(box), \(name), \(count) cards")
+        .accessibilityLabel("Box \(box), \(name), \(count) cards" + (today.map { ", \($0)" } ?? ""))
     }
 }

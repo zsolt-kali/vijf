@@ -86,7 +86,7 @@ struct DeckListView: View {
     }
 }
 
-/// One deck's five boxes. Empty boxes are greyed out and can't be opened.
+/// One deck's five boxes. Empty boxes and boxes done for today are greyed out and can't be opened.
 struct DeckBoxesView: View {
     @Environment(WatchModel.self) private var model
     let deckId: Int
@@ -94,8 +94,11 @@ struct DeckBoxesView: View {
     static let names = ["New", "Shaky", "Getting there", "Nearly", "Learned"]
 
     var body: some View {
+        let today = Day.start()
         List(1...5, id: \.self) { box in
             let count = model.library.cards(inDeck: deckId, box: box).count
+            let due = model.library.dueCards(inDeck: deckId, box: box, dayStart: today).count
+            let note: String? = count == 0 || due == count ? nil : due == 0 ? "Done for today" : "\(due) left today"
             Button {
                 model.startStudy(deck: deckId, box: box)
                 path.append(.study)
@@ -104,18 +107,24 @@ struct DeckBoxesView: View {
                     Text("\(box)")
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .frame(width: 22, height: 22)
-                        .foregroundStyle(count == 0 ? VJ.mute : (box == 5 ? VJ.onSignal : VJ.paper))
-                        .background(count == 0 ? VJ.card : (box == 5 ? VJ.signal : VJ.ink))
-                    Text(Self.names[box - 1]).font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(count == 0 ? VJ.mute : VJ.ink)
+                        .foregroundStyle(due == 0 ? VJ.mute : (box == 5 ? VJ.onSignal : VJ.paper))
+                        .background(due == 0 ? VJ.card : (box == 5 ? VJ.signal : VJ.ink))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(Self.names[box - 1]).font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(due == 0 ? VJ.mute : VJ.ink)
+                        if let note {
+                            Text(note.uppercased()).font(.system(size: 9, design: .monospaced))
+                                .foregroundStyle(VJ.mute)
+                        }
+                    }
                     Spacer()
                     Text("\(count)").font(.system(size: 17, weight: .bold, design: .monospaced))
-                        .foregroundStyle(count == 0 ? VJ.mute : VJ.ink)
+                        .foregroundStyle(due == 0 ? VJ.mute : VJ.ink)
                 }
             }
-            .disabled(count == 0)
+            .disabled(due == 0)
             .listRowBackground(VJ.card)
-            .accessibilityLabel("Box \(box), \(Self.names[box - 1]), \(count) cards")
+            .accessibilityLabel("Box \(box), \(Self.names[box - 1]), \(count) cards" + (note.map { ", \($0)" } ?? ""))
         }
         .navigationTitle(model.library.deck(deckId)?.name ?? "")
     }
