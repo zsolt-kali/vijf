@@ -202,6 +202,8 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
     counts; empty boxes are greyed out and can't be opened. A filled box 5 has a yellow number.
   - **Study:** the position counter top-right, the card filling the screen (tap to flip; Dutch
     on yellow), and **Not yet** (red) / **I know it** (green) side by side, or **Next** in box 5.
+    Text too long for the card scrolls (Digital Crown or swipe) instead of being cut off; a new
+    card or a flip starts at the top.
     Rounds, the counter and the summary follow the Leitner rules above.
   - With no decks yet, the watch asks you to open vijf on the iPhone.
   - If a deck you have open is deleted on the phone, the watch goes back to the deck list.
