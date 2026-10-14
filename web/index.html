@@ -380,6 +380,11 @@
     var start = dayStart();
     return inBox(n).filter(function (c) { return n === 5 || !(c.seenAt >= start); });
   }
+  /* A deck's work for today: cards in boxes 1–4 not answered since midnight. */
+  function leftToday(id) {
+    var start = dayStart();
+    return cardsIn(id).filter(function (c) { return c.box < 5 && !(c.seenAt >= start); }).length;
+  }
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (m) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m];
@@ -480,13 +485,14 @@
     var h = '<div class="tray">';
     state.decks.forEach(function (d) {
       var cs = cardsIn(d.id);
-      var learned = cs.filter(function (c) { return c.box === 5; }).length;
+      var learned = cs.filter(function (c) { return c.box === 5; }).length, left = leftToday(d.id);
+      var sub = !cs.length ? '0 cards' : left ? left + ' left today' : 'Done for today';
       h += '<div class="swipe">' +
         '<button class="swipe__del" data-del-deck="' + d.id + '" tabindex="-1" ' +
         'aria-label="Delete deck ' + esc(d.name) + '">Delete</button>' +
         '<button class="slot slot--deck" data-deck="' + d.id + '" data-empty="' + (cs.length ? 0 : 1) + '">' +
         '<span><span class="lbl">' + esc(d.name) + '</span>' +
-        '<span class="sub">' + cs.length + (cs.length === 1 ? ' card' : ' cards') + '</span></span>' +
+        '<span class="sub">' + sub + '</span></span>' +
         '<span class="cnt">' + learned + '<small>/' + cs.length + '</small></span></button></div>';
     });
     return h + '</div><p class="note">Each deck has its own five boxes. The number on the right ' +

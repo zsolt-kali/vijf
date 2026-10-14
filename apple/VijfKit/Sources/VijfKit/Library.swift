@@ -74,6 +74,16 @@ public struct Library: Codable, Equatable, Sendable {
     public func dueCards(inDeck deckId: Int, box: Int, dayStart: Int64) -> [Card] {
         cards(inDeck: deckId, box: box).filter { $0.isDue(dayStart: dayStart) }
     }
+    /// A deck's work for today: cards in boxes 1–4 not answered since `dayStart`.
+    public func leftToday(inDeck deckId: Int, dayStart: Int64) -> Int {
+        cards(inDeck: deckId).filter { $0.box < 5 && $0.isDue(dayStart: dayStart) }.count
+    }
+    /// The deck row's second line: "8 left today", "Done for today", or "0 cards" for an empty deck.
+    public func todayNote(inDeck deckId: Int, dayStart: Int64) -> String {
+        if cards(inDeck: deckId).isEmpty { return "0 cards" }
+        let left = leftToday(inDeck: deckId, dayStart: dayStart)
+        return left == 0 ? "Done for today" : "\(left) left today"
+    }
 
     /// Case-insensitive lookup by trimmed name, as the web app's `findDeck`.
     public func deck(named name: String) -> Deck? {
