@@ -6,14 +6,14 @@ public struct Card: Codable, Equatable, Identifiable, Sendable {
     public var deckId: Int
     public var native: String
     public var dutch: String
-    /// Leitner box, 1–5. Cards only ever move up.
+    /// Leitner box, 1–5. Cards move up, and only "Not yet" in box 5 moves one down (to 4).
     public var box: Int
     /// Milliseconds since 1970, as in the web app.
     public var createdAt: Int64
-    /// Set when the card last moved up; untouched by "Not yet".
+    /// Set on "I know it"; untouched by "Not yet".
     public var reviewedAt: Int64?
-    /// Set on every answer, "I know it" or "Not yet". A card seen today isn't due again until
-    /// tomorrow (box 5 excepted). Missing in data from before this rule: the card is due.
+    /// Set on every answer, "I know it" or "Not yet"; the gap until the card is due again counts
+    /// from its day. Missing (never answered, or data from before the daily rule): the card is due.
     public var seenAt: Int64?
 
     public init(id: Int, deckId: Int, native: String, dutch: String, box: Int = 1,
@@ -22,14 +22,31 @@ public struct Card: Codable, Equatable, Identifiable, Sendable {
         self.box = box; self.createdAt = createdAt; self.reviewedAt = reviewedAt; self.seenAt = seenAt
     }
 
-    /// Whether a new study session shows this card: not answered since `dayStart` (the start of
-    /// today, see `Day.start`). Box 5 is read-only and always due.
-    public func isDue(dayStart: Int64) -> Bool {
-        box == 5 || (seenAt ?? .min) < dayStart
+    /// Days until a card answered "I know it" comes up again, for boxes 1–5.
+    public static let gaps = [1, 2, 4, 8, 16]
+
+    /// The start of the day this card is next due, or nil when it has never been answered (due
+    /// now). After "I know it" (`reviewedAt` on the same day as `seenAt`; older versions set the
+    /// two a moment apart) that is the box's gap; after "Not yet" it is the next day.
+    public func dueDay(calendar: Calendar = .current) -> Int64? {
+        guard let seenAt else { return nil }
+        let seenDay = Day.start(of: Date(millis: seenAt), calendar: calendar)
+        let known = (reviewedAt ?? .min) >= seenDay
+        let days = known ? Card.gaps[min(max(box, 1), 5) - 1] : 1
+        return Day.start(of: calendar.date(byAdding: .day, value: days, to: Date(millis: seenDay))!, calendar: calendar)
+    }
+
+    /// Whether a new study session shows this card on the day starting at `dayStart` (see `Day.start`).
+    public func isDue(dayStart: Int64, calendar: Calendar = .current) -> Bool {
+        (dueDay(calendar: calendar) ?? .min) <= dayStart
     }
 }
 
-/// The daily rule's day: it starts at local midnight.
+extension Date {
+    init(millis: Int64) { self.init(timeIntervalSince1970: TimeInterval(millis) / 1000) }
+}
+
+/// The rules count days (gaps, "left today") from local midnight.
 public enum Day {
     /// The start of the day containing `date`, in milliseconds since 1970.
     public static func start(of date: Date = Date(), calendar: Calendar = .current) -> Int64 {
@@ -74,9 +91,18 @@ public struct Library: Codable, Equatable, Sendable {
     public func dueCards(inDeck deckId: Int, box: Int, dayStart: Int64) -> [Card] {
         cards(inDeck: deckId, box: box).filter { $0.isDue(dayStart: dayStart) }
     }
-    /// A deck's work for today: cards in boxes 1–4 not answered since `dayStart`.
+    /// A deck's work for today: its cards due in any box.
     public func leftToday(inDeck deckId: Int, dayStart: Int64) -> Int {
-        cards(inDeck: deckId).filter { $0.box < 5 && $0.isDue(dayStart: dayStart) }.count
+        cards(inDeck: deckId).filter { $0.isDue(dayStart: dayStart) }.count
+    }
+    /// For a box with cards but none due: when the next one comes up, "Next tomorrow" or
+    /// "Next in 3 days". Nil when the box is empty or has cards due.
+    public func nextNote(inDeck deckId: Int, box: Int, dayStart: Int64, calendar: Calendar = .current) -> String? {
+        let inBox = cards(inDeck: deckId, box: box)
+        guard !inBox.isEmpty, !inBox.contains(where: { $0.isDue(dayStart: dayStart, calendar: calendar) }),
+              let next = inBox.compactMap({ $0.dueDay(calendar: calendar) }).min() else { return nil }
+        let days = calendar.dateComponents([.day], from: Date(millis: dayStart), to: Date(millis: next)).day ?? 1
+        return days <= 1 ? "Next tomorrow" : "Next in \(days) days"
     }
     /// The deck row's second line: "8 left today", "Done for today", or "0 cards" for an empty deck.
     public func todayNote(inDeck deckId: Int, dayStart: Int64) -> String {
@@ -193,9 +219,12 @@ public struct Library: Codable, Equatable, Sendable {
     public mutating func answer(_ id: Int, known: Bool, now: Int64) {
         guard let i = cards.firstIndex(where: { $0.id == id }) else { return }
         cards[i].seenAt = now
-        guard known else { return }
-        cards[i].box = min(cards[i].box + 1, 5)
-        cards[i].reviewedAt = now
+        if known {
+            cards[i].box = min(cards[i].box + 1, 5)
+            cards[i].reviewedAt = now
+        } else if cards[i].box == 5 {
+            cards[i].box = 4   // the only way down
+        }
     }
 }
 

@@ -373,17 +373,31 @@
   function deck() { return state.decks.find(function (d) { return d.id === deckId; }) || null; }
   function cardsIn(id) { return state.cards.filter(function (c) { return c.deckId === id; }); }
   function inBox(n) { return cardsIn(deckId).filter(function (c) { return c.box === n; }); }
-  /* Each card comes up once a day: one answered since local midnight (seenAt) waits until
-     tomorrow. Box 5 is read-only and always due. Cards without seenAt (older data) are due. */
-  function dayStart() { var d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  /* Spaced repetition: each box has a gap in days, counted from the day the card was last
+     answered (seenAt). "Not yet" brings it back the next day instead. The last answer was
+     "I know it" when reviewedAt is on the same day as seenAt. Never answered (no seenAt): due. */
+  var GAPS = [1, 2, 4, 8, 16];
+  function dayStart(ms) { var d = ms === undefined ? new Date() : new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function dueDay(c) {
+    if (!c.seenAt) return 0;
+    var d = new Date(dayStart(c.seenAt));
+    d.setDate(d.getDate() + (c.reviewedAt >= d.getTime() ? GAPS[c.box - 1] : 1));
+    return d.getTime();
+  }
   function dueIn(n) {
     var start = dayStart();
-    return inBox(n).filter(function (c) { return n === 5 || !(c.seenAt >= start); });
+    return inBox(n).filter(function (c) { return dueDay(c) <= start; });
   }
-  /* A deck's work for today: cards in boxes 1–4 not answered since midnight. */
+  /* A deck's work for today: its cards due in any box. */
   function leftToday(id) {
     var start = dayStart();
-    return cardsIn(id).filter(function (c) { return c.box < 5 && !(c.seenAt >= start); }).length;
+    return cardsIn(id).filter(function (c) { return dueDay(c) <= start; }).length;
+  }
+  /* For a box with cards but none due: when the next one comes up. */
+  function nextIn(n) {
+    var next = Math.min.apply(null, inBox(n).map(dueDay));
+    var days = Math.round((next - dayStart()) / 864e5);
+    return days <= 1 ? 'Next tomorrow' : 'Next in ' + days + ' days';
   }
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (m) {
@@ -566,8 +580,8 @@
     for (var i = 1; i <= 5; i++) {
       var n = inBox(i).length, due = dueIn(i).length, edges = '';
       for (var e = 0; e < Math.min(n, 20); e++) edges += '<i></i>';
-      /* A box done for today looks like an empty one but keeps its count. */
-      var today = n && due < n ? (due ? due + ' left today' : 'Done for today') : '';
+      /* A box with nothing due looks like an empty one but keeps its count. */
+      var today = n && due < n ? (due ? due + ' left today' : nextIn(i)) : '';
       h += '<button class="slot" data-go="box' + i + '" data-empty="' + (due ? 0 : 1) +
         '" data-full="' + (i === 5 && n ? 1 : 0) + '">' +
         '<span class="num">' + i + '</span><span>' +
@@ -584,7 +598,8 @@
     h += '<div class="row">' +
       '<button class="btn btn--fill" data-go="add">Add words</button></div>';
     h += '<p class="note">Tap a box to study it. <b>I know it</b> moves a card up one box; ' +
-      '<b>Not yet</b> keeps it where it is. Cards never move down. Each card comes up once a day. ' +
+      '<b>Not yet</b> keeps it where it is and brings it back tomorrow. Box 1 comes up every day, ' +
+      'box 2 every 2 days, then 4, 8 and 16. In box 5, <b>Not yet</b> moves a card back to box 4. ' +
       'Use the cog on a card to fix or delete it.</p>';
     return h;
   }
@@ -594,7 +609,7 @@
     var card = state.cards.find(function (c) { return c.id === session.queue[0]; });
     if (!card) { advance(session); return studyView(); }
     if (session.editing) return editView(card);
-    var readonly = session.box === 5;
+    var last = session.box === 5;
     var cog = '<button class="cog" data-act="edit" aria-label="Edit card">' + COG + '</button>';
     var speaker = CAN_SPEAK ?
       '<button class="speak" data-act="speak" aria-label="Say the Dutch word">' + SPEAKER + '</button>' : '';
@@ -607,17 +622,13 @@
       '<span class="hint">Tap to flip</span>' + cog + '</div>' +
       '<div class="face face--back"><span class="hint">Dutch</span>' +
       '<div class="mid"><div class="word">' + esc(card.dutch) + '</div></div>' +
-      '<span class="hint">' + (readonly ? 'Learned. Stays in box 5' : 'Did you know it?') +
-      '</span>' + speaker + cog + '</div></div></div>';
+      '<span class="hint">Did you know it?</span>' + speaker + cog + '</div></div></div>';
 
-    if (readonly) {
-      h += '<div class="rate">' +
-        '<button class="btn btn--fill" data-act="next">Next</button></div>';
-    } else {
-      h += '<div class="rate">' +
-        '<button class="btn no" data-act="no">Not yet<small>stays in box ' + session.box + '</small></button>' +
-        '<button class="btn yes" data-act="yes">I know it<small>→ box ' + (session.box + 1) + '</small></button></div>';
-    }
+    h += '<div class="rate">' +
+      '<button class="btn no" data-act="no">Not yet<small>' +
+      (last ? 'back to box 4' : 'stays in box ' + session.box) + '</small></button>' +
+      '<button class="btn yes" data-act="yes">I know it<small>' +
+      (last ? 'stays in box 5' : '→ box ' + (session.box + 1)) + '</small></button></div>';
     return h;
   }
 
@@ -643,8 +654,9 @@
     var h = '<div class="bar">' + crumbs() + '<span>Done</span></div>' +
       '<h2>Round complete.</h2>';
     if (session) {
-      h += '<p class="note" style="margin-top:0">Moved up to box ' + Math.min(session.box + 1, 5) + ': ' +
-        session.up + '. Not yet: ' + session.held + '.</p>';
+      h += '<p class="note" style="margin-top:0">' + (session.box === 5 ?
+        'Stayed in box 5: ' + session.up + '. Back to box 4: ' + session.held + '.' :
+        'Moved up to box ' + (session.box + 1) + ': ' + session.up + '. Not yet: ' + session.held + '.') + '</p>';
     }
     h += '<div class="row"><button class="btn btn--fill" data-go="home">' +
       'Back to boxes</button>' +
@@ -703,7 +715,7 @@
 
   function startBox(n) {
     var ids = dueIn(n).map(function (c) { return c.id; });
-    if (!ids.length) { toast(inBox(n).length ? 'Done for today' : 'Box ' + n + ' is empty'); return; }
+    if (!ids.length) { toast(inBox(n).length ? nextIn(n) : 'Box ' + n + ' is empty'); return; }
     for (var i = ids.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
       var t = ids[i]; ids[i] = ids[j]; ids[j] = t;
@@ -729,11 +741,16 @@
     var id = session.queue[0];
     var card = state.cards.find(function (c) { return c.id === id; });
     if (!card) { advance(session); render(); return; }
-    card.seenAt = Date.now();
+    var now = Date.now();
+    card.seenAt = now;
     if (liked) {
       card.box = Math.min(card.box + 1, 5);
-      card.reviewedAt = Date.now();
+      card.reviewedAt = now;
       session.up++;
+    } else if (card.box === 5) {
+      /* The only way down: a missed box 5 card goes back to box 4, and not round again today. */
+      card.box = 4;
+      session.held++;
     } else {
       session.held++;
       session.retry.push(id);
@@ -903,7 +920,6 @@
     }
     else if (act === 'yes') rate(true);
     else if (act === 'no') rate(false);
-    else if (act === 'next') { advance(session); render(); }
     else if (act === 'speak') speak(currentCard().dutch);
     else if (act === 'edit') { session.editing = true; render(); }
     else if (act === 'edit-cancel') {

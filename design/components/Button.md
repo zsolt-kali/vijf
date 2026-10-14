@@ -3,7 +3,7 @@
 A square, outlined action that fills its row; variants set the meaning.
 
 - **Default** (`vj-btn`): `ink` outline, for secondary actions like Cancel and Backup.
-- **Fill** (`vj-btn--fill`): `ink` fill. One per screen, for the main action: Save, Add words, Next.
+- **Fill** (`vj-btn--fill`): `ink` fill. One per screen, for the main action: Save, Add words.
 - **Not yet / I know it** (`vj-btn--no`, `vj-btn--yes`): the two answers on the study screen, `danger` and `success` fills. Always side by side in that order, always with their words.
 - **Danger** (`vj-btn--danger`): `danger` outline and text, for Delete card.
 - **Ghost** (`vj-btn--ghost`): `line` outline and `mute` text, for optional extras like the starter set.

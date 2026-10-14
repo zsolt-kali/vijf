@@ -243,3 +243,12 @@ that day; a card moved up could also come straight back in its next box. Now eve
 A missing `seenAt` means due, so old data and backups need no migration. The watch now sends
 "Not yet" answers too, and both sides keep the later `seenAt`. Longer gaps per box (classic
 Leitner: 1, 2, 4… days) and a "study anyway" option can come later without changing the data.
+
+### 23. Spaced repetition: a gap per box
+With every card coming up daily, big decks meant repeating words already known. Now each box has
+the classic Leitner gap (1, 2, 4, 8, 16 days) after "I know it", and "Not yet" brings a card back
+the next day in any box, so a missed word doesn't wait 8 days. Box 5 became a real check: "Not
+yet" there moves the card back to box 4, the only way down. No new field: the last answer was
+"I know it" when `reviewedAt` is on the same day as `seenAt` (same day, not same instant, because
+the web app set the two a moment apart). Because a card can now move down, Watch sync changed
+from "keep the higher box" to "the latest answer wins", with a `known` flag on each review.

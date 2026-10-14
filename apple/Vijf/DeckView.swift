@@ -21,7 +21,8 @@ struct DeckView: View {
 
                 ForEach(1...5, id: \.self) { box in
                     BoxRow(box: box, name: Self.boxNames[box - 1], count: library.cards(inDeck: deckId, box: box).count,
-                           due: library.dueCards(inDeck: deckId, box: box, dayStart: today).count) {
+                           due: library.dueCards(inDeck: deckId, box: box, dayStart: today).count,
+                           next: library.nextNote(inDeck: deckId, box: box, dayStart: today)) {
                         model.startStudy(deck: deckId, box: box)
                     }
                 }
@@ -38,7 +39,7 @@ struct DeckView: View {
 
                 Button("Add words") { adding = true }.buttonStyle(.vj(.fill)).padding(.top, 14)
 
-                Text("Tap a box to study it. **I know it** moves a card up one box; **Not yet** keeps it where it is. Cards never move down. Each card comes up once a day. Use the cog on a card to fix or delete it.")
+                Text("Tap a box to study it. **I know it** moves a card up one box; **Not yet** keeps it where it is and brings it back tomorrow. Box 1 comes up every day, box 2 every 2 days, then 4, 8 and 16. In box 5, **Not yet** moves a card back to box 4. Use the cog on a card to fix or delete it.")
                     .font(.vjNote).foregroundStyle(VJ.mute).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 10)
             }
             .padding(.horizontal, 16).padding(.bottom, 40)
@@ -54,18 +55,20 @@ private struct BoxRow: View {
     let box: Int
     let name: String
     let count: Int
-    /// Cards due today; box 5 always has all of them.
+    /// Cards due today.
     let due: Int
+    /// With none due: "Next in 3 days".
+    let next: String?
     let action: () -> Void
 
-    /// "3 left today" or "Done for today"; nothing when every card is due.
+    /// "3 left today", or when the next card comes up; nothing when every card is due.
     var today: String? {
         guard count > 0, due < count else { return nil }
-        return due == 0 ? "Done for today" : "\(due) left today"
+        return due == 0 ? next : "\(due) left today"
     }
 
     var body: some View {
-        // A box done for today looks like an empty one, but keeps its count.
+        // A box with nothing due looks like an empty one, but keeps its count.
         let empty = due == 0
         let learned = box == 5 && !empty
         Button(action: action) {

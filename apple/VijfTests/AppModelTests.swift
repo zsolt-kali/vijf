@@ -41,7 +41,7 @@ import VijfKit
         model.study = nil
         model.startStudy(deck: deckId, box: 1)
         #expect(model.study == nil)
-        #expect(model.toast?.message == "Done for today")
+        #expect(model.toast?.message == "Next tomorrow")
         model.startStudy(deck: deckId, box: 2)
         #expect(model.toast?.message == "Box 2 is empty")
     }
@@ -132,7 +132,7 @@ import VijfKit
         var sent: Library?
         model.onChange = { sent = $0 }
 
-        model.applyReviews([Sync.Review(cardId: id, box: 3, at: 42)])
+        model.applyReviews([Sync.Review(cardId: id, box: 3, at: 42, known: true)])
         #expect(model.library.card(id)?.box == 3)
         #expect(sent?.card(id)?.box == 3)
         #expect(AppModel(url: url).library.card(id)?.box == 3)
