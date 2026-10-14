@@ -107,15 +107,20 @@ test('with exactly one deck the app opens straight into it', async ({ page }) =>
   await expect(page.locator('[data-go=box1]')).toBeVisible();
 });
 
-test('each deck row shows its card count and learned count', async ({ page }) => {
+test('each deck row shows how many cards are left today and its learned count', async ({ page }) => {
+  const seen = (c) => Object.assign(c, { seenAt: Date.now() });
   await open(page, data(
-    [deck(1, 'Start'), deck(2, 'Eten')],
-    [card(1, 1, 'a', 'a', 5), card(2, 1, 'b', 'b', 2), card(3, 1, 'c', 'c', 1), card(4, 2, 'd', 'd', 1)],
+    [deck(1, 'Start'), deck(2, 'Eten'), deck(3, 'Werk'), deck(4, 'Leeg')],
+    [card(1, 1, 'a', 'a', 5), card(2, 1, 'b', 'b', 2), card(3, 1, 'c', 'c', 1), seen(card(4, 1, 'd', 'd', 1)),
+      card(5, 2, 'e', 'e', 1), seen(card(6, 3, 'f', 'f', 3)), card(7, 3, 'g', 'g', 5)],
   ));
-  await expect(deckRow(page, 'Start').locator('.sub')).toHaveText('3 cards');
-  await expect(deckRow(page, 'Start').locator('.cnt')).toHaveText('1/3');
-  await expect(deckRow(page, 'Eten').locator('.sub')).toHaveText('1 card');
+  // box 5 doesn't count; a card answered today doesn't either
+  await expect(deckRow(page, 'Start').locator('.sub')).toHaveText('2 left today');
+  await expect(deckRow(page, 'Start').locator('.cnt')).toHaveText('1/4');
+  await expect(deckRow(page, 'Eten').locator('.sub')).toHaveText('1 left today');
   await expect(deckRow(page, 'Eten').locator('.cnt')).toHaveText('0/1');
+  await expect(deckRow(page, 'Werk').locator('.sub')).toHaveText('Done for today');
+  await expect(deckRow(page, 'Leeg').locator('.sub')).toHaveText('0 cards');
 });
 
 test('inside a deck, boxes and tally count only that deck', async ({ page }) => {

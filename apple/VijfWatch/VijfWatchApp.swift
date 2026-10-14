@@ -49,7 +49,7 @@ struct WatchRoot: View {
     }
 }
 
-/// Every deck, with its card count and how many are learned (box 5).
+/// Every deck, with how many cards are left today and how many are learned (box 5).
 struct DeckListView: View {
     @Environment(WatchModel.self) private var model
     @Binding var path: [WatchRoute]
@@ -68,7 +68,7 @@ struct DeckListView: View {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(deck.name).font(.system(size: 15, weight: .bold))
                                     .foregroundStyle(total == 0 ? VJ.mute : VJ.ink)
-                                Text(total == 1 ? "1 CARD" : "\(total) CARDS")
+                                Text(library.todayNote(inDeck: deck.id, dayStart: Day.start()).uppercased())
                                     .font(.system(size: 10, design: .monospaced)).foregroundStyle(VJ.mute)
                             }
                             Spacer()
@@ -78,7 +78,7 @@ struct DeckListView: View {
                         }
                     }
                     .listRowBackground(VJ.card)
-                    .accessibilityLabel("\(deck.name), \(total) cards, \(library.learnedCount(inDeck: deck.id)) learned")
+                    .accessibilityLabel("\(deck.name), \(library.todayNote(inDeck: deck.id, dayStart: Day.start())), \(library.learnedCount(inDeck: deck.id)) of \(total) learned")
                 }
             }
         }

@@ -31,6 +31,21 @@ import Testing
         #expect(l.card(1)?.box == 2)
     }
 
+    @Test func theDeckRowSaysHowManyCardsAreLeftToday() throws {
+        var l = Library()
+        let a = try l.makeDeck(named: "Start", now: 1)
+        let empty = try l.makeDeck(named: "Leeg", now: 1)
+        for w in ["a", "b", "c"] { l.addCard(native: w, dutch: w, to: a.id, now: 1) }
+        #expect(l.todayNote(inDeck: a.id, dayStart: 10) == "3 left today")
+        l.answer(l.cards[0].id, known: false, now: 20)  // answered today
+        l.cards[1].box = 5                               // box 5 is review, not counted
+        #expect(l.leftToday(inDeck: a.id, dayStart: 10) == 1)
+        l.answer(l.cards[2].id, known: true, now: 20)
+        #expect(l.todayNote(inDeck: a.id, dayStart: 10) == "Done for today")
+        #expect(l.todayNote(inDeck: a.id, dayStart: 100) == "2 left today")  // tomorrow
+        #expect(l.todayNote(inDeck: empty.id, dayStart: 10) == "0 cards")
+    }
+
     @Test func starterSetGoesIntoStartBox1() {
         var l = Library()
         let start = l.addStarterSet(now: 1)

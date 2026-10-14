@@ -193,7 +193,7 @@ private struct DeckRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(deck.name).font(.vjLabel).foregroundStyle(empty ? VJ.mute : VJ.ink)
-                    Eyebrow(total == 1 ? "1 card" : "\(total) cards")
+                    Eyebrow(model.library.todayNote(inDeck: deck.id, dayStart: Day.start()))
                 }
                 Spacer()
                 (Text("\(learned)").font(.vjMono(22, weight: .bold)).foregroundColor(empty ? VJ.mute : VJ.ink)
@@ -205,7 +205,7 @@ private struct DeckRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(deck.name), \(total) cards, \(learned) learned")
+        .accessibilityLabel("\(deck.name), \(model.library.todayNote(inDeck: deck.id, dayStart: Day.start())), \(learned) of \(total) learned")
     }
 }
 
