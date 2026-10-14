@@ -5,7 +5,7 @@ vijf is a five-box Leitner flashcard app for learning Dutch words. It runs as a 
 ## Content
 
 - **English only, short and plain.** Only the words being learned are Dutch. Sentence case everywhere ("Add words", "Round complete.").
-- **Buttons say what happens:** `Create`, `Save`, `Delete card`, `I know it`, `Not yet`, `Next`. Toasts confirm in past tense: "Deck deleted", "Saved", "Restored".
+- **Buttons say what happens:** `Create`, `Save`, `Delete card`, `I know it`, `Not yet`. Toasts confirm in past tense: "Deck deleted", "Saved", "Restored".
 - **A subtitle line only when it adds information:** `Not yet` / "stays in box 1", `I know it` / "→ box 2". Never a translation of the label.
 - **Numbers are figures:** "3 / 12", "Box 3 is empty", "12 words added to box 1".
 - No emoji, no exclamation marks, no apologies.

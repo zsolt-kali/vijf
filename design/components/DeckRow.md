@@ -2,7 +2,7 @@
 
 A deck on the deck list: name, today's work, and learned out of total; swipe left to delete.
 
-- Under the name, in the same style as a box row's line: "8 left today" (cards in boxes 1–4 not answered today; box 5 isn't counted), "Done for today" when none are left, or "0 cards" for an empty deck. The total card count is already on the right ("/12"), so it isn't repeated.
+- Under the name, in the same style as a box row's line: "8 left today" (the deck's cards due today, in all five boxes), "Done for today" when none are left, or "0 cards" for an empty deck. The total card count is already on the right ("/12"), so it isn't repeated.
 
 - Swiping left narrows the row by `swipe-reveal` and shows a `danger` **Delete** area on the right (second row). Deleting shows a 5-second undo toast.
 - An empty deck uses `line` and `mute`, like an empty box.

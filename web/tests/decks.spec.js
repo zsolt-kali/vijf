@@ -112,10 +112,10 @@ test('each deck row shows how many cards are left today and its learned count', 
   await open(page, data(
     [deck(1, 'Start'), deck(2, 'Eten'), deck(3, 'Werk'), deck(4, 'Leeg')],
     [card(1, 1, 'a', 'a', 5), card(2, 1, 'b', 'b', 2), card(3, 1, 'c', 'c', 1), seen(card(4, 1, 'd', 'd', 1)),
-      card(5, 2, 'e', 'e', 1), seen(card(6, 3, 'f', 'f', 3)), card(7, 3, 'g', 'g', 5)],
+      card(5, 2, 'e', 'e', 1), seen(card(6, 3, 'f', 'f', 3)), seen(card(7, 3, 'g', 'g', 5))],
   ));
-  // box 5 doesn't count; a card answered today doesn't either
-  await expect(deckRow(page, 'Start').locator('.sub')).toHaveText('2 left today');
+  // every box counts; a card answered today doesn't
+  await expect(deckRow(page, 'Start').locator('.sub')).toHaveText('3 left today');
   await expect(deckRow(page, 'Start').locator('.cnt')).toHaveText('1/4');
   await expect(deckRow(page, 'Eten').locator('.sub')).toHaveText('1 left today');
   await expect(deckRow(page, 'Eten').locator('.cnt')).toHaveText('0/1');

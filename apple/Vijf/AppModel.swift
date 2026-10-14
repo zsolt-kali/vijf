@@ -157,7 +157,7 @@ final class AppModel {
 
     func startStudy(deck: Int, box: Int) {
         guard let s = StudySession(library: library, deckId: deck, box: box) else {
-            show(library.cards(inDeck: deck, box: box).isEmpty ? "Box \(box) is empty" : "Done for today")
+            show(library.nextNote(inDeck: deck, box: box, dayStart: Day.start()) ?? "Box \(box) is empty")
             return
         }
         study = s
@@ -169,8 +169,6 @@ final class AppModel {
         change { $0.answer(id, known: known, now: .nowMillis) }
         study?.answer(known: known)
     }
-
-    func next() { study?.next() }
 
     /// Deletes the card being studied and moves on. Undo puts it back, and makes it the current
     /// card again if that session is still running.

@@ -38,11 +38,10 @@ test('the cog on the back of the card opens the editor too', async ({ page }) =>
   await expect(page.locator('#f-edit-dutch')).toHaveValue('het huis');
 });
 
-test('in box 5 the cog is inside the card and Next is alone below it', async ({ page }) => {
+test('in box 5 the cog is inside the card too', async ({ page }) => {
   await open(page, oneCard(5));
   await study(page, 'Start', 5);
-  await expect(page.locator('.rate .btn')).toHaveCount(1);
-  await expect(page.getByRole('button', { name: /Next/ })).toBeVisible();
+  await expect(page.locator('.rate .btn')).toHaveCount(2);
   await expect(cog(page)).toBeVisible();
 });
 

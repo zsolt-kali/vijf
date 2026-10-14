@@ -36,14 +36,16 @@ import Testing
         let a = try l.makeDeck(named: "Start", now: 1)
         let empty = try l.makeDeck(named: "Leeg", now: 1)
         for w in ["a", "b", "c"] { l.addCard(native: w, dutch: w, to: a.id, now: 1) }
-        #expect(l.todayNote(inDeck: a.id, dayStart: 10) == "3 left today")
-        l.answer(l.cards[0].id, known: false, now: 20)  // answered today
-        l.cards[1].box = 5                               // box 5 is review, not counted
-        #expect(l.leftToday(inDeck: a.id, dayStart: 10) == 1)
-        l.answer(l.cards[2].id, known: true, now: 20)
-        #expect(l.todayNote(inDeck: a.id, dayStart: 10) == "Done for today")
-        #expect(l.todayNote(inDeck: a.id, dayStart: 100) == "2 left today")  // tomorrow
-        #expect(l.todayNote(inDeck: empty.id, dayStart: 10) == "0 cards")
+        #expect(l.todayNote(inDeck: a.id, dayStart: midnight()) == "3 left today")
+        l.answer(l.cards[0].id, known: false, now: noon())  // answered today
+        l.cards[1].box = 5                                   // box 5 counts too
+        #expect(l.leftToday(inDeck: a.id, dayStart: midnight()) == 2)
+        l.answer(l.cards[1].id, known: true, now: noon())
+        l.answer(l.cards[2].id, known: true, now: noon())
+        #expect(l.todayNote(inDeck: a.id, dayStart: midnight()) == "Done for today")
+        // tomorrow only the Not yet card is due; the others wait their gaps
+        #expect(l.todayNote(inDeck: a.id, dayStart: midnight(1)) == "1 left today")
+        #expect(l.todayNote(inDeck: empty.id, dayStart: midnight()) == "0 cards")
     }
 
     @Test func starterSetGoesIntoStartBox1() {
@@ -69,14 +71,25 @@ import Testing
         #expect(l.card(1)?.reviewedAt == 10)
         l.answer(1, known: true, now: 20)
         #expect(l.card(1)?.box == 5)
+        #expect(l.card(1)?.reviewedAt == 20)
     }
 
-    @Test func notYetOnlyRecordsThatTheCardWasSeen() {
+    @Test func notYetInBox5MovesTheCardBackToBox4() {
+        var l = Library(cards: [Card(id: 1, deckId: 1, native: "a", dutch: "a", box: 5, createdAt: 0, reviewedAt: 7)], nextId: 2)
+        l.answer(1, known: false, now: 10)
+        #expect(l.card(1)?.box == 4)
+        #expect(l.card(1)?.seenAt == 10 && l.card(1)?.reviewedAt == 7)
+    }
+
+    @Test func notYetMovesTheCardDownOneBoxAndRecordsThatItWasSeen() {
         var card = Card(id: 1, deckId: 1, native: "a", dutch: "a", box: 3, createdAt: 0, reviewedAt: 7)
         var l = Library(cards: [card], nextId: 2)
         l.answer(1, known: false, now: 10)
-        card.seenAt = 10
+        card.box = 2; card.seenAt = 10
         #expect(l.card(1) == card)
+        l.answer(1, known: false, now: 20)
+        l.answer(1, known: false, now: 30)
+        #expect(l.card(1)?.box == 1)   // never below box 1
     }
 
     @Test func bothAnswersRecordTheTimeSeen() {

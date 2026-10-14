@@ -11,21 +11,15 @@ struct WatchStudyView: View {
     var body: some View {
         if let session = model.study, let id = session.currentCardId, let card = model.library.card(id) {
             VStack(spacing: 6) {
-                face(card: card, review: session.isReviewOnly)
+                face(card: card)
                     .layoutPriority(1)
                     .onTapGesture { flipped.toggle() }
                     .accessibilityAddTraits(.isButton)
                     .accessibilityHint("Flips the card")
 
-                Group {
-                    if session.isReviewOnly {
-                        answerButton("Next", fill: VJ.ink, text: VJ.paper) { model.next() }
-                    } else {
-                        HStack(spacing: 6) {
-                            answerButton("Not yet", fill: VJ.danger, text: VJ.onDanger) { model.answer(known: false) }
-                            answerButton("I know it", fill: VJ.success, text: VJ.onSuccess) { model.answer(known: true) }
-                        }
-                    }
+                HStack(spacing: 6) {
+                    answerButton("Not yet", fill: VJ.danger, text: VJ.onDanger) { model.answer(known: false) }
+                    answerButton("I know it", fill: VJ.success, text: VJ.onSuccess) { model.answer(known: true) }
                 }
                 .frame(height: 44)
             }
@@ -41,7 +35,7 @@ struct WatchStudyView: View {
             VStack(spacing: 8) {
                 Text("Round complete.").font(.system(size: 17, weight: .heavy))
                 if let s = model.study {
-                    Text("Moved up: \(s.up). Not yet: \(s.held).")
+                    Text(s.summary)
                         .font(.footnote).foregroundStyle(VJ.mute)
                 }
                 Button("Done") { dismiss() }
@@ -49,7 +43,7 @@ struct WatchStudyView: View {
         }
     }
 
-    private func face(card: Card, review: Bool) -> some View {
+    private func face(card: Card) -> some View {
         let back = flipped
         return VStack(alignment: .leading) {
             Text((back ? "Dutch" : "Your language").uppercased())
@@ -68,7 +62,7 @@ struct WatchStudyView: View {
                 .id("\(card.id)-\(back)")   // a new card or a flip starts at the top
             }
             Spacer(minLength: 2)
-            Text((back ? (review ? "Learned" : "Did you know it?") : "Tap to flip").uppercased())
+            Text((back ? "Did you know it?" : "Tap to flip").uppercased())
                 .font(.system(size: 9, design: .monospaced)).tracking(1.2)
         }
         .foregroundStyle(back ? VJ.onSignal : VJ.ink)

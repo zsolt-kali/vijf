@@ -55,7 +55,7 @@ test('without a Dutch voice it still asks for Dutch', async ({ page }) => {
   expect(await said(page)).toEqual([{ text: 'het huis', lang: 'nl-NL' }]);
 });
 
-test('it works in box 5 review too', async ({ page }) => {
+test('it works in box 5 too', async ({ page }) => {
   await fakeSpeech(page);
   await open(page, sample());
   await study(page, 'Start', 5);

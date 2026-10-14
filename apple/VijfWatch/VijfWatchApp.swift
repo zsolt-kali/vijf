@@ -86,7 +86,7 @@ struct DeckListView: View {
     }
 }
 
-/// One deck's five boxes. Empty boxes and boxes done for today are greyed out and can't be opened.
+/// One deck's five boxes. Empty boxes and boxes with nothing due are greyed out and can't be opened.
 struct DeckBoxesView: View {
     @Environment(WatchModel.self) private var model
     let deckId: Int
@@ -98,7 +98,8 @@ struct DeckBoxesView: View {
         List(1...5, id: \.self) { box in
             let count = model.library.cards(inDeck: deckId, box: box).count
             let due = model.library.dueCards(inDeck: deckId, box: box, dayStart: today).count
-            let note: String? = count == 0 || due == count ? nil : due == 0 ? "Done for today" : "\(due) left today"
+            let note: String? = count == 0 || due == count ? nil
+                : due == 0 ? model.library.nextNote(inDeck: deckId, box: box, dayStart: today) : "\(due) left today"
             Button {
                 model.startStudy(deck: deckId, box: box)
                 path.append(.study)

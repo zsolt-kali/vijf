@@ -41,10 +41,10 @@ final class WatchModel {
     }
 
     /// Re-sends every answer the phone's last copy doesn't have. Applying an answer twice is
-    /// harmless (the higher box and later time win), so this runs whenever the phone may have missed one.
+    /// harmless (only an answer later than the phone's own counts), so this runs whenever the phone may have missed one.
     func sendUnsent() {
         guard let phone = lastFromPhone else { return }
-        let unsent = Sync.unsent(phone: phone, watch: library, now: .nowMillis)
+        let unsent = Sync.unsent(phone: phone, watch: library)
         if !unsent.isEmpty { link.send(unsent) }
     }
 
@@ -54,16 +54,14 @@ final class WatchModel {
 
     func answer(known: Bool) {
         guard let id = study?.currentCardId else { return }
-        var l = library
-        l.answer(id, known: known, now: .nowMillis)
+        var l = library, now = Int64.nowMillis
+        l.answer(id, known: known, now: now)
         save(l)
-        if let review = Sync.review(afterAnswering: id, in: l, now: .nowMillis) {
+        if let review = Sync.review(afterAnswering: id, known: known, in: l, now: now) {
             link.send([review])
         }
         study?.answer(known: known)
     }
-
-    func next() { study?.next() }
 
     private func save(_ l: Library) {
         library = l

@@ -36,37 +36,50 @@ no account, works offline once loaded.
 - Every new card starts in **box 1** of the chosen deck.
 - Studying is per box within a deck: the user picks a box and goes through all its cards due
   today in random order.
-- **Once a day:** a card answered today (**I know it** or **Not yet**) isn't in a new session
-  until tomorrow; the day starts at local midnight. A big box can be studied in parts: reopening
-  it later shows only the cards not yet answered today, and a card moved up today isn't due in
-  its new box until tomorrow either. Within one session nothing changes: "Not yet" cards still
-  come back in the next round. Box 5 is exempt and always open. Cards from before this rule
-  (no `seenAt`) are due.
-- **I know it** moves the card up one box and removes it from the session.
-- **Not yet** leaves the card in its box; it comes back in the next round (see below) until
-  the user knows it.
-- Cards **never move down**.
-- **Box 5** ("Learned") is the end. Studying box 5 is review only: one **Next** button, no
-  rating, cards stay in box 5.
-- **Rounds:** round 1 shows every card in the box that is due today, in random order. The cards answered
-  **Not yet** in a round come back as the next round, in the order they were answered. This
-  repeats until every card is known; box 5 (Next only) has a single round.
+- **Spacing:** each box has its own gap, counted in days from the day the card was last
+  answered; the day starts at local midnight.
+
+  | Box | Comes up |
+  |---|---|
+  | 1 | every day |
+  | 2 | every 2 days |
+  | 3 | every 4 days |
+  | 4 | every 8 days |
+  | 5 | every 16 days |
+
+  After **I know it** the card waits the gap of its (new) box: a card moved from box 1 to box 2
+  on Monday is due again on Wednesday. After **Not yet** it is due again the next day, whatever
+  its box. A big box can be studied in parts: reopening it later shows only the cards still due.
+  Within one session nothing changes: in box 1, "Not yet" cards still come back in the next round. Cards
+  never answered (no `seenAt`, including data from before the daily rule) are due.
+- **I know it** moves the card up one box and removes it from the session. In box 5 the card
+  stays in box 5.
+- **Not yet** moves the card **down one box** (box 1 stays in box 1), and it is due again the
+  next day. In box 1 it comes back in the next round (see below) until the user knows it. In
+  boxes 2–5 it leaves the session, because another round would only move it straight back up.
+- **Box 5** ("Learned") works like the others: **I know it** keeps the card in box 5,
+  **Not yet** moves it back to box 4.
+- **Rounds:** round 1 shows every card in the box that is due today, in random order. In box 1,
+  the cards answered **Not yet** in a round come back as the next round, in the order they were
+  answered, until every card is known. Boxes 2–5 have a single round.
 - **Position counter:** the study screen shows the current card's position in the round as
   **3 / 12**, where 12 is the size of the round. Every answer moves the position forward by one;
   **no answer ever changes the total**. A new round starts at 1 with its own total (e.g. 1 / 3).
   Deleting the current card removes it from the round (the total drops by one, the position
   stays); undoing the delete adds it back.
 - When the queue is empty, a summary shows how many cards moved up and how many "Not yet"
-  answers were given. The count is per answer, so a card answered "Not yet" twice counts twice.
+  answers were given ("Moved up to box 2: 5. Not yet: 3."). The count is per answer, so a card
+  answered "Not yet" twice counts twice. In boxes 2–5 it says where missed cards went
+  ("Moved up to box 4: 6. Back to box 2: 1."), and box 5 "Stayed in box 5: 4. Back to box 4: 1."
 
 ## Screens
 
 | Screen | Contents |
 |---|---|
-| **Decks** | Wordmark and a **⋯** button (no deck count). The ⋯ menu holds **New deck** and **Backup**; tapping anywhere else (or Escape) closes it. Below the header: the search field (see Search), then one row per deck, in creation order: name, how many cards are left today, and learned (box 5) out of total. The line under the name counts the cards in boxes 1–4 not answered today ("8 left today"; box 5 is review and isn't counted), says "Done for today" when none are left, and "0 cards" for an empty deck. There is no total across decks. Empty decks are greyed out. Swiping a row left reveals its delete button (see Decks). With zero decks there is no search field; instead an empty-state note and a name field with **Create**, which creates a deck and opens it (Enter also works). With zero cards: a button that loads the 12-word starter set into a deck called **Start** and opens it. Backup stays in the menu even with no decks, so a backup can be restored on a fresh install. |
+| **Decks** | Wordmark and a **⋯** button (no deck count). The ⋯ menu holds **New deck** and **Backup**; tapping anywhere else (or Escape) closes it. Below the header: the search field (see Search), then one row per deck, in creation order: name, how many cards are left today, and learned (box 5) out of total. The line under the name counts the deck's cards due today in all five boxes ("8 left today"), says "Done for today" when none are left, and "0 cards" for an empty deck. There is no total across decks. Empty decks are greyed out. Swiping a row left reveals its delete button (see Decks). With zero decks there is no search field; instead an empty-state note and a name field with **Create**, which creates a deck and opens it (Enter also works). With zero cards: a button that loads the 12-word starter set into a deck called **Start** and opens it. Backup stays in the menu even with no decks, so a backup can be restored on a fresh install. |
 | **New deck** | Opened from the ⋯ menu; the back button returns to the deck list. A name field (focused) and **Create**, which creates the deck and opens it; Enter also works. |
-| **Deck** | A back button to the deck list and the deck name. Wordmark, plus a tally of this deck's cards in box 5 out of this deck's total. Five box rows: number, name (New, Shaky, Getting there, Nearly, Learned), card count, and up to 20 tick marks. When some of a box's cards were answered today, a line under the name says how many are left ("8 left today"), or "Done for today" when none are; a box done for today is greyed out like an empty one (it keeps its count, loses its ticks) and tapping it shows the toast "Done for today". Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Below the button, a note explains the rules, including "Each card comes up once a day". Button: add words. With zero cards in the deck: an empty-state note. |
-| **Study** | Breadcrumb "Decks / *deck*" (both tappable) and the position counter (e.g. 3 / 12). The card shows the native word on the front ("Your language") and the Dutch word on the back ("Dutch", yellow); tap to flip. Below the card: **Not yet** (red, "stays in box n") and **I know it** (green, "→ box n+1"), or **Next** alone in box 5. The **cog** (⚙) sits inside the card, top-right, on both faces; tapping it opens the edit form (see Editing a card) without flipping the card. On the back, a **speaker** sits just left of the cog (see Hearing the Dutch word). Tapping an empty box shows a toast instead of opening this screen. |
+| **Deck** | A back button to the deck list and the deck name. Wordmark, plus a tally of this deck's cards in box 5 out of this deck's total. Five box rows: number, name (New, Shaky, Getting there, Nearly, Learned), card count, and up to 20 tick marks. When only some of a box's cards are due, a line under the name says how many ("8 left today"); when none are, it says when the next one comes up ("Next tomorrow", "Next in 3 days"), the box is greyed out like an empty one (it keeps its count, loses its ticks) and tapping it shows that line as a toast. Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Below the button, a note explains the rules, including that **Not yet** moves a card down one box and the gaps (every day, 2 days, then 4, 8 and 16). Button: add words. With zero cards in the deck: an empty-state note. |
+| **Study** | Breadcrumb "Decks / *deck*" (both tappable) and the position counter (e.g. 3 / 12). The card shows the native word on the front ("Your language") and the Dutch word on the back ("Dutch", yellow); tap to flip. Below the card: **Not yet** (red, "back to box n−1", or "stays in box 1") and **I know it** (green, "→ box n+1", or "stays in box 5"). The **cog** (⚙) sits inside the card, top-right, on both faces; tapping it opens the edit form (see Editing a card) without flipping the card. On the back, a **speaker** sits just left of the cog (see Hearing the Dutch word). Tapping an empty box shows a toast instead of opening this screen. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
 | **Backup** | Opened from the deck list's ⋯ menu; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. |
@@ -101,8 +114,8 @@ least one deck.
 - The back of the study card (the Dutch side) has a **speaker** button, just left of the cog.
   Tapping it reads the Dutch word aloud with the device's own Dutch voice, and does not flip the
   card. Tapping it again starts the word over.
-- Nothing plays by itself. Answering, **Next**, or leaving the screen stops a word being read.
-- It works in every box, box 5 review too. It uses the device's built-in voices, so it needs no
+- Nothing plays by itself. Answering or leaving the screen stops a word being read.
+- It works in every box. It uses the device's built-in voices, so it needs no
   network where the device has a Dutch voice.
 - Web: the browser's speech (`speechSynthesis`), asking for Dutch (`nl-NL`) and picking a Dutch
   voice when the browser lists one. Without speech support in the browser there is no speaker.
@@ -143,10 +156,11 @@ Stored in `localStorage` under the key **`leitner-dutch-v1`**:
 }
 ```
 
-- `box` is 1–5. `reviewedAt` is set when a card moves up and is not set on "Not yet".
-  `seenAt` is set on every answer, "I know it" or "Not yet" (not on box 5's Next); it drives
-  the once-a-day rule. A missing or null `seenAt` (data from before the rule) means the card is
-  due, so no migration step is needed.
+- `box` is 1–5. `reviewedAt` is set on "I know it" (box 5 included) and not on "Not yet".
+  `seenAt` is set on every answer; the gaps count from its day. The last answer was "I know it"
+  when `reviewedAt` falls on the same day as `seenAt` (older versions set the two a moment
+  apart), otherwise "Not yet". A missing or null `seenAt` (never answered, or data from before
+  the daily rule) means the card is due, so no migration step is needed.
 - The backup text is exactly this JSON. Restore accepts any object with a `cards` array.
   There is no deeper validation.
 - Changing the key or the card shape breaks existing data and old backups, so add a migration
@@ -209,10 +223,10 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
   - **Decks:** each deck with, as on the phone, "8 left today" or "Done for today", and learned (box 5) out of total; decks without
     cards are greyed out. With exactly one deck the watch opens straight into it.
   - **Boxes:** the deck's five boxes (New, Shaky, Getting there, Nearly, Learned) with card
-    counts and, as on the phone, "8 left today" or "Done for today" under the name; empty boxes
-    and boxes done for today are greyed out and can't be opened. A filled box 5 has a yellow number.
+    counts and, as on the phone, "8 left today" or "Next in 3 days" under the name; empty boxes
+    and boxes with nothing due are greyed out and can't be opened. A filled box 5 has a yellow number.
   - **Study:** the position counter top-right, the card filling the screen (tap to flip; Dutch
-    on yellow), and **Not yet** (red) / **I know it** (green) side by side, or **Next** in box 5.
+    on yellow), and **Not yet** (red) / **I know it** (green) side by side, in every box.
     Text too long for the card scrolls (Digital Crown or swipe) instead of being cut off; a new
     card or a flip starts at the top.
     Rounds, the counter and the summary follow the Leitner rules above.
@@ -229,20 +243,22 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
 - **Sync** (WatchConnectivity):
   - The phone is the source of truth for decks, words and deletions. It sends its whole library
     when it starts, after every change, and whenever it comes to the front; the watch replaces
-    its copy with it, except that a card keeps a higher box the watch has reached and a later
-    `seenAt`. Each send
+    its copy with it, except that a card answered later on the watch keeps the watch's box,
+    `seenAt` and `reviewedAt`. Each send
     carries its time, so it is delivered even when nothing changed.
   - The iPhone's **Backup** screen shows how the last send went: "Watch: sent 18:52", or
     "Watch: not sent." with the reason (in red). Nothing is shown when no watch is paired.
   - Each answer on the watch (**I know it** or **Not yet**) goes to the phone with the card's box
-    after it and the time: straight away when the phone is reachable, otherwise queued until it
-    is. The phone keeps the **higher** box and the **later** `seenAt`, so a card answered on the
-    watch isn't due on the phone the same day.
+    after it, the time, and whether it was **I know it**: straight away when the phone is
+    reachable, otherwise queued until it is. The **latest answer wins**: the phone takes it only
+    if it is later than the card's own `seenAt`, so a card answered on the watch isn't due on
+    the phone before its time.
   - Whenever the phone's library arrives, the phone becomes reachable, or the watch app comes to
     the front, the watch re-reads the phone's latest library and re-sends
-    every box it holds higher than the phone and every later `seenAt`, so an answer can't get
-    lost. Applying an answer twice changes nothing.
-  - Because cards never move down, studying on both devices before they sync loses nothing.
+    every answer later than the phone's, so an answer can't get lost. Applying an answer twice,
+    or an older one, changes nothing.
+  - The latest answer wins rather than the higher box, because **Not yet** moves a card down a
+    box; keeping the higher box would undo that.
 
 ## Non-goals
 

@@ -15,18 +15,14 @@ struct StudyView: View {
         Group {
             if let session, let id = session.currentCardId, let card = model.library.card(id) {
                 VStack(spacing: 18) {
-                    FlashCard(card: card, flipped: flipped, reviewOnly: session.isReviewOnly,
+                    FlashCard(card: card, flipped: flipped,
                               edit: { editing = card }, speak: { DutchVoice.shared.say(card.dutch) })
                         .onTapGesture { withAnimation(reduceMotion ? nil : .spring(duration: 0.5)) { flipped.toggle() } }
-                    if session.isReviewOnly {
-                        Button("Next") { answer { model.next() } }.buttonStyle(.vj(.fill))
-                    } else {
-                        HStack(spacing: 8) {
-                            Button("Not yet") { answer { model.answer(known: false) } }
-                                .buttonStyle(.vj(.no, subtitle: "stays in box \(box)"))
-                            Button("I know it") { answer { model.answer(known: true) } }
-                                .buttonStyle(.vj(.yes, subtitle: "→ box \(box + 1)"))
-                        }
+                    HStack(spacing: 8) {
+                        Button("Not yet") { answer { model.answer(known: false) } }
+                            .buttonStyle(.vj(.no, subtitle: box > 1 ? "back to box \(box - 1)" : "stays in box 1"))
+                        Button("I know it") { answer { model.answer(known: true) } }
+                            .buttonStyle(.vj(.yes, subtitle: box == 5 ? "stays in box 5" : "→ box \(box + 1)"))
                     }
                     Spacer()
                 }
@@ -39,7 +35,7 @@ struct StudyView: View {
                     }
                 }
             } else {
-                Summary(box: box, up: session?.up ?? 0, held: session?.held ?? 0)
+                Summary(line: session?.summary ?? "")
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -63,7 +59,6 @@ struct StudyView: View {
 private struct FlashCard: View {
     let card: Card
     let flipped: Bool
-    let reviewOnly: Bool
     let edit: () -> Void
     let speak: () -> Void
 
@@ -71,7 +66,7 @@ private struct FlashCard: View {
         ZStack {
             face(hint: "Your language", word: card.native, footer: "Tap to flip", back: false)
                 .opacity(flipped ? 0 : 1)
-            face(hint: "Dutch", word: card.dutch, footer: reviewOnly ? "Learned. Stays in box 5" : "Did you know it?", back: true)
+            face(hint: "Dutch", word: card.dutch, footer: "Did you know it?", back: true)
                 .opacity(flipped ? 1 : 0)
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
         }
@@ -118,14 +113,13 @@ private struct FlashCard: View {
 
 private struct Summary: View {
     @Environment(AppModel.self) private var model
-    let box: Int
-    let up: Int
-    let held: Int
+    /// "Moved up to box 2: 3. Not yet: 1."
+    let line: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Round complete.").font(.vjHeading)
-            Text("Moved up to box \(min(box + 1, 5)): \(up). Not yet: \(held).").font(.vjNote).foregroundStyle(VJ.mute)
+            Text(line).font(.vjNote).foregroundStyle(VJ.mute)
             HStack(spacing: 8) {
                 Button("Back to boxes") { model.path.removeLast() }.buttonStyle(.vj(.fill))
                 Button("Other deck") { model.path = [] }.buttonStyle(.vj())

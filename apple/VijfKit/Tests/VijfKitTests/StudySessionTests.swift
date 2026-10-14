@@ -12,9 +12,9 @@ import Testing
     func counter(_ s: StudySession) -> String { "\(s.position) / \(s.total)" }
 
     @Test func cardsSeenTodayWaitUntilTomorrow() throws {
-        let today: Int64 = 1_000_000
+        let today = midnight()
         var l = library(4)
-        l.cards[0].seenAt = today + 5        // answered today: not due
+        l.cards[0].seenAt = noon()           // answered today: not due
         l.cards[1].seenAt = today - 1        // answered yesterday: due
         l.cards[2].seenAt = today            // answered at midnight: not due
         let s = try #require(StudySession(library: l, deckId: 1, box: 1, dayStart: today))
@@ -22,30 +22,73 @@ import Testing
         #expect(s.total == 2)
         #expect(l.dueCards(inDeck: 1, box: 1, dayStart: today).map(\.id) == [2, 4])
         // tomorrow every card is due again
-        #expect(l.dueCards(inDeck: 1, box: 1, dayStart: today + 86_400_000).count == 4)
+        #expect(l.dueCards(inDeck: 1, box: 1, dayStart: midnight(1)).count == 4)
+    }
+
+    @Test func eachBoxWaitsItsGapAfterIKnowIt() {
+        for (i, gap) in Card.gaps.enumerated() {
+            let due = Card(id: 1, deckId: 1, native: "a", dutch: "a", box: i + 1, createdAt: 0,
+                           reviewedAt: noon(-gap), seenAt: noon(-gap))
+            var waiting = due
+            waiting.seenAt = noon(1 - gap); waiting.reviewedAt = waiting.seenAt
+            #expect(due.isDue(dayStart: midnight()), "box \(i + 1)")
+            #expect(!waiting.isDue(dayStart: midnight()), "box \(i + 1)")
+        }
+    }
+
+    @Test func notYetBringsACardBackTheNextDayInAnyBox() {
+        let card = Card(id: 1, deckId: 1, native: "a", dutch: "a", box: 4, createdAt: 0, reviewedAt: noon(-20), seenAt: noon(-1))
+        #expect(card.isDue(dayStart: midnight()))
+        #expect(card.dueDay() == midnight())
+    }
+
+    @Test func aCardMovedUpByAnOlderVersionStillWaitsItsGap() {
+        // the web app used to set reviewedAt a moment before seenAt
+        let card = Card(id: 1, deckId: 1, native: "a", dutch: "a", box: 3, createdAt: 0, reviewedAt: noon(-1), seenAt: noon(-1) + 1)
+        #expect(card.dueDay() == midnight(3))
+    }
+
+    @Test func aBoxWithNothingDueSaysWhenTheNextCardComesUp() {
+        var l = library(2, box: 3)
+        l.answer(1, known: true, now: noon(-1))          // → box 4: due in 8 days
+        l.answer(2, known: false, now: noon())           // → box 2: due tomorrow
+        #expect(l.nextNote(inDeck: 1, box: 2, dayStart: midnight()) == "Next tomorrow")
+        #expect(l.nextNote(inDeck: 1, box: 4, dayStart: midnight()) == "Next in 7 days")
+        #expect(l.nextNote(inDeck: 1, box: 2, dayStart: midnight(1)) == nil)   // due then
+        #expect(l.nextNote(inDeck: 1, box: 3, dayStart: midnight()) == nil)    // empty
     }
 
     @Test func aBoxDoneForTodayHasNoSession() {
         var l = library(2)
-        for i in l.cards.indices { l.cards[i].seenAt = 50 }
-        #expect(StudySession(library: l, deckId: 1, box: 1, dayStart: 10) == nil)
+        for i in l.cards.indices { l.cards[i].seenAt = noon() }
+        #expect(StudySession(library: l, deckId: 1, box: 1, dayStart: midnight()) == nil)
     }
 
-    @Test func box5IsAlwaysOpen() throws {
-        var l = library(2, box: 5)
-        for i in l.cards.indices { l.cards[i].seenAt = 50 }
-        let s = try #require(StudySession(library: l, deckId: 1, box: 5, dayStart: 10))
-        #expect(s.total == 2)
+    @Test func aboveBox1NotYetMovesACardOutOfTheSession() throws {
+        for box in 2...5 {
+            var s = try #require(StudySession(library: library(2, box: box), deckId: 1, box: box))
+            s.answer(known: false)
+            #expect(counter(s) == "2 / 2")
+            s.answer(known: true)
+            #expect(s.isFinished)
+        }
+        var s = try #require(StudySession(library: library(2, box: 3), deckId: 1, box: 3))
+        s.answer(known: true); s.answer(known: false)
+        #expect(s.summary == "Moved up to box 4: 1. Back to box 2: 1.")
+        s = try #require(StudySession(library: library(1, box: 5), deckId: 1, box: 5))
+        s.answer(known: true)
+        #expect(s.summary == "Stayed in box 5: 1. Back to box 4: 0.")
     }
 
     @Test func notYetCardsStillComeBackWithinTheSession() throws {
         var l = library(1)
-        var s = try #require(StudySession(library: l, deckId: 1, box: 1, dayStart: 10))
-        l.answer(1, known: false, now: 20)
+        var s = try #require(StudySession(library: l, deckId: 1, box: 1, dayStart: midnight()))
+        l.answer(1, known: false, now: noon())
         s.answer(known: false)
         #expect(s.currentCardId == 1)
+        #expect(s.summary == "Moved up to box 2: 0. Not yet: 1.")
         // but a new session today doesn't show it
-        #expect(StudySession(library: l, deckId: 1, box: 1, dayStart: 10) == nil)
+        #expect(StudySession(library: l, deckId: 1, box: 1, dayStart: midnight()) == nil)
     }
 
     @Test func theDayStartsAtLocalMidnight() throws {
@@ -92,13 +135,6 @@ import Testing
         let s = try #require(StudySession(library: l, deckId: 1, box: 1))
         #expect(s.total == 2)
         #expect(!s.queue.contains(9))
-    }
-
-    @Test func box5IsReviewOnly() throws {
-        var s = try #require(StudySession(library: library(1, box: 5), deckId: 1, box: 5))
-        #expect(s.isReviewOnly)
-        s.next()
-        #expect(s.isFinished)
     }
 
     @Test func deletingTheCurrentCardKeepsThePositionAndUndoRestoresIt() throws {
