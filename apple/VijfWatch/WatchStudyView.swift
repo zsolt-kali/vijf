@@ -35,7 +35,7 @@ struct WatchStudyView: View {
             VStack(spacing: 8) {
                 Text("Round complete.").font(.system(size: 17, weight: .heavy))
                 if let s = model.study {
-                    Text(s.box == 5 ? "Stayed: \(s.up). Back to box 4: \(s.held)." : "Moved up: \(s.up). Not yet: \(s.held).")
+                    Text(s.summary)
                         .font(.footnote).foregroundStyle(VJ.mute)
                 }
                 Button("Done") { dismiss() }

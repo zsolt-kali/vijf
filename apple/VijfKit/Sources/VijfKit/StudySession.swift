@@ -9,8 +9,7 @@ public struct StudySession: Equatable, Sendable {
     public private(set) var queue: [Int]
     public private(set) var retry: [Int] = []
     public private(set) var total: Int
-    /// Answers given, for the summary: "Moved up to box n: up. Not yet: held.", or in box 5
-    /// "Stayed in box 5: up. Back to box 4: held."
+    /// Answers given, for the summary (see `summary`).
     public private(set) var up = 0
     public private(set) var held = 0
 
@@ -31,18 +30,19 @@ public struct StudySession: Equatable, Sendable {
     public var isFinished: Bool { queue.isEmpty }
     /// 1-based position in the current round.
     public var position: Int { total - queue.count + 1 }
-    /// Records an answer to the current card and moves on. "Not yet" brings the card back in the
-    /// next round, except in box 5, where it has gone back to box 4.
+    /// Records an answer to the current card and moves on. In box 1 "Not yet" brings the card
+    /// back in the next round; in boxes 2–5 the card has gone down a box and leaves the session
+    /// (another round would only move it straight back up).
     public mutating func answer(known: Bool) {
         guard let id = queue.first else { return }
-        if known { up += 1 } else { held += 1; if box < 5 { retry.append(id) } }
+        if known { up += 1 } else { held += 1; if box == 1 { retry.append(id) } }
         advance()
     }
 
-    /// The summary line shown when the session is over.
+    /// The summary line shown when the session is over: "Moved up to box 3: 4. Back to box 1: 2."
     public var summary: String {
-        box == 5 ? "Stayed in box 5: \(up). Back to box 4: \(held)."
-                 : "Moved up to box \(box + 1): \(up). Not yet: \(held)."
+        (box == 5 ? "Stayed in box 5: \(up). " : "Moved up to box \(box + 1): \(up). ")
+            + (box > 1 ? "Back to box \(box - 1): \(held)." : "Not yet: \(held).")
     }
 
     /// The current card was deleted: drop it from the round, keeping the position.

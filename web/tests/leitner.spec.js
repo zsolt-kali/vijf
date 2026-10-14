@@ -162,7 +162,6 @@ test('a box studied through is done for today and cannot be opened', async ({ pa
   await expect(box(page, 2).locator('.sub')).toHaveText('1 left today');
   await expect(box(page, 2).locator('.cnt')).toHaveText('2');
   await page.click('[data-go=box2]');
-  await page.getByRole('button', { name: /Not yet/ }).click();
   await page.getByRole('button', { name: /I know it/ }).click();
   await page.getByRole('button', { name: 'Back to boxes' }).click();
 
@@ -194,11 +193,26 @@ test('a card answered Not yet comes back the next day, whatever its box', async 
   ]));
   await expect(box(page, 4).locator('.sub')).toHaveText('1 left today');
   await page.click('[data-go=box4]');
-  await page.getByRole('button', { name: /Not yet/ }).click();
-  await page.getByRole('button', { name: /I know it/ }).click();   // the next round
+  await page.getByRole('button', { name: /I know it/ }).click();
   await page.getByRole('button', { name: 'Back to boxes' }).click();
   await expect(box(page, 4).locator('.sub')).toHaveText('Next tomorrow');
   await expect(box(page, 5).locator('.sub')).toHaveText('Next in 16 days');
+});
+
+test('in boxes 2–5, Not yet moves a card down one box and out of the session', async ({ page }) => {
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 3), card(2, 1, 'b', 'b', 3)]));
+  await page.click('[data-go=box3]');
+  await expect(page.getByRole('button', { name: /Not yet/ })).toContainText('back to box 2');
+  const first = await page.locator('.face:not(.face--back) .word').textContent();
+  await page.getByRole('button', { name: /Not yet/ }).click();
+  await expect(remaining(page)).toHaveText('2 / 2');
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await expect(page.getByText('Moved up to box 4: 1. Back to box 2: 1.')).toBeVisible();
+
+  const missed = (await saved(page)).cards.find((c) => c.native === first);
+  expect(missed.box).toBe(2);
+  await page.getByRole('button', { name: 'Back to boxes' }).click();
+  await expect(box(page, 2).locator('.sub')).toHaveText('Next tomorrow');
 });
 
 test('a card moved up by an older version (reviewedAt a moment before seenAt) still waits its gap', async ({ page }) => {

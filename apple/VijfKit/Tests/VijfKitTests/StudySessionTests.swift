@@ -51,11 +51,11 @@ import Testing
     @Test func aBoxWithNothingDueSaysWhenTheNextCardComesUp() {
         var l = library(2, box: 3)
         l.answer(1, known: true, now: noon(-1))          // → box 4: due in 8 days
-        l.answer(2, known: false, now: noon())           // stays in box 3: due tomorrow
-        #expect(l.nextNote(inDeck: 1, box: 3, dayStart: midnight()) == "Next tomorrow")
+        l.answer(2, known: false, now: noon())           // → box 2: due tomorrow
+        #expect(l.nextNote(inDeck: 1, box: 2, dayStart: midnight()) == "Next tomorrow")
         #expect(l.nextNote(inDeck: 1, box: 4, dayStart: midnight()) == "Next in 7 days")
-        #expect(l.nextNote(inDeck: 1, box: 3, dayStart: midnight(1)) == nil)   // due then
-        #expect(l.nextNote(inDeck: 1, box: 1, dayStart: midnight()) == nil)    // empty
+        #expect(l.nextNote(inDeck: 1, box: 2, dayStart: midnight(1)) == nil)   // due then
+        #expect(l.nextNote(inDeck: 1, box: 3, dayStart: midnight()) == nil)    // empty
     }
 
     @Test func aBoxDoneForTodayHasNoSession() {
@@ -64,13 +64,20 @@ import Testing
         #expect(StudySession(library: l, deckId: 1, box: 1, dayStart: midnight()) == nil)
     }
 
-    @Test func inBox5NotYetMovesACardOutOfTheSession() throws {
-        var s = try #require(StudySession(library: library(2, box: 5), deckId: 1, box: 5))
-        s.answer(known: false)
-        #expect(counter(s) == "2 / 2")
+    @Test func aboveBox1NotYetMovesACardOutOfTheSession() throws {
+        for box in 2...5 {
+            var s = try #require(StudySession(library: library(2, box: box), deckId: 1, box: box))
+            s.answer(known: false)
+            #expect(counter(s) == "2 / 2")
+            s.answer(known: true)
+            #expect(s.isFinished)
+        }
+        var s = try #require(StudySession(library: library(2, box: 3), deckId: 1, box: 3))
+        s.answer(known: true); s.answer(known: false)
+        #expect(s.summary == "Moved up to box 4: 1. Back to box 2: 1.")
+        s = try #require(StudySession(library: library(1, box: 5), deckId: 1, box: 5))
         s.answer(known: true)
-        #expect(s.isFinished)
-        #expect(s.summary == "Stayed in box 5: 1. Back to box 4: 1.")
+        #expect(s.summary == "Stayed in box 5: 1. Back to box 4: 0.")
     }
 
     @Test func notYetCardsStillComeBackWithinTheSession() throws {

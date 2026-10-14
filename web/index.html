@@ -598,8 +598,8 @@
     h += '<div class="row">' +
       '<button class="btn btn--fill" data-go="add">Add words</button></div>';
     h += '<p class="note">Tap a box to study it. <b>I know it</b> moves a card up one box; ' +
-      '<b>Not yet</b> keeps it where it is and brings it back tomorrow. Box 1 comes up every day, ' +
-      'box 2 every 2 days, then 4, 8 and 16. In box 5, <b>Not yet</b> moves a card back to box 4. ' +
+      '<b>Not yet</b> moves it down one box and brings it back tomorrow. Box 1 comes up every day, ' +
+      'box 2 every 2 days, then 4, 8 and 16. ' +
       'Use the cog on a card to fix or delete it.</p>';
     return h;
   }
@@ -609,7 +609,7 @@
     var card = state.cards.find(function (c) { return c.id === session.queue[0]; });
     if (!card) { advance(session); return studyView(); }
     if (session.editing) return editView(card);
-    var last = session.box === 5;
+    var b = session.box;
     var cog = '<button class="cog" data-act="edit" aria-label="Edit card">' + COG + '</button>';
     var speaker = CAN_SPEAK ?
       '<button class="speak" data-act="speak" aria-label="Say the Dutch word">' + SPEAKER + '</button>' : '';
@@ -626,9 +626,9 @@
 
     h += '<div class="rate">' +
       '<button class="btn no" data-act="no">Not yet<small>' +
-      (last ? 'back to box 4' : 'stays in box ' + session.box) + '</small></button>' +
+      (b > 1 ? 'back to box ' + (b - 1) : 'stays in box 1') + '</small></button>' +
       '<button class="btn yes" data-act="yes">I know it<small>' +
-      (last ? 'stays in box 5' : '→ box ' + (session.box + 1)) + '</small></button></div>';
+      (b === 5 ? 'stays in box 5' : '→ box ' + (b + 1)) + '</small></button></div>';
     return h;
   }
 
@@ -654,9 +654,10 @@
     var h = '<div class="bar">' + crumbs() + '<span>Done</span></div>' +
       '<h2>Round complete.</h2>';
     if (session) {
-      h += '<p class="note" style="margin-top:0">' + (session.box === 5 ?
-        'Stayed in box 5: ' + session.up + '. Back to box 4: ' + session.held + '.' :
-        'Moved up to box ' + (session.box + 1) + ': ' + session.up + '. Not yet: ' + session.held + '.') + '</p>';
+      var b = session.box;
+      h += '<p class="note" style="margin-top:0">' +
+        (b === 5 ? 'Stayed in box 5: ' : 'Moved up to box ' + (b + 1) + ': ') + session.up + '. ' +
+        (b > 1 ? 'Back to box ' + (b - 1) + ': ' : 'Not yet: ') + session.held + '.</p>';
     }
     h += '<div class="row"><button class="btn btn--fill" data-go="home">' +
       'Back to boxes</button>' +
@@ -721,8 +722,9 @@
       var t = ids[i]; ids[i] = ids[j]; ids[j] = t;
     }
     /* A study session runs in rounds. queue holds the rest of the current round and total its
-       size, so the position shown is total - queue.length + 1. "Not yet" cards collect in retry
-       and become the next round; no answer ever changes the current round's total. */
+       size, so the position shown is total - queue.length + 1. In box 1, "Not yet" cards collect
+       in retry and become the next round (elsewhere they go down a box and leave the session);
+       no answer ever changes the current round's total. */
     session = { box: n, queue: ids, retry: [], total: ids.length, up: 0, held: 0 };
     go('study');
   }
@@ -747,9 +749,9 @@
       card.box = Math.min(card.box + 1, 5);
       card.reviewedAt = now;
       session.up++;
-    } else if (card.box === 5) {
-      /* The only way down: a missed box 5 card goes back to box 4, and not round again today. */
-      card.box = 4;
+    } else if (card.box > 1) {
+      /* A missed card goes down one box and leaves the session; another round would only move it back up. */
+      card.box--;
       session.held++;
     } else {
       session.held++;

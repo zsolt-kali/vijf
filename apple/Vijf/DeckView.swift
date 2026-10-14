@@ -39,7 +39,7 @@ struct DeckView: View {
 
                 Button("Add words") { adding = true }.buttonStyle(.vj(.fill)).padding(.top, 14)
 
-                Text("Tap a box to study it. **I know it** moves a card up one box; **Not yet** keeps it where it is and brings it back tomorrow. Box 1 comes up every day, box 2 every 2 days, then 4, 8 and 16. In box 5, **Not yet** moves a card back to box 4. Use the cog on a card to fix or delete it.")
+                Text("Tap a box to study it. **I know it** moves a card up one box; **Not yet** moves it down one box and brings it back tomorrow. Box 1 comes up every day, box 2 every 2 days, then 4, 8 and 16. Use the cog on a card to fix or delete it.")
                     .font(.vjNote).foregroundStyle(VJ.mute).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 10)
             }
             .padding(.horizontal, 16).padding(.bottom, 40)

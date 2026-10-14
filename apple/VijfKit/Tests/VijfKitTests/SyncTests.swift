@@ -21,7 +21,7 @@ import Testing
         #expect(phone.card(2)?.seenAt == 70 && phone.card(2)?.reviewedAt == nil)
     }
 
-    @Test func aBox5CardMissedOnTheWatchGoesBackToBox4OnThePhone() {
+    @Test func aCardMissedOnTheWatchGoesDownABoxOnThePhoneToo() {
         var phone = library([card(1, box: 5, seenAt: 10)])
         var watch = phone
         watch.answer(1, known: false, now: 40)
@@ -106,7 +106,7 @@ import Testing
         var watch = phone
         watch.answer(1, known: false, now: noon())                  // Not yet on the watch
         Sync.apply([Sync.review(afterAnswering: 1, known: false, in: watch, now: noon())!], to: &phone)
-        #expect(phone.card(1)?.box == 2)
+        #expect(phone.card(1)?.box == 1)
         #expect(phone.card(1)?.seenAt == noon())
         #expect(phone.card(1)?.reviewedAt == nil)
         #expect(!phone.card(1)!.isDue(dayStart: midnight()))

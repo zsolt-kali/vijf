@@ -6,7 +6,7 @@ public struct Card: Codable, Equatable, Identifiable, Sendable {
     public var deckId: Int
     public var native: String
     public var dutch: String
-    /// Leitner box, 1–5. Cards move up, and only "Not yet" in box 5 moves one down (to 4).
+    /// Leitner box, 1–5. "I know it" moves a card up one box, "Not yet" down one.
     public var box: Int
     /// Milliseconds since 1970, as in the web app.
     public var createdAt: Int64
@@ -222,8 +222,8 @@ public struct Library: Codable, Equatable, Sendable {
         if known {
             cards[i].box = min(cards[i].box + 1, 5)
             cards[i].reviewedAt = now
-        } else if cards[i].box == 5 {
-            cards[i].box = 4   // the only way down
+        } else {
+            cards[i].box = max(cards[i].box - 1, 1)
         }
     }
 }

@@ -81,12 +81,15 @@ import Testing
         #expect(l.card(1)?.seenAt == 10 && l.card(1)?.reviewedAt == 7)
     }
 
-    @Test func notYetOnlyRecordsThatTheCardWasSeen() {
+    @Test func notYetMovesTheCardDownOneBoxAndRecordsThatItWasSeen() {
         var card = Card(id: 1, deckId: 1, native: "a", dutch: "a", box: 3, createdAt: 0, reviewedAt: 7)
         var l = Library(cards: [card], nextId: 2)
         l.answer(1, known: false, now: 10)
-        card.seenAt = 10
+        card.box = 2; card.seenAt = 10
         #expect(l.card(1) == card)
+        l.answer(1, known: false, now: 20)
+        l.answer(1, known: false, now: 30)
+        #expect(l.card(1)?.box == 1)   // never below box 1
     }
 
     @Test func bothAnswersRecordTheTimeSeen() {
