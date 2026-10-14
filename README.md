@@ -1,9 +1,63 @@
 # vijf — Dutch flashcards
 
-A five-box Leitner system for learning Dutch words. New cards start in box 1. **I know it**
-moves a card up one box, **Not yet** keeps it there. Box 5 is the end of the line.
+A five-box Leitner system for learning Dutch words, on the web, iPhone and Apple Watch.
+New cards start in box 1. **I know it** moves a card up one box, **Not yet** moves it down one,
+and each box comes up less often than the one before.
 
 Live web app: **https://zsolt-kali.github.io/vijf/**
+
+## How vijf works
+
+<!-- The plain explanation for people using the app. Keep it in step with SPEC.md: update it in
+     the same change whenever something a user would notice changes. -->
+
+### Decks and boxes
+
+Make a deck for each topic (food, work, …). Every deck has five boxes, and each box comes up
+less often than the one before:
+
+| Box | Name | Comes up |
+|---|---|---|
+| 1 | New | every day |
+| 2 | Shaky | every 2 days |
+| 3 | Getting there | every 4 days |
+| 4 | Nearly | every 8 days |
+| 5 | Learned | every 16 days |
+
+New words always start in box 1.
+
+### Studying
+
+Open a deck, tap a box, and go through its cards that are due today, in random order. You see
+your own language first; tap to flip to the Dutch, where a speaker reads it aloud. Then answer:
+
+- **I know it:** the card moves up one box and waits that box's gap. From box 2 to box 3 means
+  you see it again in 4 days. In box 5 it stays in box 5 and comes back in 16 days.
+- **Not yet:** the card moves down one box and comes back tomorrow. In box 1 it can't go lower:
+  it stays there and comes back in the next round of the same session until you know it.
+
+Gaps count calendar days: a box 2 card answered on Monday evening is due on Wednesday morning.
+
+A word's usual path: box 1, practised until you know it, then box 2 (2 days), box 3 (4 days),
+box 4 (8 days) and box 5, checked every 16 days. Each **Not yet** moves it back one box and
+brings it back the next day, so a word you forgot gets practised again soon.
+
+### What the screens tell you
+
+- **Deck list:** each deck shows what's left for today ("8 left today", or "Done for today")
+  and, on the right, how many cards are learned out of the total (7/12).
+- **Inside a deck:** each box shows its card count. If only some of its cards are due, it says
+  "3 left today". If none are, it's greyed out and says when the next one comes up ("Next
+  tomorrow", "Next in 4 days").
+- **After a session:** a summary such as "Moved up to box 4: 3. Back to box 2: 1."
+- **The cog** on a card lets you fix a typo or delete the card. **Search all cards** on the deck
+  list finds a word in any deck.
+
+### iPhone and Apple Watch
+
+The Watch is for studying only. It keeps its own copy of your decks, so it works without the
+phone nearby, and sends every answer to the phone. If you answer the same card on both before
+they sync, the most recent answer wins.
 
 ## What's in this repo
 
@@ -30,7 +84,8 @@ It works offline after the first load.
 
 On your device only: private, no account, no server. Two things to know:
 
-- Progress does not sync between devices. Each one has its own boxes.
+- Progress does not sync between devices (except iPhone and Apple Watch). Each one has its own
+  boxes.
 - Clearing browsing data for the site erases it. Use **Backup** on the deck list to copy
   your cards out, and paste that text into the same screen on another device to restore.
 
