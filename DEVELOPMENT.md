@@ -254,3 +254,14 @@ rounds. Box 5 became a real check like the others (no more read-only "Next"). No
 "I know it" when `reviewedAt` is on the same day as `seenAt` (same day, not same instant, because
 the web app set the two a moment apart). Because a card can now move down, Watch sync changed
 from "keep the higher box" to "the latest answer wins", with a `known` flag on each review.
+
+### 24. The version on screen, stamped from git
+Checking whether the Watch had a new build took a terminal, and the build number was always 1, so
+it couldn't tell. Now every app shows "Version <commit> · <date>": the web app on the Backup screen
+(the deploy workflow stamps `VERSION`, like `CACHE`), the iPhone app on its Backup screen and the
+watch app below its deck list. On Apple, a build phase writes the commit into the built Info.plist
+and sets the build number to the commit count on every build, Xcode ⌘R included, so nobody has to
+remember to bump it and phone, watch and complication always match. A build with uncommitted
+changes shows "+". The web version can lag the Apple one, since the web only redeploys when
+`web/` or `design/` changes.
+

@@ -86,7 +86,7 @@ no account, works offline once loaded.
 | **Round done** | Box 1 only, between rounds: breadcrumb, "Round *n* done.", "*n* not yet.", and **Go again** (fill) / **Stop for today**. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
-| **Backup** | Opened from the deck list's ⋯ menu; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. |
+| **Backup** | Opened from the deck list's ⋯ menu; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. At the bottom, the version: "Version 3116643 · 15 Oct 2026", the commit the app was built from and its date ("Version dev" when not deployed). |
 
 ### Bulk import format
 
@@ -224,7 +224,8 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
 - **Study only**, watchOS 11 and later. It comes with the iPhone app and has no editing,
   adding, deleting or backup; that happens on the phone.
 - **Screens**, in the same order as on the phone: deck → boxes → study.
-  - **Decks:** each deck with, as on the phone, "8 left today" or "Done for today", and learned (box 5) out of total; decks without
+  - **Decks:** below the list, the version, the same as the iPhone's Backup screen shows
+    (both are built together). Each deck with, as on the phone, "8 left today" or "Done for today", and learned (box 5) out of total; decks without
     cards are greyed out. With exactly one deck the watch opens straight into it.
   - **Boxes:** the deck's five boxes (New, Shaky, Getting there, Nearly, Learned) with card
     counts and, as on the phone, "8 left today" or "Next in 3 days" under the name; empty boxes

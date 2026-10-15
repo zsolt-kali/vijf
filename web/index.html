@@ -300,6 +300,8 @@
   var session = null;
   var query = '';        /* the deck list's search text */
   var menuOpen = false;  /* the deck list's "⋯" menu */
+  /* The deploy workflow stamps this line with the commit and its date; keep its format. */
+  var VERSION = 'dev';
   var foundId = null;    /* the card opened from search, shown in the edit form */
 
   /* Settings cog, from Feather Icons (MIT). */
@@ -706,7 +708,8 @@
       '<textarea id="f-json">' + esc(JSON.stringify(state)) + '</textarea></label>' +
       '<div class="row" style="margin-top:0">' +
       '<button class="btn" data-act="copy">Copy</button>' +
-      '<button class="btn btn--fill" data-act="restore">Restore</button></div>';
+      '<button class="btn btn--fill" data-act="restore">Restore</button></div>' +
+      '<p class="note version">Version ' + esc(VERSION) + '</p>';
   }
 
   function foundCard() { return state.cards.find(function (c) { return c.id === foundId; }) || null; }
