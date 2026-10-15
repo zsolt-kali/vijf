@@ -63,6 +63,9 @@ final class WatchModel {
         study?.answer(known: known)
     }
 
+    /// Go again, between two box 1 rounds.
+    func nextRound() { study?.nextRound() }
+
     private func save(_ l: Library) {
         library = l
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)

@@ -60,8 +60,11 @@ no account, works offline once loaded.
 - **Box 5** ("Learned") works like the others: **I know it** keeps the card in box 5,
   **Not yet** moves it back to box 4.
 - **Rounds:** round 1 shows every card in the box that is due today, in random order. In box 1,
-  the cards answered **Not yet** in a round come back as the next round, in the order they were
-  answered, until every card is known. Boxes 2–5 have a single round.
+  when a round ends with cards answered **Not yet**, a short screen says so ("Round 1 done.",
+  "11 not yet.") with **Go again** and **Stop for today**. **Go again** brings those cards back
+  as the next round, in the order they were answered; **Stop for today** returns to the boxes,
+  and the missed cards come back tomorrow. When a round ends with every card known, the summary
+  shows. Boxes 2–5 have a single round.
 - **Position counter:** the study screen shows the current card's position in the round as
   **3 / 12**, where 12 is the size of the round. Every answer moves the position forward by one;
   **no answer ever changes the total**. A new round starts at 1 with its own total (e.g. 1 / 3).
@@ -80,6 +83,7 @@ no account, works offline once loaded.
 | **New deck** | Opened from the ⋯ menu; the back button returns to the deck list. A name field (focused) and **Create**, which creates the deck and opens it; Enter also works. |
 | **Deck** | A back button to the deck list and the deck name. Wordmark, plus a tally of this deck's cards in box 5 out of this deck's total. Five box rows: number, name (New, Shaky, Getting there, Nearly, Learned), card count, and up to 20 tick marks. When only some of a box's cards are due, a line under the name says how many ("8 left today"); when none are, it says when the next one comes up ("Next tomorrow", "Next in 3 days"), the box is greyed out like an empty one (it keeps its count, loses its ticks) and tapping it shows that line as a toast. Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Below the button, a note explains the rules, including that **Not yet** moves a card down one box and the gaps (every day, 2 days, then 4, 8 and 16). Button: add words. With zero cards in the deck: an empty-state note. |
 | **Study** | Breadcrumb "Decks / *deck*" (both tappable) and the position counter (e.g. 3 / 12). The card shows the native word on the front ("Your language") and the Dutch word on the back ("Dutch", yellow); tap to flip. Below the card: **Not yet** (red, "back to box n−1", or "stays in box 1") and **I know it** (green, "→ box n+1", or "stays in box 5"). The **cog** (⚙) sits inside the card, top-right, on both faces; tapping it opens the edit form (see Editing a card) without flipping the card. On the back, a **speaker** sits just left of the cog (see Hearing the Dutch word). Tapping an empty box shows a toast instead of opening this screen. |
+| **Round done** | Box 1 only, between rounds: breadcrumb, "Round *n* done.", "*n* not yet.", and **Go again** (fill) / **Stop for today**. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
 | **Backup** | Opened from the deck list's ⋯ menu; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. |
@@ -131,8 +135,8 @@ There is no list of all cards.
   The card keeps its box and `reviewedAt`. Both fields are required; an empty one shows a toast
   and nothing is saved. Enter in either field also saves.
 - **Cancel** returns to the card unchanged.
-- **Delete** removes the card immediately and moves on to the next card, or to the summary if it
-  was the last one. A toast "Card deleted · Undo" shows for 5 seconds; undo puts the
+- **Delete** removes the card immediately and moves on to the next card, or, if it was the last
+  one of the round, to the round-done screen or the summary. A toast "Card deleted · Undo" shows for 5 seconds; undo puts the
   card back in its box and, if the session is still on screen, makes it the current card again.
   This shares the single undo slot with deck deletes (see Decks).
 - There is no way to delete everything at once. Decks can be deleted one by one, and restoring

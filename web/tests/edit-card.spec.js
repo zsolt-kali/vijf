@@ -177,7 +177,7 @@ test('the card-delete undo disappears after 5 seconds and the delete stays', asy
   expect((await saved(page)).cards).toEqual([]);
 });
 
-test('deleting the last card of a round starts the next round with the Not yet cards', async ({ page }) => {
+test('deleting the last card of a round ends the round; Go again brings the Not yet cards', async ({ page }) => {
   await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), card(2, 1, 'b', 'b', 1)]));
   await study(page, 'Start', 1);
   const first = await front(page).textContent();
@@ -186,6 +186,8 @@ test('deleting the last card of a round starts the next round with the Not yet c
 
   await cog(page).click();
   await page.getByRole('button', { name: /Delete card/ }).click();
+  await expect(page.getByRole('heading', { name: 'Round 1 done.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Go again' }).click();
   await expect(remaining(page)).toHaveText('1 / 1');
   await expect(front(page)).toHaveText(first);
 });

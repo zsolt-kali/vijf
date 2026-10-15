@@ -19,6 +19,7 @@ test('Not yet keeps the card in its box and brings it back later in the session'
   await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 1)]));
   await page.click('[data-go=box1]');
   await page.getByRole('button', { name: /Not yet/ }).click();
+  await page.getByRole('button', { name: 'Go again' }).click();
 
   await expect(remaining(page)).toHaveText('1 / 1');
   await expect(page.locator('.face:not(.face--back) .word')).toHaveText('busy');
@@ -75,11 +76,41 @@ test('a study session only includes cards from the open deck', async ({ page }) 
   await expect(remaining(page)).toHaveText('1 / 2');
 });
 
+test('a box 1 round with Not yet cards ends on a screen to go again or stop', async ({ page }) => {
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), card(2, 1, 'b', 'b', 1), card(3, 1, 'c', 'c', 1)]));
+  await page.click('[data-go=box1]');
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await page.getByRole('button', { name: /Not yet/ }).click();
+  await page.getByRole('button', { name: /Not yet/ }).click();
+
+  await expect(page.getByRole('heading', { name: 'Round 1 done.' })).toBeVisible();
+  await expect(page.getByText('2 not yet.')).toBeVisible();
+  await page.getByRole('button', { name: 'Go again' }).click();
+  await expect(remaining(page)).toHaveText('1 / 2');
+  await page.getByRole('button', { name: /Not yet/ }).click();
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await expect(page.getByRole('heading', { name: 'Round 2 done.' })).toBeVisible();
+  await expect(page.getByText('1 not yet.')).toBeVisible();
+
+  // Stop for today: back to the boxes, and the missed card waits until tomorrow
+  await page.getByRole('button', { name: 'Stop for today' }).click();
+  await expect(box(page, 1).locator('.sub')).toHaveText('Next tomorrow');
+  expect((await saved(page)).cards.filter((c) => c.box === 1)).toHaveLength(1);
+});
+
+test('a box 1 round with every card known goes straight to the summary', async ({ page }) => {
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1)]));
+  await page.click('[data-go=box1]');
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await expect(page.getByRole('heading', { name: 'Round complete.' })).toBeVisible();
+});
+
 test('no answer ever changes the total: Not yet cards come back as the next round', async ({ page }) => {
   await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), card(2, 1, 'b', 'b', 1), card(3, 1, 'c', 'c', 1)]));
   await page.click('[data-go=box1]');
   const know = () => page.getByRole('button', { name: /I know it/ }).click();
   const notYet = () => page.getByRole('button', { name: /Not yet/ }).click();
+  const again = () => page.getByRole('button', { name: 'Go again' }).click();
 
   await expect(remaining(page)).toHaveText('1 / 3');
   await know();
@@ -88,11 +119,13 @@ test('no answer ever changes the total: Not yet cards come back as the next roun
   await expect(remaining(page)).toHaveText('3 / 3');
   await notYet();
   // round 2: the two Not yet cards
+  await again();
   await expect(remaining(page)).toHaveText('1 / 2');
   await know();
   await expect(remaining(page)).toHaveText('2 / 2');
   await notYet();
   // round 3: the one card still not known
+  await again();
   await expect(remaining(page)).toHaveText('1 / 1');
   await know();
   await expect(page.getByText('Moved up to box 2: 3. Not yet: 3.')).toBeVisible();
@@ -107,6 +140,7 @@ test('Not yet cards come back in the order they were answered', async ({ page })
     firstRound.push(await word.textContent());
     await page.getByRole('button', { name: /Not yet/ }).click();
   }
+  await page.getByRole('button', { name: 'Go again' }).click();
   const secondRound = [];
   for (let i = 0; i < 3; i++) {
     await expect(remaining(page)).toHaveText(`${i + 1} / 3`);
@@ -153,7 +187,9 @@ test('a box studied through is done for today and cannot be opened', async ({ pa
   await expect(box(page, 1).locator('.sub')).toHaveCount(0);
   await page.click('[data-go=box1]');
   await page.getByRole('button', { name: /Not yet/ }).click();
+  await page.getByRole('button', { name: 'Go again' }).click();
   await page.getByRole('button', { name: /Not yet/ }).click();   // the next round, still in the session
+  await page.getByRole('button', { name: 'Go again' }).click();
   await page.getByRole('button', { name: /I know it/ }).click();
   await page.getByRole('button', { name: 'Back to boxes' }).click();
 

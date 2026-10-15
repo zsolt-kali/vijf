@@ -2,7 +2,8 @@ import SwiftUI
 import VijfKit
 
 /// Studying on the watch: the position counter on top, the card filling the screen (tap to
-/// flip), and Not yet / I know it side by side. No editing: that happens on the phone.
+/// flip), and Not yet / I know it side by side; between box 1 rounds, Go again / Stop for today.
+/// No editing: that happens on the phone.
 struct WatchStudyView: View {
     @Environment(WatchModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -30,6 +31,13 @@ struct WatchStudyView: View {
                         .foregroundStyle(VJ.ink)
                         .accessibilityLabel("Card \(session.position) of \(session.total)")
                 }
+            }
+        } else if let session = model.study, session.isBetweenRounds {
+            VStack(spacing: 8) {
+                Text("Round \(session.round) done.").font(.system(size: 17, weight: .heavy))
+                Text("\(session.retry.count) not yet.").font(.footnote).foregroundStyle(VJ.mute)
+                Button("Go again") { model.nextRound() }
+                Button("Stop for today") { dismiss() }
             }
         } else {
             VStack(spacing: 8) {

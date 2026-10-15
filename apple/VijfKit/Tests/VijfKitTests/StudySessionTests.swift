@@ -85,6 +85,8 @@ import Testing
         var s = try #require(StudySession(library: l, deckId: 1, box: 1, dayStart: midnight()))
         l.answer(1, known: false, now: noon())
         s.answer(known: false)
+        #expect(s.isBetweenRounds)
+        s.nextRound()
         #expect(s.currentCardId == 1)
         #expect(s.summary == "Moved up to box 2: 0. Not yet: 1.")
         // but a new session today doesn't show it
@@ -110,11 +112,14 @@ import Testing
         s.answer(known: false); #expect(counter(s) == "3 / 3")
         s.answer(known: false)
         // round 2: the two Not yet cards
+        s.nextRound()
         #expect(counter(s) == "1 / 2")
         s.answer(known: true);  #expect(counter(s) == "2 / 2")
         s.answer(known: false)
         // round 3: the one card still not known
+        s.nextRound()
         #expect(counter(s) == "1 / 1")
+        #expect(s.round == 3)
         s.answer(known: true)
         #expect(s.isFinished)
         #expect(s.up == 3 && s.held == 3)
@@ -124,6 +129,7 @@ import Testing
         var s = try #require(StudySession(library: library(3), deckId: 1, box: 1))
         var first: [Int] = []
         for _ in 0..<3 { first.append(s.currentCardId!); s.answer(known: false) }
+        s.nextRound()
         var second: [Int] = []
         for _ in 0..<3 { second.append(s.currentCardId!); s.answer(known: true) }
         #expect(second == first)
@@ -147,12 +153,37 @@ import Testing
         #expect(s.currentCardId == first)
     }
 
-    @Test func deletingTheLastCardOfARoundStartsTheNextRound() throws {
+    @Test func aRoundWithNotYetCardsWaitsForGoAgain() throws {
+        var s = try #require(StudySession(library: library(3), deckId: 1, box: 1))
+        s.answer(known: true); s.answer(known: false); s.answer(known: false)
+        #expect(s.isBetweenRounds && !s.isFinished)
+        #expect(s.currentCardId == nil)
+        #expect(s.round == 1 && s.retry.count == 2)
+        s.nextRound()
+        #expect(!s.isBetweenRounds && s.round == 2)
+        #expect(counter(s) == "1 / 2")
+        s.answer(known: true); s.answer(known: true)
+        #expect(s.isFinished && !s.isBetweenRounds)
+    }
+
+    @Test func aRoundWithEveryCardKnownFinishesTheSession() throws {
+        var s = try #require(StudySession(library: library(2), deckId: 1, box: 1))
+        s.answer(known: true); s.answer(known: true)
+        #expect(s.isFinished && !s.isBetweenRounds)
+    }
+
+    @Test func deletingTheLastCardOfARoundEndsTheRound() throws {
         var s = try #require(StudySession(library: library(2), deckId: 1, box: 1))
         let first = s.currentCardId!
         s.answer(known: false)
         #expect(counter(s) == "2 / 2")
+        let last = s.currentCardId!
         s.removeCurrent()
+        #expect(s.isBetweenRounds)
+        s.reinsert(last)                // undo
+        #expect(counter(s) == "2 / 2" && s.currentCardId == last)
+        s.removeCurrent()
+        s.nextRound()
         #expect(counter(s) == "1 / 1")
         #expect(s.currentCardId == first)
     }

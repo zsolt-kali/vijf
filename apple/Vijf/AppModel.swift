@@ -170,6 +170,9 @@ final class AppModel {
         study?.answer(known: known)
     }
 
+    /// Go again, between two box 1 rounds.
+    func nextRound() { study?.nextRound() }
+
     /// Deletes the card being studied and moves on. Undo puts it back, and makes it the current
     /// card again if that session is still running.
     func deleteCurrentCard() {

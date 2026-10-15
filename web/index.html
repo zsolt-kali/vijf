@@ -605,6 +605,7 @@
   }
 
   function studyView() {
+    if (session && !session.queue.length && session.retry.length) return roundView();
     if (!session || !session.queue.length) return summaryView();
     var card = state.cards.find(function (c) { return c.id === session.queue[0]; });
     if (!card) { advance(session); return studyView(); }
@@ -648,6 +649,15 @@
       '<button class="btn btn--fill" data-act="edit-save">Save</button></div>' +
       '<div class="row"><button class="btn btn--danger" data-act="edit-delete">' +
       'Delete card</button></div>';
+  }
+
+  /* Between two box 1 rounds: the "Not yet" cards can go round again, or wait until tomorrow. */
+  function roundView() {
+    return '<div class="bar">' + crumbs() + '<span></span></div>' +
+      '<h2>Round ' + session.round + ' done.</h2>' +
+      '<p class="note" style="margin-top:0">' + session.retry.length + ' not yet.</p>' +
+      '<div class="row"><button class="btn btn--fill" data-act="again">Go again</button>' +
+      '<button class="btn" data-go="home">Stop for today</button></div>';
   }
 
   function summaryView() {
@@ -723,20 +733,21 @@
     }
     /* A study session runs in rounds. queue holds the rest of the current round and total its
        size, so the position shown is total - queue.length + 1. In box 1, "Not yet" cards collect
-       in retry and become the next round (elsewhere they go down a box and leave the session);
-       no answer ever changes the current round's total. */
-    session = { box: n, queue: ids, retry: [], total: ids.length, up: 0, held: 0 };
+       in retry; when the round runs out, roundView offers them as the next round (elsewhere they
+       go down a box and leave the session). No answer ever changes the current round's total. */
+    session = { box: n, queue: ids, retry: [], total: ids.length, round: 1, up: 0, held: 0 };
     go('study');
   }
 
-  /* Moves past the current card; when the round runs out, the "Not yet" cards start the next. */
-  function advance(s) {
-    s.queue.shift();
-    if (!s.queue.length && s.retry.length) {
-      s.queue = s.retry;
-      s.retry = [];
-      s.total = s.queue.length;
-    }
+  /* Moves past the current card. */
+  function advance(s) { s.queue.shift(); }
+
+  /* Go again: the "Not yet" cards become the next round, in the order they were answered. */
+  function nextRound(s) {
+    s.queue = s.retry;
+    s.retry = [];
+    s.total = s.queue.length;
+    s.round++;
   }
 
   function rate(liked) {
@@ -923,6 +934,7 @@
     else if (act === 'yes') rate(true);
     else if (act === 'no') rate(false);
     else if (act === 'speak') speak(currentCard().dutch);
+    else if (act === 'again') { nextRound(session); render(); }
     else if (act === 'edit') { session.editing = true; render(); }
     else if (act === 'edit-cancel') {
       if (fromSearch) go('decks');
