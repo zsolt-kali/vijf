@@ -29,7 +29,9 @@ New words always start in box 1.
 ### Studying
 
 Open a deck, tap a box, and go through its cards that are due today, in random order. You see
-your own language first; tap to flip to the Dutch, where a speaker reads it aloud. Then answer:
+your own language first; tap to flip to the Dutch, where a speaker reads it aloud. In the web
+app, **Voice** in the ⋯ menu lets you pick the voice and the speed (Slow, Normal, Fast). Then
+answer:
 
 - **I know it:** the card moves up one box and waits that box's gap. From box 2 to box 3 means
   you see it again in 4 days. In box 5 it stays in box 5 and comes back in 16 days.

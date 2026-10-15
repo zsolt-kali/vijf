@@ -190,6 +190,13 @@
   .search__clear[hidden] { display: none; }
   input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
   .found { margin-bottom: 8px; }
+  .pick-head { margin: 22px 0 8px; }
+  .speeds { margin-top: 0; }
+  .slot--voice { grid-template-columns: 1fr auto; padding-left: 16px; }
+  .slot--voice .lbl { display: block; }
+  .slot--voice .in-use {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
   .slot--hit { grid-template-columns: 1fr auto; padding-left: 16px; }
   .slot--hit .lbl { display: block; }
   .slot--hit .nl { display: block; font-size: 15px; margin-top: 3px; }
@@ -406,13 +413,35 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m];
     });
   }
-  /* Reads a Dutch word aloud with the device's own voice, a Dutch one when it has one.
-     A new tap restarts it. */
+  /* The voice and speed chosen on the Voice screen. Saved on this device only, apart from the
+     cards and backups, because each device has its own voices. */
+  var VOICE_KEY = 'vijf-voice';
+  var SPEEDS = { slow: 0.7, normal: 1, fast: 1.25 };
+  var voicePick = { voice: '', speed: 'normal' };
+  try {
+    var savedPick = JSON.parse(localStorage.getItem(VOICE_KEY));
+    if (savedPick) voicePick = { voice: savedPick.voice || '', speed: SPEEDS[savedPick.speed] ? savedPick.speed : 'normal' };
+  } catch (e) {}
+  function savePick() { try { localStorage.setItem(VOICE_KEY, JSON.stringify(voicePick)); } catch (e) {} }
+
+  function dutchVoices() {
+    return CAN_SPEAK ? speechSynthesis.getVoices().filter(function (v) { return /^nl\b/i.test(v.lang); }) : [];
+  }
+  /* The chosen voice; when it's gone or none was chosen, the first voice from the Netherlands
+     (browsers often list a Belgian one first), else any Dutch one. */
+  function voiceInUse() {
+    var nl = dutchVoices();
+    return nl.find(function (v) { return v.voiceURI === voicePick.voice; }) ||
+      nl.find(function (v) { return /^nl-NL/i.test(v.lang); }) || nl[0] || null;
+  }
+
+  /* Reads Dutch aloud with the chosen voice and speed. A new tap restarts it. */
   function speak(text) {
     var u = new SpeechSynthesisUtterance(text);
     u.lang = 'nl-NL';
-    var nl = speechSynthesis.getVoices().find(function (v) { return /^nl\b/i.test(v.lang); });
-    if (nl) u.voice = nl;
+    var v = voiceInUse();
+    if (v) u.voice = v;
+    u.rate = SPEEDS[voicePick.speed];
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
   }
@@ -470,6 +499,7 @@
       'aria-expanded="' + menuOpen + '">⋯</button>' +
       (menuOpen ? '<div class="menu" role="menu">' +
         '<button role="menuitem" data-go="newdeck">New deck</button>' +
+        (CAN_SPEAK ? '<button role="menuitem" data-go="voice">Voice</button>' : '') +
         '<button role="menuitem" data-go="backup">Backup</button></div>' : '') + '</div>';
     if (n) {
       h += '<div class="search"><input type="search" id="f-search" value="' + esc(query) + '" ' +
@@ -712,10 +742,41 @@
       '<p class="note version">Version ' + esc(VERSION) + '</p>';
   }
 
+  /* How Dutch words are read on this device: speed, then voice. A tap on either reads a sample. */
+  function voiceView() {
+    var nl = dutchVoices(), using = voiceInUse();
+    var h = '<div class="bar"><button data-go="decks">← Decks</button><span>Voice</span></div>' +
+      '<h2>Voice</h2>' +
+      '<p class="note" style="margin-top:0">How Dutch words are read on this device. Tap a speed or ' +
+      'a voice to hear it.</p>' +
+      '<div class="eyebrow pick-head">Speed</div><div class="row speeds">';
+    ['slow', 'normal', 'fast'].forEach(function (k) {
+      var on = voicePick.speed === k;
+      h += '<button class="btn' + (on ? ' btn--fill' : '') + '" data-act="speed" data-speed="' + k + '" ' +
+        'aria-pressed="' + on + '">' + k.charAt(0).toUpperCase() + k.slice(1) + '</button>';
+    });
+    h += '</div><div class="eyebrow pick-head">Voice</div>';
+    if (!nl.length) {
+      h += '<div class="empty"><p>No Dutch voice on this device yet.</p></div>';
+    } else {
+      h += '<div class="tray">';
+      nl.forEach(function (v) {
+        var on = using && v.voiceURI === using.voiceURI;
+        h += '<button class="slot slot--voice" data-act="voice" data-voice="' + esc(v.voiceURI) + '" ' +
+          'aria-pressed="' + !!on + '"><span><span class="lbl">' + esc(v.name) + '</span>' +
+          '<span class="sub">' + (/^nl-BE/i.test(v.lang) ? 'Belgium' : 'Netherlands') + '</span></span>' +
+          (on ? '<span class="in-use">In use</span>' : '') + '</button>';
+      });
+      h += '</div>';
+    }
+    return h + '<p class="note">More voices on a Mac: System Settings → Accessibility → Read &amp; ' +
+      'Speak → System voice → Manage Voices → Dutch. The Enhanced and Premium ones sound most natural.</p>';
+  }
+
   function foundCard() { return state.cards.find(function (c) { return c.id === foundId; }) || null; }
 
   function render() {
-    var v = { decks: decksView, home: homeView, study: studyView, add: addView, backup: backupView,
+    var v = { decks: decksView, home: homeView, study: studyView, add: addView, backup: backupView, voice: voiceView,
       newdeck: newDeckView, card: function () { return editView(foundCard()); } };
     if (!v[view] || (/^(home|study|add)$/.test(view) && !deck()) || (view === 'card' && !foundCard())) {
       view = 'decks';
@@ -938,6 +999,11 @@
     else if (act === 'no') rate(false);
     else if (act === 'speak') speak(currentCard().dutch);
     else if (act === 'again') { nextRound(session); render(); }
+    else if (act === 'speed' || act === 'voice') {
+      if (act === 'speed') voicePick.speed = el.getAttribute('data-speed');
+      else voicePick.voice = el.getAttribute('data-voice');
+      savePick(); render(); speak('Goedemorgen');
+    }
     else if (act === 'edit') { session.editing = true; render(); }
     else if (act === 'edit-cancel') {
       if (fromSearch) go('decks');
@@ -1014,6 +1080,11 @@
 
   load();
   launch();
+
+  /* Some browsers list their voices a moment after the page loads. */
+  if (CAN_SPEAK && speechSynthesis.addEventListener) {
+    speechSynthesis.addEventListener('voiceschanged', function () { if (view === 'voice') render(); });
+  }
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
