@@ -74,6 +74,12 @@ jobs:
           sed -i "s/^const CACHE = .*/const CACHE = 'vijf-${GITHUB_SHA::7}';/" _site/sw.js
           grep -q "^const CACHE = 'vijf-${GITHUB_SHA::7}';" _site/sw.js
 
+      - name: Stamp the version shown on the Backup screen
+        run: |
+          VERSION="${GITHUB_SHA::7} · $(git log -1 --format=%cd --date=format:'%-d %b %Y')"
+          sed -i "s/^  var VERSION = .*/  var VERSION = '${VERSION}';/" _site/index.html
+          grep -q "^  var VERSION = '${VERSION}';" _site/index.html
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

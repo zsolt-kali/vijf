@@ -61,6 +61,13 @@ The Watch is for studying only. It keeps its own copy of your decks, so it works
 phone nearby, and sends every answer to the phone. If you answer the same card on both before
 they sync, the most recent answer wins.
 
+### Which version do I have?
+
+The **Backup** screen (⋯ menu) ends with a line like "Version 3116643 · 15 Oct 2026": the code
+the app was built from and its date. On the Watch it's at the bottom of the deck list. The iPhone
+and the Watch always show the same version. The web app can show an older one, because it only
+updates when something in the web app itself changes.
+
 ## What's in this repo
 
 ```

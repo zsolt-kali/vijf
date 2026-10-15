@@ -72,3 +72,9 @@ test('an invalid back-up is rejected and data is kept', async ({ page }) => {
   await expect(toast(page)).toHaveText('Invalid backup');
   expect(await saved(page)).toEqual(before);
 });
+
+test('the Backup screen shows the version, "dev" when not deployed', async ({ page }) => {
+  await open(page, data([], []));
+  await openBackup(page);
+  await expect(page.locator('.version')).toHaveText('Version dev');
+});

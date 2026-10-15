@@ -61,28 +61,47 @@ struct DeckListView: View {
                 Text("Open vijf on your iPhone to send your decks to the watch.")
                     .font(.footnote).foregroundStyle(VJ.mute).multilineTextAlignment(.center).padding()
             } else {
-                List(library.decks) { deck in
-                    let total = library.cards(inDeck: deck.id).count
-                    Button { path.append(.deck(deck.id)) } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(deck.name).font(.system(size: 15, weight: .bold))
-                                    .foregroundStyle(total == 0 ? VJ.mute : VJ.ink)
-                                Text(library.todayNote(inDeck: deck.id, dayStart: Day.start()).uppercased())
-                                    .font(.system(size: 10, design: .monospaced)).foregroundStyle(VJ.mute)
-                            }
-                            Spacer()
-                            (Text("\(library.learnedCount(inDeck: deck.id))").foregroundColor(total == 0 ? VJ.mute : VJ.ink)
-                             + Text("/\(total)").font(.system(size: 11, design: .monospaced)).foregroundColor(VJ.mute))
-                                .font(.system(size: 17, weight: .bold, design: .monospaced))
+                List {
+                    Section {
+                        ForEach(library.decks) { deck in
+                            DeckRow(deck: deck, path: $path)
                         }
+                    } footer: {
+                        // The same commit as the iPhone's Backup screen shows, since both are built together.
+                        Text(AppVersion.text()).font(.system(size: 10, design: .monospaced)).foregroundStyle(VJ.mute)
                     }
-                    .listRowBackground(VJ.card)
-                    .accessibilityLabel("\(deck.name), \(library.todayNote(inDeck: deck.id, dayStart: Day.start())), \(library.learnedCount(inDeck: deck.id)) of \(total) learned")
                 }
             }
         }
         .navigationTitle("Decks")
+    }
+}
+
+/// One deck on the watch: name, what's left today, and learned out of total.
+private struct DeckRow: View {
+    @Environment(WatchModel.self) private var model
+    let deck: Deck
+    @Binding var path: [WatchRoute]
+
+    var body: some View {
+        let library = model.library
+        let total = library.cards(inDeck: deck.id).count
+        Button { path.append(.deck(deck.id)) } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(deck.name).font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(total == 0 ? VJ.mute : VJ.ink)
+                    Text(library.todayNote(inDeck: deck.id, dayStart: Day.start()).uppercased())
+                        .font(.system(size: 10, design: .monospaced)).foregroundStyle(VJ.mute)
+                }
+                Spacer()
+                (Text("\(library.learnedCount(inDeck: deck.id))").foregroundColor(total == 0 ? VJ.mute : VJ.ink)
+                 + Text("/\(total)").font(.system(size: 11, design: .monospaced)).foregroundColor(VJ.mute))
+                    .font(.system(size: 17, weight: .bold, design: .monospaced))
+            }
+        }
+        .listRowBackground(VJ.card)
+        .accessibilityLabel("\(deck.name), \(library.todayNote(inDeck: deck.id, dayStart: Day.start())), \(library.learnedCount(inDeck: deck.id)) of \(total) learned")
     }
 }
 

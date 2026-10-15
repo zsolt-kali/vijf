@@ -57,6 +57,8 @@ struct BackupView: View {
                 Button("Restore") { if model.restore(from: pasted) { pasted = "" } }
                     .buttonStyle(.vj(.fill))
                     .disabled(pasted.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                // The same commit as the watch's deck list shows, since both are built together.
+                Text(AppVersion.text()).font(.vjNote).foregroundStyle(VJ.mute).padding(.top, 18)
             }
             .padding(16)
         }
