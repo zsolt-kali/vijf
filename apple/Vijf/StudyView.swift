@@ -34,6 +34,8 @@ struct StudyView: View {
                             .accessibilityLabel("Card \(session.position) of \(session.total)")
                     }
                 }
+            } else if let session, session.isBetweenRounds {
+                RoundBreak(round: session.round, notYet: session.retry.count)
             } else {
                 Summary(line: session?.summary ?? "")
             }
@@ -108,6 +110,26 @@ private struct FlashCard: View {
             .foregroundStyle(soft)
             .padding(8)
         }
+    }
+}
+
+/// Between two box 1 rounds: the "Not yet" cards can go round again, or wait until tomorrow.
+private struct RoundBreak: View {
+    @Environment(AppModel.self) private var model
+    let round: Int
+    let notYet: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Round \(round) done.").font(.vjHeading)
+            Text("\(notYet) not yet.").font(.vjNote).foregroundStyle(VJ.mute)
+            HStack(spacing: 8) {
+                Button("Go again") { model.nextRound() }.buttonStyle(.vj(.fill))
+                Button("Stop for today") { model.path.removeLast() }.buttonStyle(.vj())
+            }
+            Spacer()
+        }
+        .padding(16)
     }
 }
 

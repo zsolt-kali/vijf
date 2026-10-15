@@ -46,6 +46,20 @@ import VijfKit
         #expect(model.toast?.message == "Box 2 is empty")
     }
 
+    @Test func goAgainStartsTheNextBox1Round() throws {
+        let model = freshModel()
+        model.addStarterSet()
+        let deckId = try #require(model.library.decks.first?.id)
+        model.startStudy(deck: deckId, box: 1)
+        model.answer(known: true)
+        for _ in 0..<11 { model.answer(known: false) }
+        #expect(model.study?.isBetweenRounds == true)
+        #expect(model.study?.retry.count == 11)
+        model.nextRound()
+        #expect(model.study?.round == 2)
+        #expect(model.study?.position == 1 && model.study?.total == 11)
+    }
+
     @Test func undoAfterLeavingTheSessionOnlyRestoresTheCard() throws {
         let model = freshModel()
         model.addStarterSet()

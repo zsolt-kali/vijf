@@ -34,7 +34,8 @@ your own language first; tap to flip to the Dutch, where a speaker reads it alou
 - **I know it:** the card moves up one box and waits that box's gap. From box 2 to box 3 means
   you see it again in 4 days. In box 5 it stays in box 5 and comes back in 16 days.
 - **Not yet:** the card moves down one box and comes back tomorrow. In box 1 it can't go lower:
-  it stays there and comes back in the next round of the same session until you know it.
+  it stays there, and at the end of the round you choose: **Go again** to practise the cards you
+  missed straight away, or **Stop for today** to see them tomorrow.
 
 Gaps count calendar days: a box 2 card answered on Monday evening is due on Wednesday morning.
 
@@ -49,6 +50,7 @@ brings it back the next day, so a word you forgot gets practised again soon.
 - **Inside a deck:** each box shows its card count. If only some of its cards are due, it says
   "3 left today". If none are, it's greyed out and says when the next one comes up ("Next
   tomorrow", "Next in 4 days").
+- **Between box 1 rounds:** "Round 1 done. 11 not yet." with **Go again** and **Stop for today**.
 - **After a session:** a summary such as "Moved up to box 4: 3. Back to box 2: 1."
 - **The cog** on a card lets you fix a typo or delete the card. **Search all cards** on the deck
   list finds a word in any deck.
