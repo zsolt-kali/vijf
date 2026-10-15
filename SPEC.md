@@ -86,6 +86,7 @@ no account, works offline once loaded.
 | **Round done** | Box 1 only, between rounds: breadcrumb, "Round *n* done.", "*n* not yet.", and **Go again** (fill) / **Stop for today**. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
+| **Voice** | Web only, opened from the deck list's ⋯ menu; the back button returns there. Speed and voice for reading Dutch aloud (see Hearing the Dutch word). |
 | **Backup** | Opened from the deck list's ⋯ menu; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. At the bottom, the version: "Version 3116643 · 15 Oct 2026", the commit the app was built from and its date ("Version dev" when not deployed). |
 
 ### Bulk import format
@@ -121,8 +122,17 @@ least one deck.
 - Nothing plays by itself. Answering or leaving the screen stops a word being read.
 - It works in every box. It uses the device's built-in voices, so it needs no
   network where the device has a Dutch voice.
-- Web: the browser's speech (`speechSynthesis`), asking for Dutch (`nl-NL`) and picking a Dutch
-  voice when the browser lists one. Without speech support in the browser there is no speaker.
+- Web: the browser's speech (`speechSynthesis`), asking for Dutch (`nl-NL`). Without speech
+  support in the browser there is no speaker and no Voice screen.
+- **Voice screen (web only):** in the deck list's ⋯ menu. **Speed:** Slow, Normal or Fast. **Voice:**
+  a row for each Dutch voice the browser lists, with its name and "Netherlands" or "Belgium"; the
+  one in use says "In use". Tapping a speed or a voice chooses it and reads "Goedemorgen". With no
+  Dutch voice it says so; a note gives the Mac path for downloading more (System Settings →
+  Accessibility → Read & Speak → System voice → Manage Voices → Dutch).
+- Without a choice, or when the chosen voice is no longer listed, the first voice from the
+  Netherlands is used, else any Dutch voice (browsers often list a Belgian one first). The choice
+  is saved on the device only (`vijf-voice` in `localStorage`, not part of the cards or backups),
+  because each device has its own voices.
 
 ## Editing a card
 
