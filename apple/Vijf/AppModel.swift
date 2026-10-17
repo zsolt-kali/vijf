@@ -7,6 +7,7 @@ enum Route: Hashable {
     case study(deck: Int, box: Int)
     case browse(deck: Int)
     case backup
+    case settings
 }
 
 /// How the last send of the library to the watch went (shown on the Backup screen).
@@ -35,7 +36,10 @@ final class AppModel {
     var browse: BrowseSession?
     private(set) var toast: Toast?
     /// Called after every saved change; the watch sync uses it to send the new library.
-    var onChange: ((Library) -> Void)?
+    var onChange: ((Library, MissRule) -> Void)?
+    /// What "Not yet" does above box 1. Saved next to the library (not in backups) and sent to the
+    /// watch with it, so the watch always answers the way the phone is set.
+    private(set) var miss: MissRule = .oneDown
     /// The last send to the watch, nil until one was tried (no watch paired: stays nil).
     var watchSync: WatchSyncStatus?
 
@@ -48,7 +52,20 @@ final class AppModel {
         } else {
             library = .empty
         }
+        if let data = try? Data(contentsOf: settingsURL), let saved = try? JSONDecoder().decode(Settings.self, from: data) {
+            miss = saved.miss
+        }
         launch()
+    }
+
+    private struct Settings: Codable { var miss: MissRule }
+    private var settingsURL: URL { url.deletingPathExtension().appendingPathExtension("settings.json") }
+
+    func setMiss(_ rule: MissRule) {
+        miss = rule
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? JSONEncoder().encode(Settings(miss: rule)).write(to: settingsURL, options: .atomic)
+        onChange?(library, miss)
     }
 
     static var defaultURL: URL {
@@ -64,7 +81,7 @@ final class AppModel {
         edit(&library)
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? Backup.encode(library).write(to: url, options: .atomic)
-        onChange?(library)
+        onChange?(library, miss)
     }
 
     // MARK: Toasts
@@ -159,7 +176,7 @@ final class AppModel {
     // MARK: Studying
 
     func startStudy(deck: Int, box: Int) {
-        guard let s = StudySession(library: library, deckId: deck, box: box) else {
+        guard let s = StudySession(library: library, deckId: deck, box: box, miss: miss) else {
             show(library.nextNote(inDeck: deck, box: box, dayStart: Day.start()) ?? "Box \(box) is empty")
             return
         }
@@ -169,7 +186,7 @@ final class AppModel {
 
     func answer(known: Bool) {
         guard let id = study?.currentCardId else { return }
-        change { $0.answer(id, known: known, now: .nowMillis) }
+        change { [miss] in $0.answer(id, known: known, now: .nowMillis, miss: miss) }
         study?.answer(known: known)
     }
 

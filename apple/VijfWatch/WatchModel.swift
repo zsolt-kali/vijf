@@ -14,6 +14,9 @@ final class WatchModel {
     private(set) var library: Library
     var study: StudySession?
     var browse: BrowseSession?
+    /// The phone's "Not yet" setting, as last sent with the library; kept in a file so it holds
+    /// while the phone is away.
+    private(set) var miss: MissRule = .oneDown
 
     private let url: URL
     private let link = PhoneLink()
@@ -23,12 +26,19 @@ final class WatchModel {
     init(url: URL = URL.applicationSupportDirectory.appending(path: "vijf.json")) {
         self.url = url
         library = (try? Data(contentsOf: url)).flatMap { try? Backup.decode($0) } ?? .empty
-        link.onLibrary = { [weak self] phone in self?.receive(phone) }
+        miss = (try? Data(contentsOf: missURL)).flatMap { MissRule(rawValue: String(decoding: $0, as: UTF8.self)) } ?? .oneDown
+        link.onLibrary = { [weak self] phone, miss in self?.receive(phone, miss: miss) }
         link.onReachable = { [weak self] in self?.sendUnsent() }
         link.start()
     }
 
-    func receive(_ phone: Library) {
+    private var missURL: URL { url.deletingPathExtension().appendingPathExtension("miss") }
+
+    func receive(_ phone: Library, miss: MissRule? = nil) {
+        if let miss, miss != self.miss {
+            self.miss = miss
+            try? Data(miss.rawValue.utf8).write(to: missURL, options: .atomic)
+        }
         lastFromPhone = phone
         sendUnsent()
         save(Sync.merge(phone: phone, into: library))
@@ -50,13 +60,13 @@ final class WatchModel {
     }
 
     func startStudy(deck: Int, box: Int) {
-        study = StudySession(library: library, deckId: deck, box: box)
+        study = StudySession(library: library, deckId: deck, box: box, miss: miss)
     }
 
     func answer(known: Bool) {
         guard let id = study?.currentCardId else { return }
         var l = library, now = Int64.nowMillis
-        l.answer(id, known: known, now: now)
+        l.answer(id, known: known, now: now, miss: miss)
         save(l)
         if let review = Sync.review(afterAnswering: id, known: known, in: l, now: now) {
             link.send([review])
@@ -81,7 +91,8 @@ final class WatchModel {
 
 /// The WatchConnectivity side of the watch app.
 private final class PhoneLink: NSObject, WCSessionDelegate, @unchecked Sendable {
-    @MainActor var onLibrary: ((Library) -> Void)?
+    /// The phone's library and its "Not yet" setting (nil from an older phone app).
+    @MainActor var onLibrary: ((Library, MissRule?) -> Void)?
     @MainActor var onReachable: (() -> Void)?
 
     func start() {
@@ -126,6 +137,7 @@ private final class PhoneLink: NSObject, WCSessionDelegate, @unchecked Sendable 
 
     private func deliver(_ context: [String: Any]) {
         guard let library = Sync.library(fromContext: context) else { return }
-        Task { @MainActor in self.onLibrary?(library) }
+        let miss = Sync.missRule(fromContext: context)
+        Task { @MainActor in self.onLibrary?(library, miss) }
     }
 }

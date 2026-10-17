@@ -6,7 +6,8 @@ public struct Card: Codable, Equatable, Identifiable, Sendable {
     public var deckId: Int
     public var native: String
     public var dutch: String
-    /// Leitner box, 1–5. "I know it" moves a card up one box, "Not yet" down one.
+    /// Leitner box, 1–5. "I know it" moves a card up one box, "Not yet" down one (or back to box 1,
+    /// see `MissRule`).
     public var box: Int
     /// Milliseconds since 1970, as in the web app.
     public var createdAt: Int64
@@ -216,14 +217,14 @@ public struct Library: Codable, Equatable, Sendable {
     /// An answer while studying. Both answers record the time as `seenAt`, so the card isn't
     /// due again until tomorrow; "I know it" also moves it up one box (at most 5) and records
     /// `reviewedAt`.
-    public mutating func answer(_ id: Int, known: Bool, now: Int64) {
+    public mutating func answer(_ id: Int, known: Bool, now: Int64, miss: MissRule = .oneDown) {
         guard let i = cards.firstIndex(where: { $0.id == id }) else { return }
         cards[i].seenAt = now
         if known {
             cards[i].box = min(cards[i].box + 1, 5)
             cards[i].reviewedAt = now
         } else {
-            cards[i].box = max(cards[i].box - 1, 1)
+            cards[i].box = miss.boxAfterMiss(cards[i].box)
         }
     }
 }

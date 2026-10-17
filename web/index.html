@@ -193,9 +193,9 @@
   .found { margin-bottom: 8px; }
   .pick-head { margin: 22px 0 8px; }
   .speeds { margin-top: 0; }
-  .slot--voice { grid-template-columns: 1fr auto; padding-left: 16px; }
-  .slot--voice .lbl { display: block; }
-  .slot--voice .in-use {
+  .slot--voice, .slot--pick { grid-template-columns: 1fr auto; padding-left: 16px; }
+  .slot--voice .lbl, .slot--pick .lbl { display: block; }
+  .slot--voice .in-use, .slot--pick .in-use {
     font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
   }
   .slot--hit { grid-template-columns: 1fr auto; padding-left: 16px; }
@@ -426,7 +426,14 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m];
     });
   }
-  /* The voice and speed chosen on the Voice screen. Saved on this device only, apart from the
+  /* What "Not yet" does to a card above box 1: 'down' (one box down) or 'box1' (classic Leitner).
+     Saved in this browser only, like the voice. */
+  var MISS_KEY = 'vijf-miss';
+  var missRule = 'down';
+  try { if (localStorage.getItem(MISS_KEY) === 'box1') missRule = 'box1'; } catch (e) {}
+  function missBox(box) { return missRule === 'box1' ? 1 : Math.max(box - 1, 1); }
+
+  /* The voice and speed chosen on the Settings screen. Saved on this device only, apart from the
      cards and backups, because each device has its own voices. */
   var VOICE_KEY = 'vijf-voice';
   var SPEEDS = { slow: 0.7, normal: 1, fast: 1.25 };
@@ -512,7 +519,7 @@
       'aria-expanded="' + menuOpen + '">⋯</button>' +
       (menuOpen ? '<div class="menu" role="menu">' +
         '<button role="menuitem" data-go="newdeck">New deck</button>' +
-        (CAN_SPEAK ? '<button role="menuitem" data-go="voice">Voice</button>' : '') +
+        '<button role="menuitem" data-go="settings">Settings</button>' +
         '<button role="menuitem" data-go="backup">Backup</button></div>' : '') + '</div>';
     if (n) {
       h += '<div class="search"><input type="search" id="f-search" value="' + esc(query) + '" ' +
@@ -715,7 +722,7 @@
 
     h += '<div class="rate">' +
       '<button class="btn no" data-act="no">Not yet<small>' +
-      (b > 1 ? 'back to box ' + (b - 1) : 'stays in box 1') + '</small></button>' +
+      (b > 1 ? 'back to box ' + missBox(b) : 'stays in box 1') + '</small></button>' +
       '<button class="btn yes" data-act="yes">I know it<small>' +
       (b === 5 ? 'stays in box 5' : '→ box ' + (b + 1)) + '</small></button></div>';
     return h;
@@ -756,7 +763,7 @@
       var b = session.box;
       h += '<p class="note" style="margin-top:0">' +
         (b === 5 ? 'Stayed in box 5: ' : 'Moved up to box ' + (b + 1) + ': ') + session.up + '. ' +
-        (b > 1 ? 'Back to box ' + (b - 1) + ': ' : 'Not yet: ') + session.held + '.</p>';
+        (b > 1 ? 'Back to box ' + missBox(b) + ': ' : 'Not yet: ') + session.held + '.</p>';
     }
     h += '<div class="row"><button class="btn btn--fill" data-go="home">' +
       'Back to boxes</button>' +
@@ -799,14 +806,28 @@
       '<p class="note version">Version ' + esc(VERSION) + '</p>';
   }
 
+  /* Settings: what "Not yet" does above box 1, then (where the browser can speak) how Dutch
+     words are read. Both are saved in this browser only. */
+  function settingsView() {
+    var h = '<div class="bar"><button data-go="decks">← Decks</button><span>Settings</span></div>' +
+      '<h2>Settings</h2>' +
+      '<div class="eyebrow pick-head">When you don\'t know a card</div><div class="tray">';
+    [['down', 'Move it down one box', 'As now'], ['box1', 'Send it back to box 1', 'Classic Leitner']].forEach(function (o) {
+      var on = missRule === o[0];
+      h += '<button class="slot slot--pick" data-act="miss" data-miss="' + o[0] + '" aria-pressed="' + on + '">' +
+        '<span><span class="lbl">' + o[1] + '</span><span class="sub">' + o[2] + '</span></span>' +
+        (on ? '<span class="in-use">In use</span>' : '') + '</button>';
+    });
+    h += '</div><p class="note">Either way the card comes back tomorrow. Box 1 cards stay in box 1.</p>';
+    return h + (CAN_SPEAK ? voiceHtml() : '');
+  }
+
   /* How Dutch words are read on this device: speed, then voice. A tap on either reads a sample. */
-  function voiceView() {
+  function voiceHtml() {
     var nl = dutchVoices(), using = voiceInUse();
-    var h = '<div class="bar"><button data-go="decks">← Decks</button><span>Voice</span></div>' +
-      '<h2>Voice</h2>' +
-      '<p class="note" style="margin-top:0">How Dutch words are read on this device. Tap a speed or ' +
-      'a voice to hear it.</p>' +
-      '<div class="eyebrow pick-head">Speed</div><div class="row speeds">';
+    var h = '<div class="eyebrow pick-head">Speed</div>' +
+      '<p class="note" style="margin:0 0 8px">How Dutch words are read on this device. Tap a speed or ' +
+      'a voice to hear it.</p><div class="row speeds">';
     ['slow', 'normal', 'fast'].forEach(function (k) {
       var on = voicePick.speed === k;
       h += '<button class="btn' + (on ? ' btn--fill' : '') + '" data-act="speed" data-speed="' + k + '" ' +
@@ -833,7 +854,7 @@
   function foundCard() { return state.cards.find(function (c) { return c.id === foundId; }) || null; }
 
   function render() {
-    var v = { decks: decksView, home: homeView, study: studyView, add: addView, backup: backupView, voice: voiceView, browse: browseView,
+    var v = { decks: decksView, home: homeView, study: studyView, add: addView, backup: backupView, settings: settingsView, browse: browseView,
       newdeck: newDeckView, card: function () { return editView(foundCard()); } };
     if (!v[view] || (/^(home|study|add|browse)$/.test(view) && !deck()) || (view === 'card' && !foundCard()) ||
         (view === 'browse' && !browseCard())) {
@@ -883,8 +904,8 @@
       card.reviewedAt = now;
       session.up++;
     } else if (card.box > 1) {
-      /* A missed card goes down one box and leaves the session; another round would only move it back up. */
-      card.box--;
+      /* A missed card goes down (missBox) and leaves the session; another round would only move it back up. */
+      card.box = missBox(card.box);
       session.held++;
     } else {
       session.held++;
@@ -1072,6 +1093,11 @@
     else if (act === 'browse-next') browseMove(1);
     else if (act === 'browse-edit') { foundId = browseCard().id; editFrom = 'browse'; go('card'); }
     else if (act === 'again') { nextRound(session); render(); }
+    else if (act === 'miss') {
+      missRule = el.getAttribute('data-miss') === 'box1' ? 'box1' : 'down';
+      try { localStorage.setItem(MISS_KEY, missRule); } catch (e) {}
+      render();
+    }
     else if (act === 'speed' || act === 'voice') {
       if (act === 'speed') voicePick.speed = el.getAttribute('data-speed');
       else voicePick.voice = el.getAttribute('data-voice');
@@ -1156,7 +1182,7 @@
 
   /* Some browsers list their voices a moment after the page loads. */
   if (CAN_SPEAK && speechSynthesis.addEventListener) {
-    speechSynthesis.addEventListener('voiceschanged', function () { if (view === 'voice') render(); });
+    speechSynthesis.addEventListener('voiceschanged', function () { if (view === 'settings') render(); });
   }
 
   if ('serviceWorker' in navigator) {
