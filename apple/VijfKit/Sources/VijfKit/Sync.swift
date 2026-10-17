@@ -77,11 +77,18 @@ public enum Sync {
     static let libraryKey = "library"
     static let sentAtKey = "sentAt"
     static let reviewsKey = "reviews"
+    static let missKey = "miss"
 
     /// The phone's library as an application context. The send time makes every context new, so
     /// the system delivers it even when the library hasn't changed since the last one.
-    public static func context(for library: Library, sentAt: Int64) -> [String: Any] {
-        [libraryKey: Backup.encode(library), sentAtKey: sentAt]
+    /// The phone's "Not yet" setting rides along, so the watch always answers the way the phone is set.
+    public static func context(for library: Library, sentAt: Int64, miss: MissRule = .oneDown) -> [String: Any] {
+        [libraryKey: Backup.encode(library), sentAtKey: sentAt, missKey: miss.rawValue]
+    }
+
+    /// The phone's "Not yet" setting; nil from a phone app that didn't send one yet.
+    public static func missRule(fromContext context: [String: Any]) -> MissRule? {
+        (context[missKey] as? String).flatMap(MissRule.init(rawValue:))
     }
 
     public static func library(fromContext context: [String: Any]) -> Library? {

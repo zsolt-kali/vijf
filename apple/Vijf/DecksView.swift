@@ -14,7 +14,7 @@ struct DecksView: View {
         let decks = model.library.decks
         let searching = !query.trimmingCharacters(in: .whitespaces).isEmpty
         List {
-            Header { MoreMenu(newDeck: { naming = true }, backup: { model.path.append(.backup) }) }
+            Header { MoreMenu(newDeck: { naming = true }, settings: { model.path.append(.settings) }, backup: { model.path.append(.backup) }) }
                 .padding(.bottom, 12)
                 .row()
 
@@ -96,11 +96,13 @@ struct DecksView: View {
 /// The "⋯" button in the deck list's header, with the actions that used to sit below the decks.
 private struct MoreMenu: View {
     let newDeck: () -> Void
+    let settings: () -> Void
     let backup: () -> Void
 
     var body: some View {
         Menu {
             Button("New deck", action: newDeck)
+            Button("Settings", action: settings)
             Button("Backup", action: backup)
         } label: {
             Text("⋯")

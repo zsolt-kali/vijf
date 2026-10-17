@@ -78,11 +78,11 @@ test('the deck list header has only the wordmark and the menu button, no deck co
   await expect(page.getByRole('button', { name: 'Backup' })).toHaveCount(0);
 });
 
-test('the menu holds New deck, Voice and Backup; tapping outside or Escape closes it', async ({ page }) => {
+test('the menu holds New deck, Settings and Backup; tapping outside or Escape closes it', async ({ page }) => {
   await open(page, data([deck(1, 'Start'), deck(2, 'Eten')], []));
   const more = page.getByRole('button', { name: 'More' });
   await more.click();
-  await expect(page.getByRole('menuitem')).toHaveText(['New deck', 'Voice', 'Backup']);
+  await expect(page.getByRole('menuitem')).toHaveText(['New deck', 'Settings', 'Backup']);
   await expect(more).toHaveAttribute('aria-expanded', 'true');
 
   // a tap on a deck outside the menu only closes the menu

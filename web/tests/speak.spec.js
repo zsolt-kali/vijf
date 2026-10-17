@@ -84,7 +84,7 @@ test('with no speech support there is no speaker button', async ({ page }) => {
   await expect(page.locator('.face--back .cog')).toHaveCount(1);
 });
 
-/* The Voice screen */
+/* Settings: voice and speed */
 const voices = [
   { lang: 'en-US', name: 'Samantha' }, { lang: 'nl-NL', name: 'Xander' },
   { lang: 'nl-BE', name: 'Ellen' }, { lang: 'nl-NL', name: 'Claire (Premium)' },
@@ -96,10 +96,10 @@ const sayOnCard = async (page) => {
   return (await said(page)).at(-1);
 };
 
-test('the Voice screen lists the Dutch voices and marks the one in use', async ({ page }) => {
+test('Settings lists the Dutch voices and marks the one in use', async ({ page }) => {
   await fakeSpeech(page, voices);
   await open(page, data([], []));
-  await menu(page, 'Voice');
+  await menu(page, 'Settings');
   const rows = page.locator('.slot--voice');
   await expect(rows.locator('.lbl')).toHaveText(['Xander', 'Ellen', 'Claire (Premium)']);
   await expect(rows.locator('.sub')).toHaveText(['Netherlands', 'Belgium', 'Netherlands']);
@@ -111,7 +111,7 @@ test('the Voice screen lists the Dutch voices and marks the one in use', async (
 test('choosing a voice and a speed reads a sample, and the card uses them after a reload', async ({ page }) => {
   await fakeSpeech(page, voices);
   await open(page, sample());
-  await menu(page, 'Voice');
+  await menu(page, 'Settings');
   await page.locator('.slot--voice', { hasText: 'Claire' }).click();
   expect((await said(page)).at(-1)).toEqual({ text: 'Goedemorgen', lang: 'nl-NL', voice: 'Claire (Premium)', rate: 1 });
   await page.getByRole('button', { name: 'Slow' }).click();
@@ -125,7 +125,7 @@ test('choosing a voice and a speed reads a sample, and the card uses them after 
 test('the choice is kept apart from the cards, so backups do not carry it', async ({ page }) => {
   await fakeSpeech(page, voices);
   await open(page, data([], []));
-  await menu(page, 'Voice');
+  await menu(page, 'Settings');
   await page.getByRole('button', { name: 'Fast' }).click();
   const stored = await page.evaluate(() => ({ pick: localStorage.getItem('vijf-voice'), cards: localStorage.getItem('leitner-dutch-v1') }));
   expect(JSON.parse(stored.pick)).toEqual({ voice: '', speed: 'fast' });
@@ -145,18 +145,18 @@ test('a chosen voice that is gone falls back to the first Dutch voice', async ({
   expect(await sayOnCard(page)).toMatchObject({ voice: 'Xander', rate: 1.25 });
 });
 
-test('with no Dutch voice the Voice screen says how to add one', async ({ page }) => {
+test('with no Dutch voice Settings says how to add one', async ({ page }) => {
   await fakeSpeech(page, [{ lang: 'en-US', name: 'Samantha' }]);
   await open(page, data([], []));
-  await menu(page, 'Voice');
+  await menu(page, 'Settings');
   await expect(page.getByText('No Dutch voice on this device yet.')).toBeVisible();
   await expect(page.getByText(/Manage Voices → Dutch/)).toBeVisible();
 });
 
-test('with no speech support there is no Voice in the menu', async ({ page }) => {
+test('with no speech support Settings has no voice or speed', async ({ page }) => {
   await page.addInitScript(() => { delete window.speechSynthesis; delete window.SpeechSynthesisUtterance; });
   await open(page, data([], []));
-  await page.getByRole('button', { name: 'More' }).click();
-  await expect(page.getByRole('menuitem', { name: 'Voice' })).toHaveCount(0);
+  await menu(page, 'Settings');
+  await expect(page.locator('[data-act=miss]')).toHaveCount(2);
+  await expect(page.locator('[data-act=speed]')).toHaveCount(0);
 });
-

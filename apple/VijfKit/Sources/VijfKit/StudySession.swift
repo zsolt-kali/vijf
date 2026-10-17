@@ -15,18 +15,26 @@ public struct StudySession: Equatable, Sendable {
     /// Answers given, for the summary (see `summary`).
     public private(set) var up = 0
     public private(set) var held = 0
+    /// Where "Not yet" sends a card above box 1, for the subtitle and the summary.
+    public let miss: MissRule
 
     /// Starts a session with the box's cards due today (see `Card.isDue`) in random order; nil
     /// when there are none.
-    public init?(library: Library, deckId: Int, box: Int, dayStart: Int64 = Day.start()) {
+    public init?(library: Library, deckId: Int, box: Int, dayStart: Int64 = Day.start(), miss: MissRule = .oneDown) {
         var g = SystemRandomNumberGenerator()
-        self.init(library: library, deckId: deckId, box: box, dayStart: dayStart, using: &g)
+        self.init(library: library, deckId: deckId, box: box, dayStart: dayStart, miss: miss, using: &g)
     }
 
-    public init?<G: RandomNumberGenerator>(library: Library, deckId: Int, box: Int, dayStart: Int64 = Day.start(), using g: inout G) {
+    public init?<G: RandomNumberGenerator>(library: Library, deckId: Int, box: Int, dayStart: Int64 = Day.start(),
+                                           miss: MissRule = .oneDown, using g: inout G) {
         let ids = library.dueCards(inDeck: deckId, box: box, dayStart: dayStart).map(\.id).shuffled(using: &g)
         guard !ids.isEmpty else { return nil }
-        self.deckId = deckId; self.box = box; self.queue = ids; self.total = ids.count
+        self.deckId = deckId; self.box = box; self.queue = ids; self.total = ids.count; self.miss = miss
+    }
+
+    /// The "Not yet" button's subtitle: "stays in box 1", "back to box 2" or "back to box 1".
+    public var notYetSubtitle: String {
+        box == 1 ? "stays in box 1" : "back to box \(miss.boxAfterMiss(box))"
     }
 
     public var currentCardId: Int? { queue.first }
@@ -49,7 +57,7 @@ public struct StudySession: Equatable, Sendable {
     /// The summary line shown when the session is over: "Moved up to box 3: 4. Back to box 1: 2."
     public var summary: String {
         (box == 5 ? "Stayed in box 5: \(up). " : "Moved up to box \(box + 1): \(up). ")
-            + (box > 1 ? "Back to box \(box - 1): \(held)." : "Not yet: \(held).")
+            + (box > 1 ? "Back to box \(miss.boxAfterMiss(box)): \(held)." : "Not yet: \(held).")
     }
 
     /// The current card was deleted: drop it from the round, keeping the position.

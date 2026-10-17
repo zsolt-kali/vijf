@@ -1,6 +1,6 @@
 // SPEC.md → Leitner rules
 const { test, expect } = require('@playwright/test');
-const { deck, card, data, open, saved, toast } = require('./helpers');
+const { deck, card, data, open, saved, toast, menu } = require('./helpers');
 
 const remaining = (page) => page.locator('.bar > span').last();
 
@@ -256,3 +256,38 @@ test('a card moved up by an older version (reviewedAt a moment before seenAt) st
   await open(page, data([deck(1, 'Start')], [Object.assign(card(1, 1, 'a', 'a', 3), { reviewedAt: at, seenAt: at + 1 })]));
   await expect(box(page, 3).locator('.sub')).toHaveText('Next in 3 days');
 });
+
+/* The "Not yet" setting: one box down (default) or back to box 1 (classic Leitner). */
+test('with "Send it back to box 1", Not yet sends a card from any box to box 1', async ({ page }) => {
+  await open(page, data([], []));
+  await menu(page, 'Settings');
+  await expect(page.locator('[data-miss=down]')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('[data-miss=box1]').click();
+  await expect(page.locator('[data-miss=box1] .in-use')).toHaveText('In use');
+
+  await page.evaluate(() => {
+    localStorage.setItem('leitner-dutch-v1', JSON.stringify({ cards: [
+      { id: 1, deckId: 1, native: 'a', dutch: 'a', box: 4, createdAt: 1, reviewedAt: null, seenAt: null },
+      { id: 2, deckId: 1, native: 'b', dutch: 'b', box: 4, createdAt: 2, reviewedAt: null, seenAt: null },
+    ], nextId: 3, decks: [{ id: 1, name: 'Start', createdAt: 1 }], nextDeckId: 2 }));
+  });
+  await page.reload();
+  await page.click('[data-go=box4]');
+  await expect(page.getByRole('button', { name: /Not yet/ })).toContainText('back to box 1');
+  await page.getByRole('button', { name: /Not yet/ }).click();
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await expect(page.getByText('Moved up to box 5: 1. Back to box 1: 1.')).toBeVisible();
+  expect((await saved(page)).cards.map((c) => c.box).sort()).toEqual([1, 5]);
+});
+
+test('the setting is kept in this browser only, apart from the cards', async ({ page }) => {
+  await open(page, data([], []));
+  await menu(page, 'Settings');
+  await page.locator('[data-miss=box1]').click();
+  await page.reload();
+  await menu(page, 'Settings');
+  await expect(page.locator('[data-miss=box1]')).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => localStorage.getItem('vijf-miss'))).toBe('box1');
+  expect(await page.evaluate(() => localStorage.getItem('leitner-dutch-v1') || '')).not.toContain('box1');
+});
+

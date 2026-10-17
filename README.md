@@ -30,12 +30,13 @@ New words always start in box 1.
 
 Open a deck, tap a box, and go through its cards that are due today, in random order. You see
 your own language first; tap to flip to the Dutch, where a speaker reads it aloud. In the web
-app, **Voice** in the ⋯ menu lets you pick the voice and the speed (Slow, Normal, Fast). Then
+app, **Settings** in the ⋯ menu lets you pick the voice and the speed (Slow, Normal, Fast). Then
 answer:
 
 - **I know it:** the card moves up one box and waits that box's gap. From box 2 to box 3 means
   you see it again in 4 days. In box 5 it stays in box 5 and comes back in 16 days.
-- **Not yet:** the card moves down one box and comes back tomorrow. In box 1 it can't go lower:
+- **Not yet:** the card moves down one box (or back to box 1, if you choose that in **Settings**)
+  and comes back tomorrow. In box 1 it can't go lower:
   it stays there, and at the end of the round you choose: **Go again** to practise the cards you
   missed straight away, or **Stop for today** to see them tomorrow.
 
@@ -44,6 +45,12 @@ Gaps count calendar days: a box 2 card answered on Monday evening is due on Wedn
 A word's usual path: box 1, practised until you know it, then box 2 (2 days), box 3 (4 days),
 box 4 (8 days) and box 5, checked every 16 days. Each **Not yet** moves it back one box and
 brings it back the next day, so a word you forgot gets practised again soon.
+
+### Settings
+
+**Settings** in the ⋯ menu: **When you don't know a card**, choose **Move it down one box** (the
+default) or **Send it back to box 1** (classic Leitner, stricter). In the web app, the voice and
+speed are there too. The iPhone's setting also applies on the Watch.
 
 ### Browsing a deck
 

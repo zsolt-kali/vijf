@@ -20,7 +20,7 @@ struct VijfApp: App {
                 .environment(model)
         }
         .onChange(of: phase) {
-            if phase == .active { sync.push(model.library) }
+            if phase == .active { sync.push(model.library, miss: model.miss) }
         }
     }
 }
@@ -38,6 +38,7 @@ struct RootView: View {
                     case .study(let deck, let box): StudyView(deckId: deck, box: box)
                     case .browse(let deck): BrowseView(deckId: deck)
                     case .backup: BackupView()
+                    case .settings: SettingsView()
                     }
                 }
         }

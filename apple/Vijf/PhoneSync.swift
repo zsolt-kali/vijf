@@ -7,7 +7,7 @@ import WatchConnectivity
 /// The phone sends its whole library as the application context (only the latest one is kept, so
 /// the watch always gets the current state): when the session activates, after every change, and
 /// whenever the app comes to the front. The watch sends back its answers, which are
-/// applied with the highest-box rule from VijfKit. The outcome of the last send is kept on the
+/// applied with the latest-answer rule from VijfKit. The "Not yet" setting travels with the library. The outcome of the last send is kept on the
 /// model (`watchSync`) and shown on the Backup screen, so a stuck sync is visible.
 final class PhoneSync: NSObject, WCSessionDelegate, @unchecked Sendable {
     @MainActor private weak var model: AppModel?
@@ -17,18 +17,18 @@ final class PhoneSync: NSObject, WCSessionDelegate, @unchecked Sendable {
         guard WCSession.isSupported() else { return }
         WCSession.default.delegate = self
         WCSession.default.activate()
-        model.onChange = { [weak self] library in self?.push(library) }
+        model.onChange = { [weak self] library, miss in self?.push(library, miss: miss) }
     }
 
     /// No `isWatchAppInstalled` pre-check: it has wrongly said no after the watch app was
     /// installed on its own, and the phone then stopped sending without a sign. Trying costs
     /// nothing; a real failure is reported instead.
-    func push(_ library: Library) {
+    func push(_ library: Library, miss: MissRule) {
         guard WCSession.isSupported() else { return }
         let session = WCSession.default
         guard session.activationState == .activated, session.isPaired else { return }
         do {
-            try session.updateApplicationContext(Sync.context(for: library, sentAt: .nowMillis))
+            try session.updateApplicationContext(Sync.context(for: library, sentAt: .nowMillis, miss: miss))
             report(.sent(Date()))
         } catch {
             report(.failed(error.localizedDescription))
@@ -41,7 +41,7 @@ final class PhoneSync: NSObject, WCSessionDelegate, @unchecked Sendable {
 
     func session(_ session: WCSession, activationDidCompleteWith state: WCSessionActivationState, error: Error?) {
         Task { @MainActor in
-            if let library = self.model?.library { self.push(library) }
+            if let model = self.model { self.push(model.library, miss: model.miss) }
         }
     }
 
@@ -70,7 +70,7 @@ final class PhoneSync: NSObject, WCSessionDelegate, @unchecked Sendable {
 
     func sessionWatchStateDidChange(_ session: WCSession) {
         Task { @MainActor in
-            if let library = self.model?.library { self.push(library) }
+            if let model = self.model { self.push(model.library, miss: model.miss) }
         }
     }
 }

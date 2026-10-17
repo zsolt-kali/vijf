@@ -20,7 +20,7 @@ struct StudyView: View {
                         .onTapGesture { withAnimation(reduceMotion ? nil : .spring(duration: 0.5)) { flipped.toggle() } }
                     HStack(spacing: 8) {
                         Button("Not yet") { answer { model.answer(known: false) } }
-                            .buttonStyle(.vj(.no, subtitle: box > 1 ? "back to box \(box - 1)" : "stays in box 1"))
+                            .buttonStyle(.vj(.no, subtitle: session.notYetSubtitle))
                         Button("I know it") { answer { model.answer(known: true) } }
                             .buttonStyle(.vj(.yes, subtitle: box == 5 ? "stays in box 5" : "→ box \(box + 1)"))
                     }

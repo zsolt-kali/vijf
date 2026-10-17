@@ -96,6 +96,25 @@ import VijfKit
         #expect(model.browse == nil)
     }
 
+    @Test func theNotYetSettingIsKeptAndUsedAndSentToTheWatch() throws {
+        let url = URL.temporaryDirectory.appending(path: "vijf-\(UUID().uuidString).json")
+        let model = AppModel(url: url)
+        let backup = Library(cards: [Card(id: 1, deckId: 1, native: "a", dutch: "a", box: 4, createdAt: 0)],
+                             nextId: 2, decks: [Deck(id: 1, name: "Start", createdAt: 0)], nextDeckId: 2)
+        #expect(model.restore(from: String(decoding: Backup.encode(backup), as: UTF8.self)))
+        let deckId = 1, id = 1
+        var sent: MissRule?
+        model.onChange = { _, miss in sent = miss }
+        model.setMiss(.backToBoxOne)
+        #expect(sent == .backToBoxOne)
+        #expect(AppModel(url: url).miss == .backToBoxOne)
+
+        model.startStudy(deck: deckId, box: 4)
+        #expect(model.study?.notYetSubtitle == "back to box 1")
+        model.answer(known: false)
+        #expect(model.library.card(id)?.box == 1)
+    }
+
     @Test func undoAfterLeavingTheSessionOnlyRestoresTheCard() throws {
         let model = freshModel()
         model.addStarterSet()
@@ -180,7 +199,7 @@ import VijfKit
         model.addStarterSet()
         let id = try #require(model.library.cards.first?.id)
         var sent: Library?
-        model.onChange = { sent = $0 }
+        model.onChange = { library, _ in sent = library }
 
         model.applyReviews([Sync.Review(cardId: id, box: 3, at: 42, known: true)])
         #expect(model.library.card(id)?.box == 3)

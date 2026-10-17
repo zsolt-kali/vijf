@@ -272,3 +272,10 @@ accident. Instead, browsing is a screen started from a deck (Browse cards, next 
 ends when you leave it. It never writes to a card, and an ink band marks it so it can't be
 mistaken for studying. Design: https://claude.ai/artifact/XREzmnwRhQzMScbxZoiMB5
 
+### 26. The "Not yet" setting lives on the device, and the watch follows the phone
+"Send it back to box 1" (classic Leitner) is a choice next to the default "one box down". It's
+saved on the device, not in the cards or backups, like the voice: on the web per browser, on Apple
+on the iPhone. The watch must never answer differently from the phone, so the phone sends the
+setting with every library (application context) and the watch keeps the last one it got. The
+watch has no setting of its own.
+
