@@ -45,6 +45,13 @@ A word's usual path: box 1, practised until you know it, then box 2 (2 days), bo
 box 4 (8 days) and box 5, checked every 16 days. Each **Not yet** moves it back one box and
 brings it back the next day, so a word you forgot gets practised again soon.
 
+### Browsing a deck
+
+Inside a deck, **Browse cards** shows all its cards one at a time, box 1 first, without
+answering: nothing moves between boxes. A dark band at the top says **Browsing**. Use
+**← Previous** and **Next →** (or the arrow keys in the web app); on the last card, **Done**
+takes you back. It works on the Watch too.
+
 ### What the screens tell you
 
 - **Deck list:** each deck shows what's left for today ("8 left today", or "Done for today")

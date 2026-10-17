@@ -79,7 +79,7 @@ struct DecksView: View {
         .background(VJ.paper)
         .navigationTitle("Decks")
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(item: $editing) { card in EditCardView(card: card, fromSearch: true) }
+        .sheet(item: $editing) { card in EditCardView(card: card, origin: .search) }
         .alert("New deck", isPresented: $naming) {
             TextField("Name", text: $newName)
                 .textInputAutocapitalization(.sentences)

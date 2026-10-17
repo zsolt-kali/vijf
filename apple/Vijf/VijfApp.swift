@@ -36,6 +36,7 @@ struct RootView: View {
                     switch route {
                     case .deck(let id): DeckView(deckId: id)
                     case .study(let deck, let box): StudyView(deckId: deck, box: box)
+                    case .browse(let deck): BrowseView(deckId: deck)
                     case .backup: BackupView()
                     }
                 }

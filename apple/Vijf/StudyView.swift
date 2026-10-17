@@ -44,7 +44,7 @@ struct StudyView: View {
         .background(VJ.paper)
         .navigationTitle(model.library.deck(deckId)?.name ?? "")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $editing) { card in EditCardView(card: card) }
+        .sheet(item: $editing) { card in EditCardView(card: card, origin: .study) }
         .onDisappear { DutchVoice.shared.stop() }
     }
 
@@ -55,12 +55,16 @@ struct StudyView: View {
     }
 }
 
-/// The two-sided card: your language on white, Dutch on yellow. The cog sits inside the card,
+/// The two-sided card (also used when browsing): your language on white, Dutch on yellow. The cog sits inside the card,
 /// top-right, on both faces, and opens the editor without flipping the card. On the Dutch side
 /// a speaker beside it reads the word aloud.
-private struct FlashCard: View {
+struct FlashCard: View {
     let card: Card
     let flipped: Bool
+    /// The back's footer: "Did you know it?" when studying, "Tap to flip back" when browsing.
+    var backFooter = "Did you know it?"
+    /// Shown at the right of both footers when browsing: "Box 3".
+    var corner: String? = nil
     let edit: () -> Void
     let speak: () -> Void
 
@@ -68,7 +72,7 @@ private struct FlashCard: View {
         ZStack {
             face(hint: "Your language", word: card.native, footer: "Tap to flip", back: false)
                 .opacity(flipped ? 0 : 1)
-            face(hint: "Dutch", word: card.dutch, footer: "Did you know it?", back: true)
+            face(hint: "Dutch", word: card.dutch, footer: backFooter, back: true)
                 .opacity(flipped ? 1 : 0)
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
         }
@@ -86,7 +90,11 @@ private struct FlashCard: View {
             Spacer()
             Text(word).font(.vjWord).tracking(-1.5).foregroundStyle(fg).fixedSize(horizontal: false, vertical: true)
             Spacer()
-            Eyebrow(footer, color: soft)
+            HStack {
+                Eyebrow(footer, color: soft)
+                Spacer()
+                if let corner { Eyebrow(corner, color: soft) }
+            }
         }
         .padding(22)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)

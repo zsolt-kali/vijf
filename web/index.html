@@ -138,6 +138,7 @@
   .btn:active { background: var(--ink); color: var(--on-ink); }
   .btn:focus-visible { outline: 3px solid var(--deep); outline-offset: 2px; }
   .btn--fill { background: var(--ink); color: var(--on-ink); }
+  .btn:disabled { border-color: var(--line); background: transparent; color: var(--mute); cursor: default; }
   .btn--fill:active { opacity: 0.85; }
   .btn--ghost { border-color: var(--line); color: var(--mute); font-weight: 500; }
   .btn small {
@@ -236,6 +237,16 @@
   }
   .face--back .hint { color: var(--on-signal); }
   .mid { flex: 1; display: flex; align-items: center; }
+  .hint--foot { display: flex; justify-content: space-between; gap: 12px; }
+
+  /* Browsing: an ink band across the top says nothing is being answered. */
+  .bar--browse {
+    background: var(--ink); color: var(--on-ink);
+    margin: calc(-18px - env(safe-area-inset-top)) -16px 16px;
+    padding: calc(18px + env(safe-area-inset-top)) 16px 12px;
+  }
+  .bar--browse button, .bar--browse .crumbs .here { color: var(--on-ink); }
+  .bar--browse .mode { color: var(--on-ink-accent); letter-spacing: 0.16em; margin-right: 12px; }
 
   .rate { display: flex; gap: 8px; }
   .rate .btn { padding: 16px 10px; }
@@ -309,6 +320,8 @@
   var menuOpen = false;  /* the deck list's "⋯" menu */
   /* The deploy workflow stamps this line with the commit and its date; keep its format. */
   var VERSION = 'dev';
+  var browse = null;       /* { ids, at } while browsing a deck's cards (browseView) */
+  var editFrom = 'decks';  /* where the single-card edit form (view 'card') returns to */
   var foundId = null;    /* the card opened from search, shown in the edit form */
 
   /* Settings cog, from Feather Icons (MIT). */
@@ -628,12 +641,65 @@
         '<p>Add your first word. It starts in box 1.</p></div>';
     }
     h += '<div class="row">' +
-      '<button class="btn btn--fill" data-go="add">Add words</button></div>';
+      '<button class="btn btn--fill" data-go="add">Add words</button>' +
+      '<button class="btn" data-act="browse"' + (total ? '' : ' disabled') + '>Browse cards</button></div>';
     h += '<p class="note">Tap a box to study it. <b>I know it</b> moves a card up one box; ' +
       '<b>Not yet</b> moves it down one box and brings it back tomorrow. Box 1 comes up every day, ' +
       'box 2 every 2 days, then 4, 8 and 16. ' +
-      'Use the cog on a card to fix or delete it.</p>';
+      'Use the cog on a card to fix or delete it. <b>Browse cards</b> goes through all of them, ' +
+      'box 1 first, without changing any box.</p>';
     return h;
+  }
+
+  /* The two-sided card, for studying and browsing: tap to flip; the cog (its action `editAct`)
+     and, on the back, the speaker. `corner` is shown at the right of both footers ("Box 3"). */
+  function cardHtml(card, editAct, backHint, corner) {
+    var cog = '<button class="cog" data-act="' + editAct + '" aria-label="Edit card">' + COG + '</button>';
+    var speaker = CAN_SPEAK ?
+      '<button class="speak" data-act="speak" aria-label="Say the Dutch word">' + SPEAKER + '</button>' : '';
+    var foot = function (text) {
+      return '<span class="hint hint--foot"><span>' + text + '</span>' + (corner ? '<span>' + corner + '</span>' : '') + '</span>';
+    };
+    return '<div class="stage"><div class="flip" id="flip">' +
+      '<div class="face"><span class="hint">Your language</span>' +
+      '<div class="mid"><div class="word">' + esc(card.native) + '</div></div>' +
+      foot('Tap to flip') + cog + '</div>' +
+      '<div class="face face--back"><span class="hint">Dutch</span>' +
+      '<div class="mid"><div class="word">' + esc(card.dutch) + '</div></div>' +
+      foot(backHint) + speaker + cog + '</div></div></div>';
+  }
+
+  /* Browse cards: every card of the deck, box 1 first, without answering. A dark band says
+     so; Previous / Next move along, and Next becomes Done on the last card. */
+  function browseOrder() {
+    return cardsIn(deckId).slice().sort(function (a, b) {
+      return a.box - b.box || a.createdAt - b.createdAt || a.id - b.id;
+    }).map(function (c) { return c.id; });
+  }
+  function startBrowse() {
+    var ids = browseOrder();
+    if (!ids.length) return;
+    browse = { ids: ids, at: 0 };
+    go('browse');
+  }
+  function browseCard() {
+    return browse && state.cards.find(function (c) { return c.id === browse.ids[browse.at]; });
+  }
+  function browseView() {
+    var card = browseCard(), n = browse.ids.length, last = browse.at === n - 1;
+    return '<div class="bar bar--browse">' + crumbs() +
+      '<span class="pos"><span class="mode">Browsing</span>' + (browse.at + 1) + ' / ' + n + '</span></div>' +
+      cardHtml(card, 'browse-edit', 'Tap to flip back', 'Box ' + card.box) +
+      '<div class="rate">' +
+      '<button class="btn" data-act="browse-prev"' + (browse.at ? '' : ' disabled') + '>← Previous</button>' +
+      (last ? '<button class="btn btn--fill" data-go="home">Done</button>' :
+        '<button class="btn btn--fill" data-act="browse-next">Next →</button>') + '</div>';
+  }
+  function browseMove(step) {
+    var to = browse.at + step;
+    if (to < 0 || to >= browse.ids.length) return;
+    browse.at = to;
+    render();
   }
 
   function studyView() {
@@ -643,19 +709,9 @@
     if (!card) { advance(session); return studyView(); }
     if (session.editing) return editView(card);
     var b = session.box;
-    var cog = '<button class="cog" data-act="edit" aria-label="Edit card">' + COG + '</button>';
-    var speaker = CAN_SPEAK ?
-      '<button class="speak" data-act="speak" aria-label="Say the Dutch word">' + SPEAKER + '</button>' : '';
-
     var h = '<div class="bar">' + crumbs() +
       '<span class="pos">' + (session.total - session.queue.length + 1) + ' / ' + session.total + '</span></div>' +
-      '<div class="stage"><div class="flip" id="flip">' +
-      '<div class="face"><span class="hint">Your language</span>' +
-      '<div class="mid"><div class="word">' + esc(card.native) + '</div></div>' +
-      '<span class="hint">Tap to flip</span>' + cog + '</div>' +
-      '<div class="face face--back"><span class="hint">Dutch</span>' +
-      '<div class="mid"><div class="word">' + esc(card.dutch) + '</div></div>' +
-      '<span class="hint">Did you know it?</span>' + speaker + cog + '</div></div></div>';
+      cardHtml(card, 'edit', 'Did you know it?', '');
 
     h += '<div class="rate">' +
       '<button class="btn no" data-act="no">Not yet<small>' +
@@ -668,7 +724,8 @@
   /* Shown in place of the study card while session.editing is set, and for a card opened
      from search (view 'card'), where the back button returns to the results. */
   function editView(card) {
-    var back = view === 'card' ? '<button data-act="edit-cancel">← Search</button>' : crumbs();
+    var back = view === 'card' ?
+      '<button data-act="edit-cancel">' + (editFrom === 'browse' ? '← Cards' : '← Search') + '</button>' : crumbs();
     return '<div class="bar">' + back + '<span>Edit</span></div>' +
       '<div class="edit">' +
       '<label class="field"><span class="eyebrow">Your language</span>' +
@@ -776,9 +833,10 @@
   function foundCard() { return state.cards.find(function (c) { return c.id === foundId; }) || null; }
 
   function render() {
-    var v = { decks: decksView, home: homeView, study: studyView, add: addView, backup: backupView, voice: voiceView,
+    var v = { decks: decksView, home: homeView, study: studyView, add: addView, backup: backupView, voice: voiceView, browse: browseView,
       newdeck: newDeckView, card: function () { return editView(foundCard()); } };
-    if (!v[view] || (/^(home|study|add)$/.test(view) && !deck()) || (view === 'card' && !foundCard())) {
+    if (!v[view] || (/^(home|study|add|browse)$/.test(view) && !deck()) || (view === 'card' && !foundCard()) ||
+        (view === 'browse' && !browseCard())) {
       view = 'decks';
     }
     hush();
@@ -871,10 +929,17 @@
   /* Deletes the card opened from search and goes back to the results; undo puts it back. */
   function deleteFound() {
     var gone = foundCard(), at = state.cards.indexOf(gone);
+    var b = editFrom === 'browse' ? browse : null, was = b ? b.ids.indexOf(gone.id) : -1;
     state.cards.splice(at, 1);
-    save(); go('decks');
+    if (b) {
+      /* The next card takes its place; the last one gone ends browsing. */
+      b.ids.splice(was, 1);
+      b.at = Math.min(b.at, b.ids.length - 1);
+    }
+    save(); go(b ? (b.ids.length ? 'browse' : 'home') : 'decks');
     undoToast('Card deleted', function () {
       state.cards.splice(Math.min(at, state.cards.length), 0, gone);
+      if (b && browse === b && view === 'browse') { b.ids.splice(was, 0, gone.id); b.at = was; }
       save(); render(); toast('Restored');
     });
   }
@@ -934,6 +999,10 @@
   /* Escape closes the menu wherever the focus is (opening it re-renders, so focus is lost). */
   document.addEventListener('keydown', function (ev) {
     if (ev.key === 'Escape' && menuOpen) { menuOpen = false; render(); }
+    /* Browsing: the arrow keys go back and forward. */
+    if (view === 'browse' && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')) {
+      browseMove(ev.key === 'ArrowLeft' ? -1 : 1);
+    }
   });
 
   app.addEventListener('keydown', function (ev) {
@@ -979,7 +1048,7 @@
     if (openDeck) { open(parseInt(openDeck, 10)); return; }
 
     var openCard = el.getAttribute('data-card');
-    if (openCard) { foundId = parseInt(openCard, 10); go('card'); return; }
+    if (openCard) { foundId = parseInt(openCard, 10); editFrom = 'decks'; go('card'); return; }
 
     var goTo = el.getAttribute('data-go');
     if (goTo) {
@@ -997,7 +1066,11 @@
     }
     else if (act === 'yes') rate(true);
     else if (act === 'no') rate(false);
-    else if (act === 'speak') speak(currentCard().dutch);
+    else if (act === 'speak') speak((view === 'browse' ? browseCard() : currentCard()).dutch);
+    else if (act === 'browse') startBrowse();
+    else if (act === 'browse-prev') browseMove(-1);
+    else if (act === 'browse-next') browseMove(1);
+    else if (act === 'browse-edit') { foundId = browseCard().id; editFrom = 'browse'; go('card'); }
     else if (act === 'again') { nextRound(session); render(); }
     else if (act === 'speed' || act === 'voice') {
       if (act === 'speed') voicePick.speed = el.getAttribute('data-speed');
@@ -1006,7 +1079,7 @@
     }
     else if (act === 'edit') { session.editing = true; render(); }
     else if (act === 'edit-cancel') {
-      if (fromSearch) go('decks');
+      if (fromSearch) go(editFrom);
       else { session.editing = false; render(); }
     }
     else if (act === 'edit-save') {
@@ -1016,7 +1089,7 @@
       var edited = fromSearch ? foundCard() : currentCard();
       edited.native = en; edited.dutch = ed;
       save();
-      if (fromSearch) go('decks');
+      if (fromSearch) go(editFrom);
       else { session.editing = false; render(); }
       toast('Saved');
     }

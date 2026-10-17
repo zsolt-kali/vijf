@@ -60,6 +60,42 @@ import VijfKit
         #expect(model.study?.position == 1 && model.study?.total == 11)
     }
 
+    @Test func browsingGoesThroughTheDeckWithoutChangingIt() throws {
+        let model = freshModel()
+        model.addStarterSet()
+        let deckId = try #require(model.library.decks.first?.id)
+        let before = model.library
+        model.startBrowse(deck: deckId)
+        #expect(model.path.last == .browse(deck: deckId))
+        #expect(model.browse?.position == 1 && model.browse?.total == 12)
+        model.browseNext(); model.browseNext()
+        #expect(model.browse?.position == 3)
+        #expect(model.library == before)
+    }
+
+    @Test func deletingWhileBrowsingShowsTheNextCardAndUndoBringsItBack() throws {
+        let model = freshModel()
+        model.addStarterSet()
+        let deckId = try #require(model.library.decks.first?.id)
+        model.startBrowse(deck: deckId)
+        model.browseNext()
+        let id = try #require(model.browse?.currentCardId)
+        model.deleteBrowsedCard()
+        #expect(model.library.card(id) == nil)
+        #expect(model.browse?.total == 11 && model.browse?.position == 2)
+        model.undoToast()
+        #expect(model.library.card(id) != nil)
+        #expect(model.browse?.currentCardId == id && model.browse?.total == 12)
+    }
+
+    @Test func aDeckWithoutCardsCannotBeBrowsed() throws {
+        let model = freshModel()
+        _ = model.makeDeck(named: "Leeg")
+        let deckId = try #require(model.library.decks.first?.id)
+        model.startBrowse(deck: deckId)
+        #expect(model.browse == nil)
+    }
+
     @Test func undoAfterLeavingTheSessionOnlyRestoresTheCard() throws {
         let model = freshModel()
         model.addStarterSet()
