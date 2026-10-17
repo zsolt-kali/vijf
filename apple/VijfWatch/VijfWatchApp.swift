@@ -20,6 +20,7 @@ struct VijfWatchApp: App {
 enum WatchRoute: Hashable {
     case deck(Int)
     case study
+    case browse
 }
 
 /// Deck → boxes → study, as on the phone. With exactly one deck it opens straight into it.
@@ -34,6 +35,7 @@ struct WatchRoot: View {
                     switch route {
                     case .deck(let id): DeckBoxesView(deckId: id, path: $path)
                     case .study: WatchStudyView()
+                    case .browse: WatchBrowseView()
                     }
                 }
         }
@@ -114,37 +116,50 @@ struct DeckBoxesView: View {
 
     var body: some View {
         let today = Day.start()
-        List(1...5, id: \.self) { box in
-            let count = model.library.cards(inDeck: deckId, box: box).count
-            let due = model.library.dueCards(inDeck: deckId, box: box, dayStart: today).count
-            let note: String? = count == 0 || due == count ? nil
-                : due == 0 ? model.library.nextNote(inDeck: deckId, box: box, dayStart: today) : "\(due) left today"
-            Button {
-                model.startStudy(deck: deckId, box: box)
-                path.append(.study)
-            } label: {
-                HStack(spacing: 8) {
-                    Text("\(box)")
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .frame(width: 22, height: 22)
-                        .foregroundStyle(due == 0 ? VJ.mute : (box == 5 ? VJ.onSignal : VJ.paper))
-                        .background(due == 0 ? VJ.card : (box == 5 ? VJ.signal : VJ.ink))
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(Self.names[box - 1]).font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(due == 0 ? VJ.mute : VJ.ink)
-                        if let note {
-                            Text(note.uppercased()).font(.system(size: 9, design: .monospaced))
-                                .foregroundStyle(VJ.mute)
+        List {
+            ForEach(1...5, id: \.self) { box in
+                let count = model.library.cards(inDeck: deckId, box: box).count
+                let due = model.library.dueCards(inDeck: deckId, box: box, dayStart: today).count
+                let note: String? = count == 0 || due == count ? nil
+                    : due == 0 ? model.library.nextNote(inDeck: deckId, box: box, dayStart: today) : "\(due) left today"
+                Button {
+                    model.startStudy(deck: deckId, box: box)
+                    path.append(.study)
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("\(box)")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .frame(width: 22, height: 22)
+                            .foregroundStyle(due == 0 ? VJ.mute : (box == 5 ? VJ.onSignal : VJ.paper))
+                            .background(due == 0 ? VJ.card : (box == 5 ? VJ.signal : VJ.ink))
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(Self.names[box - 1]).font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(due == 0 ? VJ.mute : VJ.ink)
+                            if let note {
+                                Text(note.uppercased()).font(.system(size: 9, design: .monospaced))
+                                    .foregroundStyle(VJ.mute)
+                            }
                         }
+                        Spacer()
+                        Text("\(count)").font(.system(size: 17, weight: .bold, design: .monospaced))
+                            .foregroundStyle(due == 0 ? VJ.mute : VJ.ink)
                     }
-                    Spacer()
-                    Text("\(count)").font(.system(size: 17, weight: .bold, design: .monospaced))
-                        .foregroundStyle(due == 0 ? VJ.mute : VJ.ink)
                 }
+                .disabled(due == 0)
+                .listRowBackground(VJ.card)
+                .accessibilityLabel("Box \(box), \(Self.names[box - 1]), \(count) cards" + (note.map { ", \($0)" } ?? ""))
             }
-            .disabled(due == 0)
-            .listRowBackground(VJ.card)
-            .accessibilityLabel("Box \(box), \(Self.names[box - 1]), \(count) cards" + (note.map { ", \($0)" } ?? ""))
+            // Every card, box 1 first, without answering.
+            if !model.library.cards(inDeck: deckId).isEmpty {
+                Button {
+                    model.startBrowse(deck: deckId)
+                    path.append(.browse)
+                } label: {
+                    Text("Browse cards").font(.system(size: 15, weight: .bold)).foregroundStyle(VJ.ink)
+                        .frame(maxWidth: .infinity)
+                }
+                .listRowBackground(VJ.card)
+            }
         }
         .navigationTitle(model.library.deck(deckId)?.name ?? "")
     }

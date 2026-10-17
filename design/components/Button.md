@@ -10,4 +10,6 @@ A square, outlined action that fills its row; variants set the meaning.
 
 The consumer provides the label and, only when it adds information, a `<small>` subtitle ("stays in box 1"). Put buttons in a `vj-row`; they share the width equally.
 
+- **Disabled:** any variant turns into `line` outline and `mute` text, like an empty element (Browse cards for a deck without cards, ← Previous on the first card).
+
 Don't: add icons to buttons, use `success` or `danger` fills for anything but the two answers, or put two fills in one row unless they are the two answers.

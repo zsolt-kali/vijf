@@ -12,7 +12,7 @@ struct WatchStudyView: View {
     var body: some View {
         if let session = model.study, let id = session.currentCardId, let card = model.library.card(id) {
             VStack(spacing: 6) {
-                face(card: card)
+                WatchCardFace(card: card, flipped: flipped, backFooter: "Did you know it?")
                     .layoutPriority(1)
                     .onTapGesture { flipped.toggle() }
                     .accessibilityAddTraits(.isButton)
@@ -49,41 +49,6 @@ struct WatchStudyView: View {
                 Button("Done") { dismiss() }
             }
         }
-    }
-
-    private func face(card: Card) -> some View {
-        let back = flipped
-        return VStack(alignment: .leading) {
-            Text((back ? "Dutch" : "Your language").uppercased())
-                .font(.system(size: 9, design: .monospaced)).tracking(1.2)
-            Spacer(minLength: 2)
-            // The same sizes as before (26pt, shrinking to 60%); text that doesn't fit even
-            // then scrolls (Digital Crown or swipe) instead of ending in "…".
-            ViewThatFits(in: .vertical) {
-                word(back ? card.dutch : card.native, size: 26)
-                word(back ? card.dutch : card.native, size: 21)
-                word(back ? card.dutch : card.native, size: 15.6)
-                ScrollView {
-                    word(back ? card.dutch : card.native, size: 15.6)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .id("\(card.id)-\(back)")   // a new card or a flip starts at the top
-            }
-            Spacer(minLength: 2)
-            Text((back ? "Did you know it?" : "Tap to flip").uppercased())
-                .font(.system(size: 9, design: .monospaced)).tracking(1.2)
-        }
-        .foregroundStyle(back ? VJ.onSignal : VJ.ink)
-        .padding(10)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(back ? VJ.signal : VJ.card, ignoresSafeAreaEdges: [])
-        .contentShape(Rectangle())
-    }
-
-    private func word(_ text: String, size: CGFloat) -> some View {
-        Text(text)
-            .font(.system(size: size, weight: .heavy)).tracking(-size / 26)
-            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func answerButton(_ title: String, fill: Color, text: Color, action: @escaping () -> Void) -> some View {

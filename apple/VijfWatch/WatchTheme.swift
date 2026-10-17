@@ -7,6 +7,7 @@ enum VJ {
     static let paper = Color(hex: Tokens.paper.dark)
     static let card = Color(hex: Tokens.card.dark)
     static let ink = Color(hex: Tokens.ink.dark)
+    static let onInk = Color(hex: Tokens.onInk.dark)
     static let mute = Color(hex: Tokens.mute.dark)
     static let signal = Color(hex: Tokens.signal.dark)
     static let onSignal = Color(hex: Tokens.onSignal.dark)

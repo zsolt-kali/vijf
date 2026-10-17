@@ -81,8 +81,9 @@ no account, works offline once loaded.
 |---|---|
 | **Decks** | Wordmark and a **⋯** button (no deck count). The ⋯ menu holds **New deck** and **Backup**; tapping anywhere else (or Escape) closes it. Below the header: the search field (see Search), then one row per deck, in creation order: name, how many cards are left today, and learned (box 5) out of total. The line under the name counts the deck's cards due today in all five boxes ("8 left today"), says "Done for today" when none are left, and "0 cards" for an empty deck. There is no total across decks. Empty decks are greyed out. Swiping a row left reveals its delete button (see Decks). With zero decks there is no search field; instead an empty-state note and a name field with **Create**, which creates a deck and opens it (Enter also works). With zero cards: a button that loads the 12-word starter set into a deck called **Start** and opens it. Backup stays in the menu even with no decks, so a backup can be restored on a fresh install. |
 | **New deck** | Opened from the ⋯ menu; the back button returns to the deck list. A name field (focused) and **Create**, which creates the deck and opens it; Enter also works. |
-| **Deck** | A back button to the deck list and the deck name. Wordmark, plus a tally of this deck's cards in box 5 out of this deck's total. Five box rows: number, name (New, Shaky, Getting there, Nearly, Learned), card count, and up to 20 tick marks. When only some of a box's cards are due, a line under the name says how many ("8 left today"); when none are, it says when the next one comes up ("Next tomorrow", "Next in 3 days"), the box is greyed out like an empty one (it keeps its count, loses its ticks) and tapping it shows that line as a toast. Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Below the button, a note explains the rules, including that **Not yet** moves a card down one box and the gaps (every day, 2 days, then 4, 8 and 16). Button: add words. With zero cards in the deck: an empty-state note. |
+| **Deck** | A back button to the deck list and the deck name. Wordmark, plus a tally of this deck's cards in box 5 out of this deck's total. Five box rows: number, name (New, Shaky, Getting there, Nearly, Learned), card count, and up to 20 tick marks. When only some of a box's cards are due, a line under the name says how many ("8 left today"); when none are, it says when the next one comes up ("Next tomorrow", "Next in 3 days"), the box is greyed out like an empty one (it keeps its count, loses its ticks) and tapping it shows that line as a toast. Empty boxes are greyed out, and a filled box 5 is highlighted yellow. Below the button, a note explains the rules, including that **Not yet** moves a card down one box and the gaps (every day, 2 days, then 4, 8 and 16). Buttons: **Add words** (fill) and **Browse cards** (outlined; greyed out for a deck without cards), see Browsing a deck. With zero cards in the deck: an empty-state note. |
 | **Study** | Breadcrumb "Decks / *deck*" (both tappable) and the position counter (e.g. 3 / 12). The card shows the native word on the front ("Your language") and the Dutch word on the back ("Dutch", yellow); tap to flip. Below the card: **Not yet** (red, "back to box n−1", or "stays in box 1") and **I know it** (green, "→ box n+1", or "stays in box 5"). The **cog** (⚙) sits inside the card, top-right, on both faces; tapping it opens the edit form (see Editing a card) without flipping the card. On the back, a **speaker** sits just left of the cog (see Hearing the Dutch word). Tapping an empty box shows a toast instead of opening this screen. |
+| **Browse** | See Browsing a deck: an ink band (breadcrumb, **BROWSING**, the position), the card with its box, **← Previous** / **Next →** (Done on the last card). |
 | **Round done** | Box 1 only, between rounds: breadcrumb, "Round *n* done.", "*n* not yet.", and **Go again** (fill) / **Stop for today**. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
@@ -133,6 +134,25 @@ least one deck.
   Netherlands is used, else any Dutch voice (browsers often list a Belgian one first). The choice
   is saved on the device only (`vijf-voice` in `localStorage`, not part of the cards or backups),
   because each device has its own voices.
+
+## Browsing a deck
+
+- **Browse cards**, on a deck's boxes screen next to **Add words**, goes through all the deck's
+  cards one at a time, **without answering**: no box changes and `seenAt` stays as it is, so
+  today's counts don't change either. There is no mode: leaving the screen ends it.
+- Order: box 1 first, then the order the cards were added.
+- The top is an **ink band**: the breadcrumb, **BROWSING** (in `on-ink-accent`) and the
+  position "3 / 12".
+- The card is the study card: tap to flip; both footers show the card's box on the right ("Box
+  3"); the back says "Tap to flip back". The cog edits or deletes the card (web and iPhone)
+  and the speaker reads the Dutch word.
+- **← Previous** (greyed out on the first card) and **Next →**. On the last card, Next becomes
+  **Done**, which returns to the deck's boxes. Web: the ← and → keys do the same.
+- Deleting the shown card shows the next one (the previous one if it was the last); undo puts it
+  back and shows it again. Deleting the deck's only card ends browsing.
+- A deck without cards can't be browsed.
+- Watch: a **Browse cards** row under the five boxes (not shown for a deck without cards); the
+  card with Previous / Next (Done) under it and the position top-right; no editing.
 
 ## Editing a card
 
@@ -240,6 +260,7 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
   - **Boxes:** the deck's five boxes (New, Shaky, Getting there, Nearly, Learned) with card
     counts and, as on the phone, "8 left today" or "Next in 3 days" under the name; empty boxes
     and boxes with nothing due are greyed out and can't be opened. A filled box 5 has a yellow number.
+    Under them, **Browse cards** (see Browsing a deck).
   - **Study:** the position counter top-right, the card filling the screen (tap to flip; Dutch
     on yellow), and **Not yet** (red) / **I know it** (green) side by side, in every box.
     Text too long for the card scrolls (Digital Crown or swipe) instead of being cut off; a new

@@ -13,6 +13,7 @@ import WatchConnectivity
 final class WatchModel {
     private(set) var library: Library
     var study: StudySession?
+    var browse: BrowseSession?
 
     private let url: URL
     private let link = PhoneLink()
@@ -65,6 +66,11 @@ final class WatchModel {
 
     /// Go again, between two box 1 rounds.
     func nextRound() { study?.nextRound() }
+
+    /// Going through a deck's cards without answering (Browse cards).
+    func startBrowse(deck: Int) { browse = BrowseSession(library: library, deckId: deck) }
+    func browseNext() { browse?.next() }
+    func browsePrevious() { browse?.previous() }
 
     private func save(_ l: Library) {
         library = l

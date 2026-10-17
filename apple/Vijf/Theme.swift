@@ -80,8 +80,24 @@ struct VJButtonStyle: ButtonStyle {
     var subtitle: String? = nil
 
     func makeBody(configuration: Configuration) -> some View {
+        Styled(configuration: configuration, style: self)
+    }
+
+    /// Reads whether the button is enabled: a disabled one looks like an empty element
+    /// (`line` border, `mute` text), whatever its kind.
+    private struct Styled: View {
+        @Environment(\.isEnabled) private var isEnabled
+        let configuration: Configuration
+        let style: VJButtonStyle
+
+        var body: some View {
+            style.body(configuration, colors: isEnabled ? style.colors : (.clear, VJ.mute, VJ.line))
+        }
+    }
+
+    private func body(_ configuration: Configuration, colors: (Color, Color, Color)) -> some View {
         let (bg, fg, border) = colors
-        VStack(spacing: 3) {
+        return VStack(spacing: 3) {
             configuration.label.font(.vjButton)
             if let subtitle {
                 Text(subtitle.uppercased()).font(.vjMono(9)).tracking(0.9)

@@ -5,6 +5,7 @@ import VijfKit
 enum Route: Hashable {
     case deck(Int)
     case study(deck: Int, box: Int)
+    case browse(deck: Int)
     case backup
 }
 
@@ -30,6 +31,8 @@ final class AppModel {
     private(set) var library: Library
     var path: [Route] = []
     var study: StudySession?
+    /// The deck being browsed (Browse cards).
+    var browse: BrowseSession?
     private(set) var toast: Toast?
     /// Called after every saved change; the watch sync uses it to send the new library.
     var onChange: ((Library) -> Void)?
@@ -188,6 +191,39 @@ final class AppModel {
             if var s = study, s.deckId == session?.deckId, s.box == session?.box, path.last == .study(deck: s.deckId, box: s.box) {
                 s.reinsert(removed.card.id)
                 study = s
+            }
+            show("Restored")
+        }
+    }
+
+    // MARK: Browsing
+
+    /// Going through a deck's cards without answering; nil for a deck without cards.
+    func startBrowse(deck: Int) {
+        guard let b = BrowseSession(library: library, deckId: deck) else { return }
+        browse = b
+        path.append(.browse(deck: deck))
+    }
+
+    func browseNext() { browse?.next() }
+    func browsePrevious() { browse?.previous() }
+
+    /// Deletes the card being browsed; the next one takes its place. Undo puts it back and shows
+    /// it again if that deck is still being browsed. The last card gone ends browsing.
+    func deleteBrowsedCard() {
+        guard let id = browse?.currentCardId else { return }
+        var removed: Library.DeletedCard?
+        change { removed = $0.deleteCard(id) }
+        let at = browse?.removeCurrent() ?? 0
+        let deck = browse?.deckId
+        if browse?.total == 0 { browse = nil; if case .browse? = path.last { path.removeLast() } }
+        guard let removed else { return }
+        showUndo("Card deleted") { [weak self] in
+            guard let self else { return }
+            change { $0.restore(removed) }
+            if var b = browse, b.deckId == deck, path.last == .browse(deck: b.deckId) {
+                b.reinsert(removed.card.id, at: at)
+                browse = b
             }
             show("Restored")
         }

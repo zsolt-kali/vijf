@@ -265,3 +265,10 @@ remember to bump it and phone, watch and complication always match. A build with
 changes shows "+". The web version can lag the Apple one, since the web only redeploys when
 `web/` or `design/` changes.
 
+### 25. Browse cards, not a practice mode
+The first idea was a practice mode switched by tapping the wordmark. A mode changes how the whole
+app behaves until you remember to switch back, and a tappable logo is easy to miss or hit by
+accident. Instead, browsing is a screen started from a deck (Browse cards, next to Add words) that
+ends when you leave it. It never writes to a card, and an ink band marks it so it can't be
+mistaken for studying. Design: https://claude.ai/artifact/XREzmnwRhQzMScbxZoiMB5
+
