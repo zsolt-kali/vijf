@@ -73,3 +73,11 @@ test('cards saved before the daily rule (no seenAt) are all due today', async ({
   await page.click('[data-go=box2]');
   await expect(page.locator('.bar > span').last()).toHaveText('1 / 2');
 });
+
+test('the voice choice an older version saved is cleared; the cards stay', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('vijf-voice', JSON.stringify({ voice: 'Xander', speed: 'slow' })));
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 2)]));
+  expect(await page.evaluate(() => localStorage.getItem('vijf-voice'))).toBeNull();
+  expect((await saved(page)).cards).toHaveLength(1);
+});
+

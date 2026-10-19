@@ -25,7 +25,7 @@ struct BrowseView: View {
 
                     VStack(spacing: 18) {
                         FlashCard(card: card, flipped: flipped, backFooter: "Tap to flip back", corner: "Box \(card.box)",
-                                  edit: { editing = card }, speak: { DutchVoice.shared.say(card.dutch) })
+                                  edit: { editing = card })
                             .onTapGesture { withAnimation(reduceMotion ? nil : .spring(duration: 0.5)) { flipped.toggle() } }
                         HStack(spacing: 8) {
                             Button("← Previous") { move { model.browsePrevious() } }
@@ -47,11 +47,9 @@ struct BrowseView: View {
         .navigationTitle(model.library.deck(deckId)?.name ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editing) { card in EditCardView(card: card, origin: .browse) }
-        .onDisappear { DutchVoice.shared.stop() }
     }
 
     private func move(_ action: () -> Void) {
-        DutchVoice.shared.stop()
         action()
         flipped = false
     }
