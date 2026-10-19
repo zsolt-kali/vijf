@@ -291,3 +291,14 @@ test('the setting is kept in this browser only, apart from the cards', async ({ 
   expect(await page.evaluate(() => localStorage.getItem('leitner-dutch-v1') || '')).not.toContain('box1');
 });
 
+test('Settings holds only the Not yet choice, and cards have no speaker', async ({ page }) => {
+  await open(page, data([], []));
+  await menu(page, 'Settings');
+  await expect(page.locator('[data-act=miss]')).toHaveCount(2);
+  await expect(page.locator('[data-act=speed], [data-act=voice]')).toHaveCount(0);
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 1)]));
+  await page.click('[data-go=box1]');
+  await expect(page.locator('.speak')).toHaveCount(0);
+  await expect(page.locator('.face--back .cog')).toHaveCount(1);
+});
+

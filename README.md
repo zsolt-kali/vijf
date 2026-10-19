@@ -29,9 +29,7 @@ New words always start in box 1.
 ### Studying
 
 Open a deck, tap a box, and go through its cards that are due today, in random order. You see
-your own language first; tap to flip to the Dutch, where a speaker reads it aloud. In the web
-app, **Settings** in the ⋯ menu lets you pick the voice and the speed (Slow, Normal, Fast). Then
-answer:
+your own language first; tap to flip to the Dutch. Then answer:
 
 - **I know it:** the card moves up one box and waits that box's gap. From box 2 to box 3 means
   you see it again in 4 days. In box 5 it stays in box 5 and comes back in 16 days.
@@ -49,8 +47,8 @@ brings it back the next day, so a word you forgot gets practised again soon.
 ### Settings
 
 **Settings** in the ⋯ menu: **When you don't know a card**, choose **Move it down one box** (the
-default) or **Send it back to box 1** (classic Leitner, stricter). In the web app, the voice and
-speed are there too. The iPhone's setting also applies on the Watch.
+default) or **Send it back to box 1** (classic Leitner, stricter). The iPhone's setting also
+applies on the Watch.
 
 ### Browsing a deck
 

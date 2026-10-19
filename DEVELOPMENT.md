@@ -279,3 +279,8 @@ on the iPhone. The watch must never answer differently from the phone, so the ph
 setting with every library (application context) and the watch keeps the last one it got. The
 watch has no setting of its own.
 
+### 27. Reading words aloud removed
+The speaker on the card (decision 20) and the web's voice and speed settings were not used, so they
+were removed on every platform rather than kept as untested weight. The web app clears the
+`vijf-voice` entry an older version saved. The Settings screen keeps the "Not yet" choice.
+

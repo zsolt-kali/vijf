@@ -192,10 +192,9 @@
   input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
   .found { margin-bottom: 8px; }
   .pick-head { margin: 22px 0 8px; }
-  .speeds { margin-top: 0; }
-  .slot--voice, .slot--pick { grid-template-columns: 1fr auto; padding-left: 16px; }
-  .slot--voice .lbl, .slot--pick .lbl { display: block; }
-  .slot--voice .in-use, .slot--pick .in-use {
+  .slot--pick { grid-template-columns: 1fr auto; padding-left: 16px; }
+  .slot--pick .lbl { display: block; }
+  .slot--pick .in-use {
     font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
   }
   .slot--hit { grid-template-columns: 1fr auto; padding-left: 16px; }
@@ -253,18 +252,16 @@
   .rate .no { background: var(--danger); border-color: var(--danger); color: var(--on-danger); }
   .rate .yes { background: var(--success); border-color: var(--success); color: var(--on-success); }
   .rate .no:active, .rate .yes:active { opacity: 0.85; }
-  /* The edit cog sits inside each card face, top-right, in a 44px tap target. The speaker that
-     reads the Dutch word sits beside it, on the back only. */
-  .cog, .speak {
+  /* The edit cog sits inside each card face, top-right, in a 44px tap target. */
+  .cog {
     position: absolute; top: 8px; right: 8px; width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
     background: none; border: none; padding: 0; color: var(--mute); cursor: pointer;
   }
-  .speak { right: 52px; }
-  .face--back .cog, .face--back .speak { color: var(--on-signal); }
-  .cog svg, .speak svg { width: 22px; height: 22px; }
-  .cog:focus-visible, .speak:focus-visible { outline: 3px solid var(--deep); outline-offset: -4px; }
-  .face--back .cog:focus-visible, .face--back .speak:focus-visible { outline-color: var(--on-signal); }
+  .face--back .cog { color: var(--on-signal); }
+  .cog svg { width: 22px; height: 22px; }
+  .cog:focus-visible { outline: 3px solid var(--deep); outline-offset: -4px; }
+  .face--back .cog:focus-visible { outline-color: var(--on-signal); }
   .btn--danger { border-color: var(--danger); color: var(--danger); }
   .btn--danger:active { background: var(--danger); color: var(--on-danger); }
   .edit { background: var(--card); border: 1.5px solid var(--ink); padding: 22px 22px 8px; margin-bottom: 18px; }
@@ -336,12 +333,6 @@
     '1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 ' +
     '0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 
-  /* Speaker, from Feather Icons "volume-2" (MIT). */
-  var SPEAKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>' +
-    '<path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
-  var CAN_SPEAK = 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
 
   var STARTER = [
     ['the house','het huis'],['the water','het water'],['the bread','het brood'],
@@ -427,45 +418,14 @@
     });
   }
   /* What "Not yet" does to a card above box 1: 'down' (one box down) or 'box1' (classic Leitner).
-     Saved in this browser only, like the voice. */
+     Saved in this browser only, not in the cards or backups. */
   var MISS_KEY = 'vijf-miss';
   var missRule = 'down';
   try { if (localStorage.getItem(MISS_KEY) === 'box1') missRule = 'box1'; } catch (e) {}
   function missBox(box) { return missRule === 'box1' ? 1 : Math.max(box - 1, 1); }
+  /* Reading words aloud was removed; clear the voice choice an older version saved. */
+  try { localStorage.removeItem('vijf-voice'); } catch (e) {}
 
-  /* The voice and speed chosen on the Settings screen. Saved on this device only, apart from the
-     cards and backups, because each device has its own voices. */
-  var VOICE_KEY = 'vijf-voice';
-  var SPEEDS = { slow: 0.7, normal: 1, fast: 1.25 };
-  var voicePick = { voice: '', speed: 'normal' };
-  try {
-    var savedPick = JSON.parse(localStorage.getItem(VOICE_KEY));
-    if (savedPick) voicePick = { voice: savedPick.voice || '', speed: SPEEDS[savedPick.speed] ? savedPick.speed : 'normal' };
-  } catch (e) {}
-  function savePick() { try { localStorage.setItem(VOICE_KEY, JSON.stringify(voicePick)); } catch (e) {} }
-
-  function dutchVoices() {
-    return CAN_SPEAK ? speechSynthesis.getVoices().filter(function (v) { return /^nl\b/i.test(v.lang); }) : [];
-  }
-  /* The chosen voice; when it's gone or none was chosen, the first voice from the Netherlands
-     (browsers often list a Belgian one first), else any Dutch one. */
-  function voiceInUse() {
-    var nl = dutchVoices();
-    return nl.find(function (v) { return v.voiceURI === voicePick.voice; }) ||
-      nl.find(function (v) { return /^nl-NL/i.test(v.lang); }) || nl[0] || null;
-  }
-
-  /* Reads Dutch aloud with the chosen voice and speed. A new tap restarts it. */
-  function speak(text) {
-    var u = new SpeechSynthesisUtterance(text);
-    u.lang = 'nl-NL';
-    var v = voiceInUse();
-    if (v) u.voice = v;
-    u.rate = SPEEDS[voicePick.speed];
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  }
-  function hush() { if (CAN_SPEAK) speechSynthesis.cancel(); }
 
   function toast(msg) {
     var t = document.createElement('div');
@@ -658,12 +618,10 @@
     return h;
   }
 
-  /* The two-sided card, for studying and browsing: tap to flip; the cog (its action `editAct`)
-     and, on the back, the speaker. `corner` is shown at the right of both footers ("Box 3"). */
+  /* The two-sided card, for studying and browsing: tap to flip; the cog (its action `editAct`) on
+     both faces. `corner` is shown at the right of both footers ("Box 3"). */
   function cardHtml(card, editAct, backHint, corner) {
     var cog = '<button class="cog" data-act="' + editAct + '" aria-label="Edit card">' + COG + '</button>';
-    var speaker = CAN_SPEAK ?
-      '<button class="speak" data-act="speak" aria-label="Say the Dutch word">' + SPEAKER + '</button>' : '';
     var foot = function (text) {
       return '<span class="hint hint--foot"><span>' + text + '</span>' + (corner ? '<span>' + corner + '</span>' : '') + '</span>';
     };
@@ -673,7 +631,7 @@
       foot('Tap to flip') + cog + '</div>' +
       '<div class="face face--back"><span class="hint">Dutch</span>' +
       '<div class="mid"><div class="word">' + esc(card.dutch) + '</div></div>' +
-      foot(backHint) + speaker + cog + '</div></div></div>';
+      foot(backHint) + cog + '</div></div></div>';
   }
 
   /* Browse cards: every card of the deck, box 1 first, without answering. A dark band says
@@ -806,8 +764,7 @@
       '<p class="note version">Version ' + esc(VERSION) + '</p>';
   }
 
-  /* Settings: what "Not yet" does above box 1, then (where the browser can speak) how Dutch
-     words are read. Both are saved in this browser only. */
+  /* Settings: what "Not yet" does above box 1. Saved in this browser only. */
   function settingsView() {
     var h = '<div class="bar"><button data-go="decks">← Decks</button><span>Settings</span></div>' +
       '<h2>Settings</h2>' +
@@ -819,37 +776,9 @@
         (on ? '<span class="in-use">In use</span>' : '') + '</button>';
     });
     h += '</div><p class="note">Either way the card comes back tomorrow. Box 1 cards stay in box 1.</p>';
-    return h + (CAN_SPEAK ? voiceHtml() : '');
+    return h;
   }
 
-  /* How Dutch words are read on this device: speed, then voice. A tap on either reads a sample. */
-  function voiceHtml() {
-    var nl = dutchVoices(), using = voiceInUse();
-    var h = '<div class="eyebrow pick-head">Speed</div>' +
-      '<p class="note" style="margin:0 0 8px">How Dutch words are read on this device. Tap a speed or ' +
-      'a voice to hear it.</p><div class="row speeds">';
-    ['slow', 'normal', 'fast'].forEach(function (k) {
-      var on = voicePick.speed === k;
-      h += '<button class="btn' + (on ? ' btn--fill' : '') + '" data-act="speed" data-speed="' + k + '" ' +
-        'aria-pressed="' + on + '">' + k.charAt(0).toUpperCase() + k.slice(1) + '</button>';
-    });
-    h += '</div><div class="eyebrow pick-head">Voice</div>';
-    if (!nl.length) {
-      h += '<div class="empty"><p>No Dutch voice on this device yet.</p></div>';
-    } else {
-      h += '<div class="tray">';
-      nl.forEach(function (v) {
-        var on = using && v.voiceURI === using.voiceURI;
-        h += '<button class="slot slot--voice" data-act="voice" data-voice="' + esc(v.voiceURI) + '" ' +
-          'aria-pressed="' + !!on + '"><span><span class="lbl">' + esc(v.name) + '</span>' +
-          '<span class="sub">' + (/^nl-BE/i.test(v.lang) ? 'Belgium' : 'Netherlands') + '</span></span>' +
-          (on ? '<span class="in-use">In use</span>' : '') + '</button>';
-      });
-      h += '</div>';
-    }
-    return h + '<p class="note">More voices on a Mac: System Settings → Accessibility → Read &amp; ' +
-      'Speak → System voice → Manage Voices → Dutch. The Enhanced and Premium ones sound most natural.</p>';
-  }
 
   function foundCard() { return state.cards.find(function (c) { return c.id === foundId; }) || null; }
 
@@ -860,7 +789,6 @@
         (view === 'browse' && !browseCard())) {
       view = 'decks';
     }
-    hush();
     app.innerHTML = v[view]();
     window.scrollTo(0, 0);
     var auto = app.querySelector('[autofocus]');
@@ -1087,7 +1015,6 @@
     }
     else if (act === 'yes') rate(true);
     else if (act === 'no') rate(false);
-    else if (act === 'speak') speak((view === 'browse' ? browseCard() : currentCard()).dutch);
     else if (act === 'browse') startBrowse();
     else if (act === 'browse-prev') browseMove(-1);
     else if (act === 'browse-next') browseMove(1);
@@ -1097,11 +1024,6 @@
       missRule = el.getAttribute('data-miss') === 'box1' ? 'box1' : 'down';
       try { localStorage.setItem(MISS_KEY, missRule); } catch (e) {}
       render();
-    }
-    else if (act === 'speed' || act === 'voice') {
-      if (act === 'speed') voicePick.speed = el.getAttribute('data-speed');
-      else voicePick.voice = el.getAttribute('data-voice');
-      savePick(); render(); speak('Goedemorgen');
     }
     else if (act === 'edit') { session.editing = true; render(); }
     else if (act === 'edit-cancel') {
@@ -1180,10 +1102,6 @@
   load();
   launch();
 
-  /* Some browsers list their voices a moment after the page loads. */
-  if (CAN_SPEAK && speechSynthesis.addEventListener) {
-    speechSynthesis.addEventListener('voiceschanged', function () { if (view === 'settings') render(); });
-  }
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
