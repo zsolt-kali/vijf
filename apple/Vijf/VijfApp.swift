@@ -20,7 +20,10 @@ struct VijfApp: App {
                 .environment(model)
         }
         .onChange(of: phase) {
-            if phase == .active { sync.push(model.library, miss: model.miss) }
+            if phase == .active {
+                model.refreshDay()
+                sync.push(model.library, miss: model.miss)
+            }
         }
     }
 }

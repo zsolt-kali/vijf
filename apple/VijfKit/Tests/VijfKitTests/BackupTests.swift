@@ -49,7 +49,7 @@ import Testing
         let d = try l.makeDeck(named: "Start", now: 1)
         l.addCard(native: "a", dutch: "b", to: d.id, now: 2)
         let json = try #require(JSONSerialization.jsonObject(with: Backup.encode(l)) as? [String: Any])
-        #expect(Set(json.keys) == ["cards", "nextId", "decks", "nextDeckId"])
+        #expect(Set(json.keys) == ["cards", "nextId", "decks", "nextDeckId", "doneDays"])
         let card = try #require((json["cards"] as? [[String: Any]])?.first)
         #expect(Set(card.keys).isSuperset(of: ["id", "deckId", "native", "dutch", "box", "createdAt"]))
     }

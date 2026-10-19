@@ -36,6 +36,8 @@ struct StudyView: View {
                 }
             } else if let session, session.isBetweenRounds {
                 RoundBreak(round: session.round, notYet: session.retry.count)
+            } else if model.library.isDone(), model.library.dueTotal(dayStart: Day.start()) == 0 {
+                DoneTodayView()
             } else {
                 Summary(line: session?.summary ?? "")
             }

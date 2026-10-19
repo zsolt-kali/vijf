@@ -57,8 +57,9 @@ final class PhoneSync: NSObject, WCSessionDelegate, @unchecked Sendable {
 
     private func receive(_ payload: [String: Any]) {
         let reviews = Sync.reviews(fromUserInfo: payload)
-        guard !reviews.isEmpty else { return }
-        Task { @MainActor in self.model?.applyReviews(reviews) }
+        guard !reviews.isEmpty || !Sync.doneDays(fromUserInfo: payload).isEmpty else { return }
+        let doneDays = Sync.doneDays(fromUserInfo: payload)
+        Task { @MainActor in self.model?.applyReviews(reviews, doneDays: doneDays) }
     }
 
     func sessionDidBecomeInactive(_ session: WCSession) {}

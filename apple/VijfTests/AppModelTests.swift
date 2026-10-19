@@ -115,6 +115,25 @@ import VijfKit
         #expect(model.library.card(id)?.box == 1)
     }
 
+    @Test func answeringTheLastDueCardMakesTodayDone() throws {
+        let model = freshModel()
+        model.addStarterSet()
+        let deckId = try #require(model.library.decks.first?.id)
+        #expect(!model.library.isDone())
+        model.startStudy(deck: deckId, box: 1)
+        for _ in 0..<12 { model.answer(known: true) }
+        #expect(model.library.isDone())
+        #expect(model.library.doneDays == [Streak.key(Date())])
+        #expect(Streak.count(doneDays: model.library.doneDays) == 1)
+    }
+
+    @Test func theWatchsDoneDaysCountOnThePhone() throws {
+        let model = freshModel()
+        model.addStarterSet()
+        model.applyReviews([], doneDays: ["2026-10-01"])
+        #expect(model.library.doneDays.contains("2026-10-01"))
+    }
+
     @Test func undoAfterLeavingTheSessionOnlyRestoresTheCard() throws {
         let model = freshModel()
         model.addStarterSet()

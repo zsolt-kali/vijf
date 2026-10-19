@@ -284,3 +284,12 @@ The speaker on the card (decision 20) and the web's voice and speed settings wer
 were removed on every platform rather than kept as untested weight. The web app clears the
 `vijf-voice` entry an older version saved. The Settings screen keeps the "Not yet" choice.
 
+### 28. Days in a row: done means nothing is due, and the dates live in the data
+A reason to come back each day: a streak and a Done for today screen. A day counts when nothing
+is due in any deck, so it rewards finishing the work (not opening the app), and a day with
+nothing due counts by itself. One missed day per calendar week is let off, because a streak that
+resets on one slip tends to make people give up. The dates are a new `doneDays` field in the
+saved data and backups (not a per-device setting like the voice was), so a streak survives a
+restore. The watch records days too and sends them with its answers; both sides keep the union.
+Design: https://claude.ai/artifact/SnG6u65yPnCMeMAgwUGU66
+
