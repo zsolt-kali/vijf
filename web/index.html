@@ -533,6 +533,11 @@
   var missRule = 'down';
   try { if (localStorage.getItem(MISS_KEY) === 'box1') missRule = 'box1'; } catch (e) {}
   function missBox(box) { return missRule === 'box1' ? 1 : Math.max(box - 1, 1); }
+  /* What the deck list shows: the search field and the days in a row. Both on unless switched
+     off in Settings; only "off" is stored ('0'), per browser like the above. */
+  var SHOW_KEYS = { search: 'vijf-search', streak: 'vijf-streak' };
+  var show = { search: true, streak: true };
+  try { Object.keys(SHOW_KEYS).forEach(function (k) { show[k] = localStorage.getItem(SHOW_KEYS[k]) !== '0'; }); } catch (e) {}
   /* Reading words aloud was removed; clear the voice choice an older version saved. */
   try { localStorage.removeItem('vijf-voice'); } catch (e) {}
 
@@ -592,14 +597,16 @@
         '<button role="menuitem" data-go="settings">Settings</button>' +
         '<button role="menuitem" data-go="backup">Backup</button></div>' : '') + '</div>';
     if (markDone()) save();
-    if (state.cards.length) h += streakHtml();
+    if (state.cards.length && show.streak) h += streakHtml();
     if (n) {
-      h += '<div class="search"><input type="search" id="f-search" value="' + esc(query) + '" ' +
-        'placeholder="Search all cards" aria-label="Search all cards" autocomplete="off" ' +
-        'autocapitalize="none" spellcheck="false">' +
-        '<button class="search__clear" data-act="search-clear" aria-label="Clear search"' +
-        (query.trim() ? '' : ' hidden') + '>×</button></div>' +
-        '<div id="list">' + listHtml() + '</div>';
+      if (show.search) {
+        h += '<div class="search"><input type="search" id="f-search" value="' + esc(query) + '" ' +
+          'placeholder="Search all cards" aria-label="Search all cards" autocomplete="off" ' +
+          'autocapitalize="none" spellcheck="false">' +
+          '<button class="search__clear" data-act="search-clear" aria-label="Clear search"' +
+          (query.trim() ? '' : ' hidden') + '>×</button></div>';
+      }
+      h += '<div id="list">' + listHtml() + '</div>';
     } else {
       h += '<div class="empty"><div class="eyebrow">Empty</div>' +
         '<p>Make a deck for each topic, like food or work.</p></div>' +
@@ -834,10 +841,10 @@
     return '<div class="bar">' + crumbs() + '<span>Done</span></div>' +
       '<h2 class="done-head">Done for today.</h2>' +
       '<p class="done-lede">Every deck is done. Nothing else is due until tomorrow.</p>' +
-      '<div class="done-card"><div class="done-count"><b>' + n + '</b> ' + (n === 1 ? 'day' : 'days') +
+      (show.streak ? '<div class="done-card"><div class="done-count"><b>' + n + '</b> ' + (n === 1 ? 'day' : 'days') +
       ' in a row</div>' + weekHtml('week--wide') +
       '<div class="weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>' +
-      '<span>Sat</span><span>Sun</span></div></div>' +
+      '<span>Sat</span><span>Sun</span></div></div>' : '') +
       '<dl class="done-rows"><div><dt>Today</dt><dd>' + cardsWord(answered) + ' · ' + up + ' moved up</dd></div>' +
       '<div><dt>Tomorrow</dt><dd>' + cardsWord(t) + '</dd></div></dl>' +
       '<div class="row"><button class="btn btn--fill" data-go="decks">Back to decks</button></div>';
@@ -899,11 +906,20 @@
     var h = '<div class="bar"><button data-go="decks">← Decks</button><span>Settings</span></div>' +
       '<h2>Settings</h2>';
     var on = missRule === 'box1';
-    h += '<div class="setting"><span><span class="lbl" id="leitner-label">Classic Leitner</span>' +
-      '<span class="sub">' + (on ? 'Missed cards go back to box 1' : 'Missed cards go down one box') + '</span></span>' +
-      '<button class="switch" role="switch" aria-checked="' + on + '" aria-labelledby="leitner-label" ' +
-      'data-act="miss"></button></div>';
+    h += settingRow('leitner', 'Classic Leitner', on,
+      on ? 'Missed cards go back to box 1' : 'Missed cards go down one box', 'data-act="miss"');
+    h += settingRow('search', 'Search', show.search, show.search ? 'Shown on the deck list' : 'Hidden',
+      'data-act="show" data-show="search"');
+    h += settingRow('streak', 'Days in a row', show.streak, show.streak ? 'Shown on the deck list' : 'Hidden',
+      'data-act="show" data-show="streak"');
     return h;
+  }
+  /* One setting: its name, a line saying what the current position does, and the switch. */
+  function settingRow(id, label, on, sub, act) {
+    return '<div class="setting"><span><span class="lbl" id="' + id + '-label">' + label + '</span>' +
+      '<span class="sub">' + sub + '</span></span>' +
+      '<button class="switch" role="switch" aria-checked="' + on + '" aria-labelledby="' + id + '-label" ' +
+      act + '></button></div>';
   }
 
 
@@ -1147,6 +1163,16 @@
     else if (act === 'browse-next') browseMove(1);
     else if (act === 'browse-edit') { foundId = browseCard().id; editFrom = 'browse'; go('card'); }
     else if (act === 'again') { nextRound(session); render(); }
+    else if (act === 'show') {
+      var which = el.getAttribute('data-show');
+      show[which] = !show[which];
+      if (which === 'search' && !show.search) query = '';
+      try {
+        if (show[which]) localStorage.removeItem(SHOW_KEYS[which]);
+        else localStorage.setItem(SHOW_KEYS[which], '0');
+      } catch (e) {}
+      render();
+    }
     else if (act === 'miss') {
       missRule = missRule === 'box1' ? 'down' : 'box1';
       try { localStorage.setItem(MISS_KEY, missRule); } catch (e) {}

@@ -267,10 +267,10 @@ test('with Classic Leitner on, Not yet sends a card from any box to box 1', asyn
   await menu(page, 'Settings');
   const sw = page.getByRole('switch', { name: 'Classic Leitner' });
   await expect(sw).toHaveAttribute('aria-checked', 'false');
-  await expect(page.locator('.setting .sub')).toHaveText('Missed cards go down one box');
+  await expect(page.locator('.setting .sub').first()).toHaveText('Missed cards go down one box');
   await sw.click();
   await expect(sw).toHaveAttribute('aria-checked', 'true');
-  await expect(page.locator('.setting .sub')).toHaveText('Missed cards go back to box 1');
+  await expect(page.locator('.setting .sub').first()).toHaveText('Missed cards go back to box 1');
 
   await page.evaluate(() => {
     localStorage.setItem('leitner-dutch-v1', JSON.stringify({ cards: [
@@ -299,10 +299,13 @@ test('the setting is kept in this browser only, apart from the cards', async ({ 
   expect(await page.evaluate(() => localStorage.getItem('leitner-dutch-v1') || '')).not.toContain('box1');
 });
 
-test('Settings holds only the Classic Leitner switch, and cards have no speaker', async ({ page }) => {
+test('Settings holds three switches, and cards have no speaker', async ({ page }) => {
   await open(page, data([], []));
   await menu(page, 'Settings');
-  await expect(page.getByRole('switch')).toHaveCount(1);
+  await expect(page.getByRole('switch')).toHaveCount(3);
+  for (const [name, on] of [['Classic Leitner', 'false'], ['Search', 'true'], ['Days in a row', 'true']]) {
+    await expect(page.getByRole('switch', { name })).toHaveAttribute('aria-checked', on);
+  }
   await expect(page.locator('[data-act=speed], [data-act=voice]')).toHaveCount(0);
   await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 1)]));
   await page.click('[data-go=box1]');

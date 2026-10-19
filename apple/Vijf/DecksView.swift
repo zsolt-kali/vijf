@@ -18,7 +18,7 @@ struct DecksView: View {
                 .padding(.bottom, 12)
                 .row()
 
-            if !model.library.cards.isEmpty {
+            if !model.library.cards.isEmpty && model.showStreak {
                 StreakLine(library: model.library).padding(.bottom, 4).row()
             }
 
@@ -47,7 +47,9 @@ struct DecksView: View {
                 .padding(.top, 14)
                 .row()
             } else {
-                SearchField(text: $query).padding(.bottom, 6).row()
+                if model.showSearch {
+                    SearchField(text: $query).padding(.bottom, 6).row()
+                }
 
                 if searching {
                     let hits = Search.cards(matching: query, in: model.library)
@@ -83,6 +85,7 @@ struct DecksView: View {
         .background(VJ.paper)
         .navigationTitle("Decks")
         .toolbar(.hidden, for: .navigationBar)
+        .onChange(of: model.showSearch) { if !model.showSearch { query = "" } }
         .sheet(item: $editing) { card in EditCardView(card: card, origin: .search) }
         .alert("New deck", isPresented: $naming) {
             TextField("Name", text: $newName)

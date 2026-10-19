@@ -1,30 +1,41 @@
 import SwiftUI
 import VijfKit
 
-/// The iPhone's settings (SPEC.md → Settings): one switch, Classic Leitner, for what "Not yet"
-/// does above box 1. The watch follows whatever is set here.
+/// The iPhone's settings (SPEC.md → Settings): Classic Leitner (what "Not yet" does above box 1;
+/// the watch follows it), and what the deck list shows: Search and Days in a row.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        let on = Binding(get: { model.miss == .backToBoxOne },
-                         set: { model.setMiss($0 ? .backToBoxOne : .oneDown) })
         ScrollView {
-            Toggle(isOn: on) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Classic Leitner").font(.vjLabel).foregroundStyle(VJ.ink)
-                    Eyebrow(on.wrappedValue ? "Missed cards go back to box 1" : "Missed cards go down one box")
-                }
+            VStack(spacing: 8) {
+                row("Classic Leitner",
+                    Binding(get: { model.miss == .backToBoxOne }, set: { model.setMiss($0 ? .backToBoxOne : .oneDown) }),
+                    on: "Missed cards go back to box 1", off: "Missed cards go down one box")
+                row("Search", Binding(get: { model.showSearch }, set: { model.setShowSearch($0) }),
+                    on: "Shown on the deck list", off: "Hidden")
+                row("Days in a row", Binding(get: { model.showStreak }, set: { model.setShowStreak($0) }),
+                    on: "Shown on the deck list", off: "Hidden")
             }
-            .toggleStyle(VJSwitchStyle())
-            .padding(.vertical, 14).padding(.horizontal, 16)
-            .background(VJ.card)
-            .overlay(Rectangle().strokeBorder(VJ.ink, lineWidth: VJ.stroke))
             .padding(16)
         }
         .background(VJ.paper)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// One setting: its name, a line saying what the current position does, and the switch.
+    private func row(_ label: String, _ isOn: Binding<Bool>, on: String, off: String) -> some View {
+        Toggle(isOn: isOn) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(label).font(.vjLabel).foregroundStyle(VJ.ink)
+                Eyebrow(isOn.wrappedValue ? on : off)
+            }
+        }
+        .toggleStyle(VJSwitchStyle())
+        .padding(.vertical, 14).padding(.horizontal, 16)
+        .background(VJ.card)
+        .overlay(Rectangle().strokeBorder(VJ.ink, lineWidth: VJ.stroke))
     }
 }
 

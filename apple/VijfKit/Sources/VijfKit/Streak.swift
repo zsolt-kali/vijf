@@ -60,8 +60,8 @@ public enum Streak {
 
 extension Library {
     /// Every card due on the day starting at `dayStart`, in all decks.
-    public func dueTotal(dayStart: Int64) -> Int {
-        cards.filter { $0.isDue(dayStart: dayStart) }.count
+    public func dueTotal(dayStart: Int64, calendar: Calendar = .current) -> Int {
+        cards.filter { $0.isDue(dayStart: dayStart, calendar: calendar) }.count
     }
 
     /// Records today as done when there are cards and none is due. Returns whether it added it.
@@ -69,7 +69,7 @@ extension Library {
     public mutating func markDoneIfClear(now: Date = Date(), calendar: Calendar = .current) -> Bool {
         let today = Streak.key(now, calendar: calendar)
         guard !cards.isEmpty, !doneDays.contains(today),
-              dueTotal(dayStart: Day.start(of: now, calendar: calendar)) == 0 else { return false }
+              dueTotal(dayStart: Day.start(of: now, calendar: calendar), calendar: calendar) == 0 else { return false }
         doneDays = (doneDays + [today]).sorted()
         return true
     }
@@ -87,7 +87,7 @@ extension Library {
     /// Cards that will be due tomorrow.
     public func dueTomorrow(now: Date = Date(), calendar: Calendar = .current) -> Int {
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))!
-        return dueTotal(dayStart: Day.start(of: tomorrow, calendar: calendar))
+        return dueTotal(dayStart: Day.start(of: tomorrow, calendar: calendar), calendar: calendar)
     }
 
     /// The deck list's second streak line: "Finish today to make it 13", "Finish today to start

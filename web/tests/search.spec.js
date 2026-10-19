@@ -1,6 +1,6 @@
 // SPEC.md → Search
 const { test, expect } = require('@playwright/test');
-const { deck, card, data, open, saved, deckRow, toast } = require('./helpers');
+const { deck, card, data, open, saved, deckRow, toast, menu } = require('./helpers');
 
 const sample = () => data(
   [deck(1, 'Food'), deck(2, 'Work'), deck(3, 'Travel')],
@@ -149,3 +149,18 @@ test('search text is shown escaped, never as markup', async ({ page }) => {
   await search(page, '&');
   await expect(hits(page).locator('.nl mark')).toHaveText('&');
 });
+
+test('the Search switch in Settings hides the search field, and it stays hidden', async ({ page }) => {
+  await open(page, data([deck(1, 'Start'), deck(2, 'Eten')], [card(1, 1, 'the bread', 'het brood')]));
+  await page.fill('#f-search', 'brood');
+  await menu(page, 'Settings');
+  await page.getByRole('switch', { name: 'Search' }).click();
+  await expect(page.getByRole('switch', { name: 'Search' })).toHaveAttribute('aria-checked', 'false');
+  await page.getByRole('button', { name: '← Decks' }).click();
+  await expect(page.locator('#f-search')).toHaveCount(0);
+  await expect(page.locator('.slot--deck')).toHaveCount(2);   // the search in progress is cleared
+  await page.reload();
+  await expect(page.locator('#f-search')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('vijf-search'))).toBe('0');
+});
+
