@@ -262,12 +262,15 @@ test('a card moved up by an older version (reviewedAt a moment before seenAt) st
 });
 
 /* The "Not yet" setting: one box down (default) or back to box 1 (classic Leitner). */
-test('with "Send it back to box 1", Not yet sends a card from any box to box 1', async ({ page }) => {
+test('with Classic Leitner on, Not yet sends a card from any box to box 1', async ({ page }) => {
   await open(page, data([], []));
   await menu(page, 'Settings');
-  await expect(page.locator('[data-miss=down]')).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('[data-miss=box1]').click();
-  await expect(page.locator('[data-miss=box1] .in-use')).toHaveText('In use');
+  const sw = page.getByRole('switch', { name: 'Classic Leitner' });
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
+  await expect(page.locator('.setting .sub')).toHaveText('Missed cards go down one box');
+  await sw.click();
+  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('.setting .sub')).toHaveText('Missed cards go back to box 1');
 
   await page.evaluate(() => {
     localStorage.setItem('leitner-dutch-v1', JSON.stringify({ cards: [
@@ -288,18 +291,18 @@ test('with "Send it back to box 1", Not yet sends a card from any box to box 1',
 test('the setting is kept in this browser only, apart from the cards', async ({ page }) => {
   await open(page, data([], []));
   await menu(page, 'Settings');
-  await page.locator('[data-miss=box1]').click();
+  await page.getByRole('switch', { name: 'Classic Leitner' }).click();
   await page.reload();
   await menu(page, 'Settings');
-  await expect(page.locator('[data-miss=box1]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('switch', { name: 'Classic Leitner' })).toHaveAttribute('aria-checked', 'true');
   expect(await page.evaluate(() => localStorage.getItem('vijf-miss'))).toBe('box1');
   expect(await page.evaluate(() => localStorage.getItem('leitner-dutch-v1') || '')).not.toContain('box1');
 });
 
-test('Settings holds only the Not yet choice, and cards have no speaker', async ({ page }) => {
+test('Settings holds only the Classic Leitner switch, and cards have no speaker', async ({ page }) => {
   await open(page, data([], []));
   await menu(page, 'Settings');
-  await expect(page.locator('[data-act=miss]')).toHaveCount(2);
+  await expect(page.getByRole('switch')).toHaveCount(1);
   await expect(page.locator('[data-act=speed], [data-act=voice]')).toHaveCount(0);
   await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 1)]));
   await page.click('[data-go=box1]');

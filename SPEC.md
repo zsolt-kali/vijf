@@ -55,8 +55,8 @@ no account, works offline once loaded.
 - **I know it** moves the card up one box and removes it from the session. In box 5 the card
   stays in box 5.
 - **Not yet** moves the card **down one box** (box 1 stays in box 1), and it is due again the
-  next day. A setting can make it **send the card back to box 1** instead (classic Leitner; see
-  Settings below); the button's subtitle and the summary say where the card goes. In box 1 it comes back in the next round (see below) until the user knows it. In
+  next day. The **Classic Leitner** switch in Settings makes it **send the card back to box 1**
+  instead; the button's subtitle and the summary say where the card goes. In box 1 it comes back in the next round (see below) until the user knows it. In
   boxes 2–5 it leaves the session, because another round would only move it straight back up.
 - **Box 5** ("Learned") works like the others: **I know it** keeps the card in box 5,
   **Not yet** moves it back to box 4.
@@ -89,7 +89,7 @@ no account, works offline once loaded.
 | **Done for today** | See Days in a row: replaces the summary when nothing is due in any deck. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
-| **Settings** | Opened from the deck list's ⋯ menu; the back button returns there. **When you don't know a card:** "Move it down one box" ("As now", the default) or "Send it back to box 1" ("Classic Leitner"); the chosen one says "In use", and a note says the card comes back tomorrow either way and box 1 cards stay in box 1. Saved on the device, not in the cards or backups: web `vijf-miss` in `localStorage` (an old `vijf-voice` entry from when words could be read aloud is cleared on load); iPhone a settings file next to its library, sent to the watch (see Apple Watch → Sync). |
+| **Settings** | Opened from the deck list's ⋯ menu; the back button returns there. One row: **Classic Leitner**, with a square switch on the right (see design/components/Switch.md). Under the label: "Missed cards go down one box" when off (the default) or "Missed cards go back to box 1" when on. No heading or note. Saved on the device, not in the cards or backups: web `vijf-miss` in `localStorage` (an old `vijf-voice` entry from when words could be read aloud is cleared on load); iPhone a settings file next to its library, sent to the watch (see Apple Watch → Sync). |
 | **Backup** | Opened from the deck list's ⋯ menu; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. At the bottom, the version: "Version 3116643 · 15 Oct 2026", the commit the app was built from and its date ("Version dev" when not deployed). |
 
 ### Bulk import format

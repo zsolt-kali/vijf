@@ -223,12 +223,28 @@
   .done-rows div { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1.5px solid var(--line); }
   .done-rows dt { font-size: 15px; }
   .done-rows dd { margin: 0; font-family: var(--mono); font-size: 13px; }
-  .pick-head { margin: 22px 0 8px; }
-  .slot--pick { grid-template-columns: 1fr auto; padding-left: 16px; }
-  .slot--pick .lbl { display: block; }
-  .slot--pick .in-use {
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  /* A setting with a square switch on the right (Settings → Classic Leitner). */
+  .setting {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    background: var(--card); border: 1.5px solid var(--ink); padding: 14px 16px; margin-top: 8px;
   }
+  .setting .lbl { display: block; font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+  .setting .sub {
+    display: block; font-family: var(--mono); font-size: 10px; color: var(--mute);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px;
+  }
+  .switch {
+    position: relative; flex: none; width: 56px; height: 32px; padding: 0; cursor: pointer;
+    border: 1.5px solid var(--ink); border-radius: 0; background: var(--paper);
+  }
+  .switch::after {
+    content: ''; position: absolute; top: 3px; left: 3px; width: 23px; height: 23px;
+    background: var(--ink); transition: left 0.15s ease;
+  }
+  .switch[aria-checked="true"] { background: var(--ink); }
+  .switch[aria-checked="true"]::after { left: 27px; background: var(--on-ink); }
+  .switch:focus-visible { outline: 3px solid var(--deep); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .switch::after { transition: none; } }
   .slot--hit { grid-template-columns: 1fr auto; padding-left: 16px; }
   .slot--hit .lbl { display: block; }
   .slot--hit .nl { display: block; font-size: 15px; margin-top: 3px; }
@@ -881,15 +897,12 @@
   /* Settings: what "Not yet" does above box 1. Saved in this browser only. */
   function settingsView() {
     var h = '<div class="bar"><button data-go="decks">← Decks</button><span>Settings</span></div>' +
-      '<h2>Settings</h2>' +
-      '<div class="eyebrow pick-head">When you don\'t know a card</div><div class="tray">';
-    [['down', 'Move it down one box', 'As now'], ['box1', 'Send it back to box 1', 'Classic Leitner']].forEach(function (o) {
-      var on = missRule === o[0];
-      h += '<button class="slot slot--pick" data-act="miss" data-miss="' + o[0] + '" aria-pressed="' + on + '">' +
-        '<span><span class="lbl">' + o[1] + '</span><span class="sub">' + o[2] + '</span></span>' +
-        (on ? '<span class="in-use">In use</span>' : '') + '</button>';
-    });
-    h += '</div><p class="note">Either way the card comes back tomorrow. Box 1 cards stay in box 1.</p>';
+      '<h2>Settings</h2>';
+    var on = missRule === 'box1';
+    h += '<div class="setting"><span><span class="lbl" id="leitner-label">Classic Leitner</span>' +
+      '<span class="sub">' + (on ? 'Missed cards go back to box 1' : 'Missed cards go down one box') + '</span></span>' +
+      '<button class="switch" role="switch" aria-checked="' + on + '" aria-labelledby="leitner-label" ' +
+      'data-act="miss"></button></div>';
     return h;
   }
 
@@ -1135,7 +1148,7 @@
     else if (act === 'browse-edit') { foundId = browseCard().id; editFrom = 'browse'; go('card'); }
     else if (act === 'again') { nextRound(session); render(); }
     else if (act === 'miss') {
-      missRule = el.getAttribute('data-miss') === 'box1' ? 'box1' : 'down';
+      missRule = missRule === 'box1' ? 'down' : 'box1';
       try { localStorage.setItem(MISS_KEY, missRule); } catch (e) {}
       render();
     }
