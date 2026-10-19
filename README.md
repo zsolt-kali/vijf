@@ -50,6 +50,14 @@ brings it back the next day, so a word you forgot gets practised again soon.
 default) or **Send it back to box 1** (classic Leitner, stricter). The iPhone's setting also
 applies on the Watch.
 
+### Days in a row
+
+A day counts as done when nothing is due in any deck. The deck list shows how many **days in a
+row** you've done, with a square for each day this week, and what's next ("Finish today to make
+it 13"). **One missed day a week is let off**; a second one starts you again. When you finish
+the last card of the day, **Done for today.** shows your streak, what you did today and how many
+cards come tomorrow. Answers on the Watch count too.
+
 ### Browsing a deck
 
 Inside a deck, **Browse cards** shows all its cards one at a time, box 1 first, without

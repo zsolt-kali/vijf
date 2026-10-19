@@ -46,6 +46,8 @@ public enum Sync {
     /// watch's box, `seenAt` and `reviewedAt`.
     public static func merge(phone: Library, into watch: Library) -> Library {
         var result = phone
+        // Days done on either device stay done.
+        result.doneDays = Array(Set(phone.doneDays).union(watch.doneDays)).sorted()
         for i in result.cards.indices {
             guard let mine = watch.card(result.cards[i].id),
                   (mine.seenAt ?? .min) > (result.cards[i].seenAt ?? .min) else { continue }
@@ -78,6 +80,7 @@ public enum Sync {
     static let sentAtKey = "sentAt"
     static let reviewsKey = "reviews"
     static let missKey = "miss"
+    static let doneDaysKey = "doneDays"
 
     /// The phone's library as an application context. The send time makes every context new, so
     /// the system delivers it even when the library hasn't changed since the last one.
@@ -96,8 +99,18 @@ public enum Sync {
         return try? Backup.decode(data)
     }
 
-    public static func userInfo(for reviews: [Review]) -> [String: Any] {
-        [reviewsKey: (try? JSONEncoder().encode(reviews)) ?? Data()]
+    /// The watch's answers, with its done days so a day finished on the watch counts on the phone.
+    public static func userInfo(for reviews: [Review], doneDays: [String] = []) -> [String: Any] {
+        [reviewsKey: (try? JSONEncoder().encode(reviews)) ?? Data(), doneDaysKey: doneDays]
+    }
+
+    public static func doneDays(fromUserInfo info: [String: Any]) -> [String] {
+        (info[doneDaysKey] as? [String] ?? []).filter(Streak.isKey)
+    }
+
+    /// Adds the watch's done days to the phone's.
+    public static func addDoneDays(_ days: [String], to library: inout Library) {
+        library.doneDays = Array(Set(library.doneDays).union(days)).sorted()
     }
 
     public static func reviews(fromUserInfo info: [String: Any]) -> [Review] {

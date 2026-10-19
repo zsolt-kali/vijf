@@ -72,9 +72,12 @@ public struct Library: Codable, Equatable, Sendable {
     public var nextId: Int
     public var decks: [Deck]
     public var nextDeckId: Int
+    /// The days nothing was due any more, as local "YYYY-MM-DD", sorted (see `Streak`).
+    public var doneDays: [String]
 
-    public init(cards: [Card] = [], nextId: Int = 1, decks: [Deck] = [], nextDeckId: Int = 1) {
+    public init(cards: [Card] = [], nextId: Int = 1, decks: [Deck] = [], nextDeckId: Int = 1, doneDays: [String] = []) {
         self.cards = cards; self.nextId = nextId; self.decks = decks; self.nextDeckId = nextDeckId
+        self.doneDays = doneDays
     }
 
     public static let empty = Library()

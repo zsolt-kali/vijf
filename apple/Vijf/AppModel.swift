@@ -56,6 +56,13 @@ final class AppModel {
             miss = saved.miss
         }
         launch()
+        refreshDay()
+    }
+
+    /// Records today as done when nothing is due (on launch and whenever the app comes to the
+    /// front, since a day can pass while it's open).
+    func refreshDay() {
+        if library.markDoneIfClear() { change { _ in } }
     }
 
     private struct Settings: Codable { var miss: MissRule }
@@ -79,6 +86,7 @@ final class AppModel {
 
     private func change(_ edit: (inout Library) -> Void) {
         edit(&library)
+        library.markDoneIfClear()
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? Backup.encode(library).write(to: url, options: .atomic)
         onChange?(library, miss)
@@ -249,8 +257,12 @@ final class AppModel {
     // MARK: Watch
 
     /// The watch's answers; a card keeps the higher of the two boxes and the later `seenAt`.
-    func applyReviews(_ reviews: [Sync.Review]) {
-        change { Sync.apply(reviews, to: &$0) }
+    /// The watch's answers, and the days it finished, which count here too.
+    func applyReviews(_ reviews: [Sync.Review], doneDays: [String] = []) {
+        change {
+            Sync.apply(reviews, to: &$0)
+            Sync.addDoneDays(doneDays, to: &$0)
+        }
     }
 
     // MARK: Backup

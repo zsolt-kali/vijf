@@ -86,6 +86,7 @@ no account, works offline once loaded.
 | **Study** | Breadcrumb "Decks / *deck*" (both tappable) and the position counter (e.g. 3 / 12). The card shows the native word on the front ("Your language") and the Dutch word on the back ("Dutch", yellow); tap to flip. Below the card: **Not yet** (red, "back to box n−1", or "stays in box 1") and **I know it** (green, "→ box n+1", or "stays in box 5"). The **cog** (⚙) sits inside the card, top-right, on both faces; tapping it opens the edit form (see Editing a card) without flipping the card. Tapping an empty box shows a toast instead of opening this screen. |
 | **Browse** | See Browsing a deck: an ink band (breadcrumb, **BROWSING**, the position), the card with its box, **← Previous** / **Next →** (Done on the last card). |
 | **Round done** | Box 1 only, between rounds: breadcrumb, "Round *n* done.", "*n* not yet.", and **Go again** (fill) / **Stop for today**. |
+| **Done for today** | See Days in a row: replaces the summary when nothing is due in any deck. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
 | **Settings** | Opened from the deck list's ⋯ menu; the back button returns there. **When you don't know a card:** "Move it down one box" ("As now", the default) or "Send it back to box 1" ("Classic Leitner"); the chosen one says "In use", and a note says the card comes back tomorrow either way and box 1 cards stay in box 1. Saved on the device, not in the cards or backups: web `vijf-miss` in `localStorage` (an old `vijf-voice` entry from when words could be read aloud is cleared on load); iPhone a settings file next to its library, sent to the watch (see Apple Watch → Sync). |
@@ -115,6 +116,29 @@ least one deck.
   button (**← Search**) return to the results, with the search text kept. **Delete card**
   removes it with the same 5-second undo.
 - Opening or creating a deck clears the search.
+
+## Days in a row
+
+- **A day is done** when nothing is due in any deck: you finished everything due, or nothing
+  was due at all. The app records the date (`doneDays`, local "YYYY-MM-DD") whenever it sees
+  that: after any change and when it starts (web: on every save and when the deck list shows;
+  iPhone: after every change, at launch and when it comes to the front).
+- **Days in a row** counts the done days back from today. Today not done yet doesn't break it.
+  **One missed day per calendar week** (Monday to Sunday) is let off; a second one in the same
+  week ends the streak.
+- **Deck list:** under the header, when there are cards: "12 days in a row" (the number in
+  `deep` once today is done), and under it what's next: "Finish today to make it 13", "Finish
+  today to start a streak", or "Done for today · Tomorrow 18 cards" ("Done for today" alone
+  when nothing is due tomorrow). On the right, this week's seven squares, Monday to Sunday:
+  `deep` = done, `ink` outline = today not done yet, `line` outline = missed or still to come.
+- **Done for today:** when a study session ends and nothing is due in any deck, this screen
+  replaces the summary: breadcrumb and "Done"; "Done for today."; "Every deck is done. Nothing
+  else is due until tomorrow."; a card with the days in a row (large, `deep`), this week's
+  squares and the weekday names; then "Today: 34 cards · 6 moved up" (cards answered today,
+  and of those the ones known) and "Tomorrow: 18 cards"; and **Back to decks**. When other
+  cards are still due, the usual summary shows.
+- Watch: shows nothing of this, but its answers count: it records done days too and sends them
+  with its answers; phone and watch keep the days done on either.
 
 ## Browsing a deck
 
@@ -166,9 +190,12 @@ Stored in `localStorage` under the key **`leitner-dutch-v1`**:
   "decks": [
     { "id": 1, "name": "Start", "createdAt": 1700000000000 }
   ],
-  "nextDeckId": 2
+  "nextDeckId": 2,
+  "doneDays": ["2026-10-18", "2026-10-19"]
 }
 ```
+
+- `doneDays`: the local dates nothing was due any more (see Days in a row), sorted.
 
 - `box` is 1–5. `reviewedAt` is set on "I know it" (box 5 included) and not on "Not yet".
   `seenAt` is set on every answer; the gaps count from its day. The last answer was "I know it"
@@ -188,6 +215,8 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
 - Any card without a valid `deckId` goes into a deck called **Start**, which is created if it
   doesn't exist. The card keeps its box. This is how data and backups from before decks
   existed are carried over without losing progress.
+- Data and backups from before Days in a row have no `doneDays`: it reads as none. Anything in it that
+  isn't a "YYYY-MM-DD" date is dropped, and duplicates are removed.
 
 ## Language and look
 
@@ -265,6 +294,8 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
   - The phone's **"Not yet" setting** (Settings) travels with the library; the watch keeps the last
     one it got and answers by it, so a card missed on the watch goes where it would on the phone.
     Changing the setting sends it straight away.
+  - The watch's **done days** go with its answers (and are re-sent while the phone's copy lacks
+    any); the phone adds them to its own, and the watch keeps the days from both lists.
   - Each answer on the watch (**I know it** or **Not yet**) goes to the phone with the card's box
     after it, the time, and whether it was **I know it**: straight away when the phone is
     reachable, otherwise queued until it is. The **latest answer wins**: the phone takes it only

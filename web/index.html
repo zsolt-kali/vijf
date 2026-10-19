@@ -191,6 +191,38 @@
   .search__clear[hidden] { display: none; }
   input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
   .found { margin-bottom: 8px; }
+
+  /* Days in a row: the deck list's line and the Done for today screen. Blue is progress. */
+  .streak { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: -4px 0 16px; }
+  .streak .days {
+    display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .streak .days b.on, .done-count b { color: var(--deep); }
+  .streak .sub {
+    display: block; font-family: var(--mono); font-size: 10px; color: var(--mute);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px;
+  }
+  .week { display: flex; gap: 3px; flex: none; }
+  .week i { box-sizing: border-box; width: 12px; height: 12px; border: 1.5px solid var(--line); }
+  .week i.done { background: var(--deep); border-color: var(--deep); }
+  .week i.today { border-color: var(--ink); }
+  .week--wide { gap: 4px; }
+  .week--wide i { flex: 1; width: auto; height: 16px; }
+  .done-head { font-size: 34px; line-height: 1; letter-spacing: -0.04em; margin-top: 18px; }
+  .done-lede { margin: 10px 0 0; font-size: 15px; line-height: 1.5; color: var(--mute); }
+  .done-card {
+    display: flex; flex-direction: column; gap: 12px; margin-top: 22px; padding: 18px 16px;
+    background: var(--card); border: 1.5px solid var(--ink);
+  }
+  .done-count { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .done-count b { font-size: 40px; line-height: 1; letter-spacing: 0; margin-right: 6px; vertical-align: -6px; }
+  .weekdays { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); }
+  .weekdays span { flex: 1; text-align: center; }
+  .done-rows { margin: 14px 0 0; border-top: 1.5px solid var(--line); }
+  .done-rows div { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1.5px solid var(--line); }
+  .done-rows dt { font-size: 15px; }
+  .done-rows dd { margin: 0; font-family: var(--mono); font-size: 13px; }
   .pick-head { margin: 22px 0 8px; }
   .slot--pick { grid-template-columns: 1fr auto; padding-left: 16px; }
   .slot--pick .lbl { display: block; }
@@ -341,7 +373,7 @@
     ['busy','druk'],['nice / kind','aardig'],['almost','bijna']
   ];
 
-  function blank() { return { cards: [], nextId: 1, decks: [], nextDeckId: 1 }; }
+  function blank() { return { cards: [], nextId: 1, decks: [], nextDeckId: 1, doneDays: [] }; }
   function maxId(list) {
     return list.reduce(function (m, x) { return Math.max(m, x.id || 0); }, 0);
   }
@@ -362,6 +394,10 @@
     if (!Array.isArray(s.decks)) s.decks = [];
     if (!s.nextId) s.nextId = maxId(s.cards) + 1;
     if (!s.nextDeckId) s.nextDeckId = maxId(s.decks) + 1;
+    /* Days in a row: data from before it has no done days. */
+    s.doneDays = (Array.isArray(s.doneDays) ? s.doneDays : []).filter(function (d, i, all) {
+      return typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && all.indexOf(d) === i;
+    }).sort();
     var ids = s.decks.map(function (d) { return d.id; });
     var loose = s.cards.filter(function (c) { return ids.indexOf(c.deckId) < 0; });
     if (loose.length) {
@@ -379,6 +415,7 @@
     } catch (e) {}
   }
   function save() {
+    markDone();
     try { localStorage.setItem(KEY, JSON.stringify(state)); }
     catch (e) { toast('Could not save'); }
   }
@@ -406,6 +443,63 @@
     var start = dayStart();
     return cardsIn(id).filter(function (c) { return dueDay(c) <= start; }).length;
   }
+  /* Days in a row. A day is done when nothing is due in any deck; save() records it in
+     state.doneDays as local "YYYY-MM-DD". The count runs back from today (today not done yet
+     doesn't break it), and one missed day per calendar week, Monday to Sunday, is let off.
+     Mirrors VijfKit's Streak. */
+  function dayKey(d) {
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+  function addDays(d, n) { var x = new Date(d); x.setHours(12, 0, 0, 0); x.setDate(x.getDate() + n); return x; }
+  function mondayOf(d) { return addDays(d, -((d.getDay() + 6) % 7)); }
+  function dueAll(start) {
+    return state.cards.filter(function (c) { return dueDay(c) <= start; }).length;
+  }
+  function isDone() { return state.doneDays.indexOf(dayKey(new Date())) >= 0; }
+  function markDone() {
+    var today = dayKey(new Date());
+    if (!state.cards.length || state.doneDays.indexOf(today) >= 0 || dueAll(dayStart())) return false;
+    state.doneDays.push(today);
+    state.doneDays.sort();
+    return true;
+  }
+  function streak() {
+    var done = state.doneDays, earliest = done[0], count = 0, forgiven = {};
+    if (!earliest) return 0;
+    var d = new Date();
+    if (done.indexOf(dayKey(d)) < 0) d = addDays(d, -1);
+    while (dayKey(d) >= earliest) {
+      if (done.indexOf(dayKey(d)) >= 0) count++;
+      else {
+        var week = dayKey(mondayOf(d));
+        if (forgiven[week]) break;
+        forgiven[week] = true;
+      }
+      d = addDays(d, -1);
+    }
+    return count;
+  }
+  /* This week's squares, Monday to Sunday: done, today, or missed / still to come. */
+  function weekHtml(cls) {
+    var start = mondayOf(new Date()), today = dayKey(new Date()), h = '', n = 0;
+    for (var i = 0; i < 7; i++) {
+      var k = dayKey(addDays(start, i)), done = state.doneDays.indexOf(k) >= 0;
+      if (done) n++;
+      h += '<i class="' + (done ? 'done' : k === today ? 'today' : '') + '"></i>';
+    }
+    return '<span class="week ' + cls + '" role="img" aria-label="This week: ' + n + ' of 7 days done">' + h + '</span>';
+  }
+  function dueTomorrow() { return dueAll(dayStart(addDays(new Date(), 1).getTime())); }
+  function cardsWord(n) { return n + (n === 1 ? ' card' : ' cards'); }
+  function streakHtml() {
+    var n = streak(), done = isDone(), t = dueTomorrow();
+    var note = done ? 'Done for today' + (t ? ' · Tomorrow ' + cardsWord(t) : '') :
+      n ? 'Finish today to make it ' + (n + 1) : 'Finish today to start a streak';
+    return '<div class="streak"><span><span class="days"><b' + (done ? ' class="on"' : '') + '>' + n + '</b> ' +
+      (n === 1 ? 'day' : 'days') + ' in a row</span><span class="sub">' + note + '</span></span>' +
+      weekHtml('') + '</div>';
+  }
+
   /* For a box with cards but none due: when the next one comes up. */
   function nextIn(n) {
     var next = Math.min.apply(null, inBox(n).map(dueDay));
@@ -481,6 +575,8 @@
         '<button role="menuitem" data-go="newdeck">New deck</button>' +
         '<button role="menuitem" data-go="settings">Settings</button>' +
         '<button role="menuitem" data-go="backup">Backup</button></div>' : '') + '</div>';
+    if (markDone()) save();
+    if (state.cards.length) h += streakHtml();
     if (n) {
       h += '<div class="search"><input type="search" id="f-search" value="' + esc(query) + '" ' +
         'placeholder="Search all cards" aria-label="Search all cards" autocomplete="off" ' +
@@ -714,7 +810,25 @@
       '<button class="btn" data-go="home">Stop for today</button></div>';
   }
 
+  /* Shown instead of the summary when a session ends and nothing is due in any deck. */
+  function doneView() {
+    var start = dayStart(), n = streak(), t = dueTomorrow();
+    var answered = state.cards.filter(function (c) { return c.seenAt >= start; }).length;
+    var up = state.cards.filter(function (c) { return c.reviewedAt >= start; }).length;
+    return '<div class="bar">' + crumbs() + '<span>Done</span></div>' +
+      '<h2 class="done-head">Done for today.</h2>' +
+      '<p class="done-lede">Every deck is done. Nothing else is due until tomorrow.</p>' +
+      '<div class="done-card"><div class="done-count"><b>' + n + '</b> ' + (n === 1 ? 'day' : 'days') +
+      ' in a row</div>' + weekHtml('week--wide') +
+      '<div class="weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>' +
+      '<span>Sat</span><span>Sun</span></div></div>' +
+      '<dl class="done-rows"><div><dt>Today</dt><dd>' + cardsWord(answered) + ' · ' + up + ' moved up</dd></div>' +
+      '<div><dt>Tomorrow</dt><dd>' + cardsWord(t) + '</dd></div></dl>' +
+      '<div class="row"><button class="btn btn--fill" data-go="decks">Back to decks</button></div>';
+  }
+
   function summaryView() {
+    if (isDone() && !dueAll(dayStart())) return doneView();
     var h = '<div class="bar">' + crumbs() + '<span>Done</span></div>' +
       '<h2>Round complete.</h2>';
     if (session) {

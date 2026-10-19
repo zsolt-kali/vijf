@@ -13,6 +13,7 @@ function data(decks, cards) {
     nextId: Math.max(0, ...cards.map((c) => c.id)) + 1,
     decks,
     nextDeckId: Math.max(0, ...decks.map((d) => d.id)) + 1,
+    doneDays: [],
   };
 }
 

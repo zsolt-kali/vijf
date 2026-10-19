@@ -56,7 +56,8 @@ final class WatchModel {
     func sendUnsent() {
         guard let phone = lastFromPhone else { return }
         let unsent = Sync.unsent(phone: phone, watch: library)
-        if !unsent.isEmpty { link.send(unsent) }
+        let daysMissing = !Set(library.doneDays).isSubset(of: phone.doneDays)
+        if !unsent.isEmpty || daysMissing { link.send(unsent, doneDays: library.doneDays) }
     }
 
     func startStudy(deck: Int, box: Int) {
@@ -67,9 +68,10 @@ final class WatchModel {
         guard let id = study?.currentCardId else { return }
         var l = library, now = Int64.nowMillis
         l.answer(id, known: known, now: now, miss: miss)
+        l.markDoneIfClear()   // answers on the watch count toward the day too
         save(l)
         if let review = Sync.review(afterAnswering: id, known: known, in: l, now: now) {
-            link.send([review])
+            link.send([review], doneDays: l.doneDays)
         }
         study?.answer(known: known)
     }
@@ -103,10 +105,10 @@ private final class PhoneLink: NSObject, WCSessionDelegate, @unchecked Sendable 
 
     /// Sends answers straight away when the phone app is reachable; otherwise, or if that fails,
     /// queues them with transferUserInfo, which the system delivers when the phone is back.
-    func send(_ reviews: [Sync.Review]) {
+    func send(_ reviews: [Sync.Review], doneDays: [String] = []) {
         let session = WCSession.default
         guard session.activationState == .activated else { return }
-        let info = Sync.userInfo(for: reviews)
+        let info = Sync.userInfo(for: reviews, doneDays: doneDays)
         if session.isReachable {
             session.sendMessage(info, replyHandler: nil) { _ in session.transferUserInfo(info) }
         } else {

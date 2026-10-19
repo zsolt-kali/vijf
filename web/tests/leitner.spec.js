@@ -3,9 +3,12 @@ const { test, expect } = require('@playwright/test');
 const { deck, card, data, open, saved, toast, menu } = require('./helpers');
 
 const remaining = (page) => page.locator('.bar > span').last();
+/* A due card in a box the test doesn't touch, so finishing the test's box doesn't finish the
+   day (which would show Done for today instead of the summary; see streak.spec.js). */
+const later = (box) => card(99, 1, 'later', 'later', box);
 
 test('I know it moves a card up one box and records the review', async ({ page }) => {
-  await open(page, data([deck(1, 'Start')], [card(1, 1, 'the house', 'het huis', 2)]));
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'the house', 'het huis', 2), later(4)]));
   await page.click('[data-go=box2]');
   await page.getByRole('button', { name: /I know it/ }).click();
 
@@ -16,7 +19,7 @@ test('I know it moves a card up one box and records the review', async ({ page }
 });
 
 test('Not yet keeps the card in its box and brings it back later in the session', async ({ page }) => {
-  await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 1)]));
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 1), later(4)]));
   await page.click('[data-go=box1]');
   await page.getByRole('button', { name: /Not yet/ }).click();
   await page.getByRole('button', { name: 'Go again' }).click();
@@ -39,7 +42,7 @@ test('tapping the card flips it to show the Dutch word', async ({ page }) => {
 });
 
 test('in box 5, I know it keeps the card there and Not yet moves it back to box 4', async ({ page }) => {
-  await open(page, data([deck(1, 'Start')], [card(1, 1, 'tomorrow', 'morgen', 5), card(2, 1, 'busy', 'druk', 5)]));
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'tomorrow', 'morgen', 5), card(2, 1, 'busy', 'druk', 5), later(3)]));
   await page.click('[data-go=box5]');
   await expect(page.getByRole('button', { name: /Not yet/ })).toContainText('back to box 4');
   await expect(page.getByRole('button', { name: /I know it/ })).toContainText('stays in box 5');
@@ -52,7 +55,7 @@ test('in box 5, I know it keeps the card there and Not yet moves it back to box 
   // the missed card doesn't come round again in this session
   await expect(page.getByText('Stayed in box 5: 1. Back to box 4: 1.')).toBeVisible();
   const s = await saved(page);
-  const missed = s.cards.find((c) => c.native === first), kept = s.cards.find((c) => c.native !== first);
+  const missed = s.cards.find((c) => c.native === first), kept = s.cards.find((c) => c.native !== first && c.id !== 99);
   expect(missed.box).toBe(4);
   expect(missed.reviewedAt).toBeNull();
   expect(kept.box).toBe(5);
@@ -99,14 +102,14 @@ test('a box 1 round with Not yet cards ends on a screen to go again or stop', as
 });
 
 test('a box 1 round with every card known goes straight to the summary', async ({ page }) => {
-  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1)]));
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), later(4)]));
   await page.click('[data-go=box1]');
   await page.getByRole('button', { name: /I know it/ }).click();
   await expect(page.getByRole('heading', { name: 'Round complete.' })).toBeVisible();
 });
 
 test('no answer ever changes the total: Not yet cards come back as the next round', async ({ page }) => {
-  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), card(2, 1, 'b', 'b', 1), card(3, 1, 'c', 'c', 1)]));
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1), card(2, 1, 'b', 'b', 1), card(3, 1, 'c', 'c', 1), later(4)]));
   await page.click('[data-go=box1]');
   const know = () => page.getByRole('button', { name: /I know it/ }).click();
   const notYet = () => page.getByRole('button', { name: /Not yet/ }).click();
@@ -183,7 +186,7 @@ test('a card answered today is not shown again until tomorrow', async ({ page })
 });
 
 test('a box studied through is done for today and cannot be opened', async ({ page }) => {
-  await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 1), card(2, 1, 'house', 'huis', 2)]));
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'busy', 'druk', 1), card(2, 1, 'house', 'huis', 2), later(5)]));
   await expect(box(page, 1).locator('.sub')).toHaveCount(0);
   await page.click('[data-go=box1]');
   await page.getByRole('button', { name: /Not yet/ }).click();
@@ -226,6 +229,7 @@ test('a card answered Not yet comes back the next day, whatever its box', async 
   await open(page, data([deck(1, 'Start')], [
     missedAt(card(1, 1, 'yesterday', 'gisteren', 4), daysAgo(1)),
     missedAt(card(2, 1, 'today', 'vandaag', 4), daysAgo(0)),
+    later(2),
   ]));
   await expect(box(page, 4).locator('.sub')).toHaveText('1 left today');
   await page.click('[data-go=box4]');
@@ -236,7 +240,7 @@ test('a card answered Not yet comes back the next day, whatever its box', async 
 });
 
 test('in boxes 2–5, Not yet moves a card down one box and out of the session', async ({ page }) => {
-  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 3), card(2, 1, 'b', 'b', 3)]));
+  await open(page, data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 3), card(2, 1, 'b', 'b', 3), later(5)]));
   await page.click('[data-go=box3]');
   await expect(page.getByRole('button', { name: /Not yet/ })).toContainText('back to box 2');
   const first = await page.locator('.face:not(.face--back) .word').textContent();
@@ -269,7 +273,8 @@ test('with "Send it back to box 1", Not yet sends a card from any box to box 1',
     localStorage.setItem('leitner-dutch-v1', JSON.stringify({ cards: [
       { id: 1, deckId: 1, native: 'a', dutch: 'a', box: 4, createdAt: 1, reviewedAt: null, seenAt: null },
       { id: 2, deckId: 1, native: 'b', dutch: 'b', box: 4, createdAt: 2, reviewedAt: null, seenAt: null },
-    ], nextId: 3, decks: [{ id: 1, name: 'Start', createdAt: 1 }], nextDeckId: 2 }));
+      { id: 3, deckId: 1, native: 'later', dutch: 'later', box: 2, createdAt: 3, reviewedAt: null, seenAt: null },
+    ], nextId: 4, decks: [{ id: 1, name: 'Start', createdAt: 1 }], nextDeckId: 2 }));
   });
   await page.reload();
   await page.click('[data-go=box4]');
@@ -277,7 +282,7 @@ test('with "Send it back to box 1", Not yet sends a card from any box to box 1',
   await page.getByRole('button', { name: /Not yet/ }).click();
   await page.getByRole('button', { name: /I know it/ }).click();
   await expect(page.getByText('Moved up to box 5: 1. Back to box 1: 1.')).toBeVisible();
-  expect((await saved(page)).cards.map((c) => c.box).sort()).toEqual([1, 5]);
+  expect((await saved(page)).cards.filter((c) => c.id !== 3).map((c) => c.box).sort()).toEqual([1, 5]);
 });
 
 test('the setting is kept in this browser only, apart from the cards', async ({ page }) => {

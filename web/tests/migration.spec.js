@@ -81,3 +81,19 @@ test('the voice choice an older version saved is cleared; the cards stay', async
   expect((await saved(page)).cards).toHaveLength(1);
 });
 
+test('data from before days in a row has none, and keeps its cards', async ({ page }) => {
+  const old = data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1)]);
+  delete old.doneDays;
+  await open(page, old);
+  const s = await saved(page);
+  expect(s.doneDays).toEqual([]);
+  expect(s.cards).toEqual(old.cards);
+});
+
+test('done days are kept, with anything that is not a date dropped', async ({ page }) => {
+  const d = data([deck(1, 'Start')], [card(1, 1, 'a', 'a', 1)]);
+  d.doneDays = ['2026-10-20', 'nonsense', 7, '2026-10-20', '2026-10-19'];
+  await open(page, d);
+  expect((await saved(page)).doneDays).toEqual(['2026-10-19', '2026-10-20']);
+});
+

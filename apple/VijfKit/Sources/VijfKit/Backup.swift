@@ -30,8 +30,11 @@ public enum Backup {
             guard let id = int(d["id"]) else { continue }
             decks.append(Deck(id: id, name: d["name"] as? String ?? "", createdAt: int64(d["createdAt"]) ?? 0))
         }
+        // Missing in data from before the streak: no done days yet.
+        let doneDays = (object["doneDays"] as? [Any] ?? []).compactMap { $0 as? String }.filter(Streak.isKey)
         var library = Library(cards: cards, nextId: int(object["nextId"]) ?? 0,
-                              decks: decks, nextDeckId: int(object["nextDeckId"]) ?? 0)
+                              decks: decks, nextDeckId: int(object["nextDeckId"]) ?? 0,
+                              doneDays: Array(Set(doneDays)).sorted())
         migrate(&library, now: .nowMillis)
         return library
     }

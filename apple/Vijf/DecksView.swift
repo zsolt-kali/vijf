@@ -18,6 +18,10 @@ struct DecksView: View {
                 .padding(.bottom, 12)
                 .row()
 
+            if !model.library.cards.isEmpty {
+                StreakLine(library: model.library).padding(.bottom, 4).row()
+            }
+
             if decks.isEmpty {
                 VStack(spacing: 8) {
                     Eyebrow("Empty")
