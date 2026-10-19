@@ -33,7 +33,7 @@ your own language first; tap to flip to the Dutch. Then answer:
 
 - **I know it:** the card moves up one box and waits that box's gap. From box 2 to box 3 means
   you see it again in 4 days. In box 5 it stays in box 5 and comes back in 16 days.
-- **Not yet:** the card moves down one box (or back to box 1, if you choose that in **Settings**)
+- **Not yet:** the card moves down one box (or back to box 1, with **Classic Leitner** on in **Settings**)
   and comes back tomorrow. In box 1 it can't go lower:
   it stays there, and at the end of the round you choose: **Go again** to practise the cards you
   missed straight away, or **Stop for today** to see them tomorrow.
@@ -46,9 +46,9 @@ brings it back the next day, so a word you forgot gets practised again soon.
 
 ### Settings
 
-**Settings** in the ⋯ menu: **When you don't know a card**, choose **Move it down one box** (the
-default) or **Send it back to box 1** (classic Leitner, stricter). The iPhone's setting also
-applies on the Watch.
+**Settings** in the ⋯ menu has one switch, **Classic Leitner**. Off (the default), a card you
+answer **Not yet** goes down one box; on, it goes back to box 1, which is stricter. The line
+under the switch says which. The iPhone's setting also applies on the Watch.
 
 ### Browsing a deck
 
