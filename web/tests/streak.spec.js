@@ -1,6 +1,6 @@
 // SPEC.md → Days in a row
 const { test, expect } = require('@playwright/test');
-const { deck, card, data, open, saved } = require('./helpers');
+const { deck, card, data, open, saved, menu } = require('./helpers');
 
 /* Saturday 24 October 2026, noon: the week runs Monday 19 to Sunday 25. */
 const SAT = new Date('2026-10-24T12:00:00');
@@ -84,3 +84,21 @@ test('the summary still shows when other cards are due today', async ({ page }) 
   await page.getByRole('button', { name: /I know it/ }).click();
   await expect(page.getByRole('heading', { name: 'Round complete.' })).toBeVisible();
 });
+
+test('the Days in a row switch hides the streak, but done days are still recorded', async ({ page }) => {
+  await at(page);
+  await open(page, withDays(data([deck(1, 'Start'), deck(2, 'Eten')], [card(1, 1, 'a', 'a', 1)]), ['2026-10-23']));
+  await menu(page, 'Settings');
+  await page.getByRole('switch', { name: 'Days in a row' }).click();
+  await page.getByRole('button', { name: '← Decks' }).click();
+  await expect(streak(page)).toHaveCount(0);
+
+  await page.locator('.slot--deck', { hasText: 'Start' }).click();
+  await page.click('[data-go=box1]');
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await expect(page.getByRole('heading', { name: 'Done for today.' })).toBeVisible();
+  await expect(page.locator('.done-card')).toHaveCount(0);
+  await expect(page.locator('.done-rows div')).toHaveCount(2);
+  expect((await saved(page)).doneDays).toEqual(['2026-10-23', '2026-10-24']);
+});
+

@@ -46,9 +46,13 @@ brings it back the next day, so a word you forgot gets practised again soon.
 
 ### Settings
 
-**Settings** in the ⋯ menu has one switch, **Classic Leitner**. Off (the default), a card you
-answer **Not yet** goes down one box; on, it goes back to box 1, which is stricter. The line
-under the switch says which. The iPhone's setting also applies on the Watch.
+**Settings** in the ⋯ menu has three switches:
+- **Classic Leitner:** off (the default), a card you answer **Not yet** goes down one box; on,
+  it goes back to box 1, which is stricter. The iPhone's setting also applies on the Watch.
+- **Search** and **Days in a row** (both on): switch them off to hide the search field or the
+  streak from the deck list. Your finished days are still counted while the streak is hidden.
+
+The line under each switch says what it does right now.
 
 ### Days in a row
 

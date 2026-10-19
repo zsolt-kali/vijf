@@ -40,6 +40,9 @@ final class AppModel {
     /// What "Not yet" does above box 1. Saved next to the library (not in backups) and sent to the
     /// watch with it, so the watch always answers the way the phone is set.
     private(set) var miss: MissRule = .oneDown
+    /// What the deck list shows (Settings); both on unless switched off.
+    private(set) var showSearch = true
+    private(set) var showStreak = true
     /// The last send to the watch, nil until one was tried (no watch paired: stays nil).
     var watchSync: WatchSyncStatus?
 
@@ -54,6 +57,8 @@ final class AppModel {
         }
         if let data = try? Data(contentsOf: settingsURL), let saved = try? JSONDecoder().decode(Settings.self, from: data) {
             miss = saved.miss
+            showSearch = saved.showSearch
+            showStreak = saved.showStreak
         }
         launch()
         refreshDay()
@@ -65,15 +70,42 @@ final class AppModel {
         if library.markDoneIfClear() { change { _ in } }
     }
 
-    private struct Settings: Codable { var miss: MissRule }
+    /// The settings file. The two show-switches are missing in files from before them: on.
+    private struct Settings: Codable {
+        var miss: MissRule
+        var showSearch = true
+        var showStreak = true
+
+        init(miss: MissRule, showSearch: Bool, showStreak: Bool) {
+            self.miss = miss; self.showSearch = showSearch; self.showStreak = showStreak
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            miss = try c.decodeIfPresent(MissRule.self, forKey: .miss) ?? .oneDown
+            showSearch = try c.decodeIfPresent(Bool.self, forKey: .showSearch) ?? true
+            showStreak = try c.decodeIfPresent(Bool.self, forKey: .showStreak) ?? true
+        }
+    }
     private var settingsURL: URL { url.deletingPathExtension().appendingPathExtension("settings.json") }
+
+    private func saveSettings() {
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? JSONEncoder().encode(Settings(miss: miss, showSearch: showSearch, showStreak: showStreak))
+            .write(to: settingsURL, options: .atomic)
+    }
 
     func setMiss(_ rule: MissRule) {
         miss = rule
-        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try? JSONEncoder().encode(Settings(miss: rule)).write(to: settingsURL, options: .atomic)
+        saveSettings()
         onChange?(library, miss)
     }
+
+    /// Settings → Search: the deck list's search field. Not sent to the watch, which has none.
+    func setShowSearch(_ on: Bool) { showSearch = on; saveSettings() }
+    /// Settings → Days in a row: the deck list's streak line and the Done for today card. Done
+    /// days are recorded either way.
+    func setShowStreak(_ on: Bool) { showStreak = on; saveSettings() }
 
     static var defaultURL: URL {
         URL.applicationSupportDirectory.appending(path: "vijf.json")

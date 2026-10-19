@@ -134,6 +134,24 @@ import VijfKit
         #expect(model.library.doneDays.contains("2026-10-01"))
     }
 
+    @Test func theShowSwitchesAreOnByDefaultAndKept() throws {
+        let url = URL.temporaryDirectory.appending(path: "vijf-\(UUID().uuidString).json")
+        let model = AppModel(url: url)
+        #expect(model.showSearch && model.showStreak)
+        model.setShowSearch(false)
+        model.setShowStreak(false)
+        let reopened = AppModel(url: url)
+        #expect(!reopened.showSearch && !reopened.showStreak)
+        #expect(reopened.miss == .oneDown)
+    }
+
+    @Test func aSettingsFileFromBeforeTheShowSwitchesKeepsThemOn() throws {
+        let url = URL.temporaryDirectory.appending(path: "vijf-\(UUID().uuidString).json")
+        try Data(#"{"miss":"box1"}"#.utf8).write(to: url.deletingPathExtension().appendingPathExtension("settings.json"))
+        let model = AppModel(url: url)
+        #expect(model.miss == .backToBoxOne && model.showSearch && model.showStreak)
+    }
+
     @Test func undoAfterLeavingTheSessionOnlyRestoresTheCard() throws {
         let model = freshModel()
         model.addStarterSet()

@@ -89,7 +89,7 @@ no account, works offline once loaded.
 | **Done for today** | See Days in a row: replaces the summary when nothing is due in any deck. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
-| **Settings** | Opened from the deck list's ⋯ menu; the back button returns there. One row: **Classic Leitner**, with a square switch on the right (see design/components/Switch.md). Under the label: "Missed cards go down one box" when off (the default) or "Missed cards go back to box 1" when on. No heading or note. Saved on the device, not in the cards or backups: web `vijf-miss` in `localStorage` (an old `vijf-voice` entry from when words could be read aloud is cleared on load); iPhone a settings file next to its library, sent to the watch (see Apple Watch → Sync). |
+| **Settings** | Opened from the deck list's ⋯ menu; the back button returns there. Three rows, each a name, a line saying what its current position does, and a square switch on the right (see design/components/Switch.md): **Classic Leitner** ("Missed cards go down one box" when off, the default; "Missed cards go back to box 1" when on), **Search** and **Days in a row** (both on by default: "Shown on the deck list" / "Hidden"). No heading or note. Search off hides the deck list's search field and clears a search in progress. Days in a row off hides the streak line on the deck list and the streak card on Done for today; done days are still recorded. Saved on the device, not in the cards or backups: web `vijf-miss`, `vijf-search` and `vijf-streak` (stored only when off) in `localStorage` (an old `vijf-voice` entry from when words could be read aloud is cleared on load); iPhone a settings file next to its library, sent to the watch (see Apple Watch → Sync). |
 | **Backup** | Opened from the deck list's ⋯ menu; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. At the bottom, the version: "Version 3116643 · 15 Oct 2026", the commit the app was built from and its date ("Version dev" when not deployed). |
 
 ### Bulk import format
@@ -101,7 +101,7 @@ than two parts are skipped, and so are blank lines. Any parts after the second a
 ## Search
 
 The deck list has a search field, **Search all cards**, above the decks whenever there is at
-least one deck.
+least one deck and **Search** is on in Settings (the default).
 
 - It matches either side of a card (your language or Dutch), anywhere in the word, ignoring case
   and accents: "cafe" finds "café", "DRUK" finds "druk". Spaces around the text are ignored, and
@@ -126,7 +126,7 @@ least one deck.
 - **Days in a row** counts the done days back from today. Today not done yet doesn't break it.
   **One missed day per calendar week** (Monday to Sunday) is let off; a second one in the same
   week ends the streak.
-- **Deck list:** under the header, when there are cards: "12 days in a row" (the number in
+- **Deck list:** under the header, when there are cards and **Days in a row** is on in Settings: "12 days in a row" (the number in
   `deep` once today is done), and under it what's next: "Finish today to make it 13", "Finish
   today to start a streak", or "Done for today · Tomorrow 18 cards" ("Done for today" alone
   when nothing is due tomorrow). On the right, this week's seven squares, Monday to Sunday:

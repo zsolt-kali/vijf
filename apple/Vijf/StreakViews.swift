@@ -60,22 +60,24 @@ struct DoneTodayView: View {
                 Text("Done for today.").font(.system(size: 34, weight: .heavy)).tracking(-1.3).padding(.top, 18)
                 Text("Every deck is done. Nothing else is due until tomorrow.").font(.vjBody).foregroundStyle(VJ.mute)
 
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .firstTextBaseline, spacing: 10) {
-                        Text("\(count)").font(.vjMono(40, weight: .bold)).foregroundStyle(VJ.deep)
-                        Text(count == 1 ? "DAY IN A ROW" : "DAYS IN A ROW").font(.vjMono(11)).tracking(1.1).foregroundStyle(VJ.ink)
-                    }
-                    WeekSquares(marks: Streak.week(doneDays: library.doneDays), size: 16, stretch: true)
-                    HStack {
-                        ForEach(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], id: \.self) { d in
-                            Text(d).font(.vjMono(9)).tracking(0.9).foregroundStyle(VJ.mute).frame(maxWidth: .infinity)
+                if model.showStreak {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            Text("\(count)").font(.vjMono(40, weight: .bold)).foregroundStyle(VJ.deep)
+                            Text(count == 1 ? "DAY IN A ROW" : "DAYS IN A ROW").font(.vjMono(11)).tracking(1.1).foregroundStyle(VJ.ink)
+                        }
+                        WeekSquares(marks: Streak.week(doneDays: library.doneDays), size: 16, stretch: true)
+                        HStack {
+                            ForEach(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], id: \.self) { d in
+                                Text(d).font(.vjMono(9)).tracking(0.9).foregroundStyle(VJ.mute).frame(maxWidth: .infinity)
+                            }
                         }
                     }
+                    .padding(.vertical, 18).padding(.horizontal, 16)
+                    .background(VJ.card)
+                    .overlay(Rectangle().strokeBorder(VJ.ink, lineWidth: VJ.stroke))
+                    .padding(.top, 10)
                 }
-                .padding(.vertical, 18).padding(.horizontal, 16)
-                .background(VJ.card)
-                .overlay(Rectangle().strokeBorder(VJ.ink, lineWidth: VJ.stroke))
-                .padding(.top, 10)
 
                 VStack(spacing: 0) {
                     row("Today", "\(today.cards) \(today.cards == 1 ? "card" : "cards") · \(today.movedUp) moved up")
