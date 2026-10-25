@@ -41,7 +41,7 @@ python3 scripts/generate_tokens.py              # after changing a colour in des
 
 ## Branches and deploying
 
-Work on a branch and open a pull request: a push to `main` that touches `web/` or `design/` deploys to GitHub Pages once the tests pass. CI has one workflow per app (`.github/workflows/web.yml`, …), each triggered only by its own folder or `design/`.
+Work on a branch and open a pull request: a push to `main` that touches `web/` or `design/` deploys to GitHub Pages once the tests pass. CI has one workflow per app (`.github/workflows/web.yml`, …). A push to `main` triggers only the workflow for its own folder or `design/`; a pull request starts both, and a `changes` job skips the tests of an app it doesn't touch. `main` is protected: a PR merges only after the checks `web-tests` and `apple-tests` pass, so keep those job names.
 
 ## Web app architecture (`web/`)
 
