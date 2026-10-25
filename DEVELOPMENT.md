@@ -75,14 +75,17 @@ from the repo root; the web app's CSS needs the same change (both are checked by
 
 ## CI and deploying
 
-Each app has its own workflow, which runs only when that app's folder or `design/` changes:
+Each app has its own workflow. A push to `main` starts it only when that app's folder or
+`design/` changes. A pull request always starts both workflows: a quick **changes** job looks at the
+PR's files, and the tests are skipped when that app isn't touched (a skipped job counts as passing).
 
-- **`.github/workflows/web.yml`**: **test** runs on every pull request and every push to `main`
-  (15-minute limit). **deploy** runs only for pushes to `main`, after **test** passes. It copies
+- **`.github/workflows/web.yml`**: **web-tests** runs on pull requests that touch `web/` or
+  `design/` and on pushes to `main` (15-minute limit). **deploy** runs only for pushes to `main`,
+  after **web-tests** passes. It copies
   `web/index.html`, `web/manifest.webmanifest`, `web/sw.js` and `web/icons/` to a folder, stamps
   the service worker's `CACHE` with the commit ID, and publishes that folder to GitHub Pages.
 
-- **`.github/workflows/apple.yml`**: on a macOS runner with the latest stable Xcode, runs the
+- **`.github/workflows/apple.yml`**: **apple-tests**, on a macOS runner with the latest stable Xcode, runs the
   `VijfKit` tests, then builds the iPhone app and runs its tests on a simulator (30-minute limit).
   It doesn't deploy; installing on devices is done from Xcode (TestFlight is a later decision).
 
@@ -92,7 +95,9 @@ one replaces it), so when several merges land together the in-between ones are s
 newest commit always deploys last. Deploys share one group across the repo, so they never
 overlap. On pull requests, pushing a new commit cancels the older run.
 
-Repo setting this relies on: **Settings → Pages → Source = GitHub Actions**.
+Repo settings this relies on: **Settings → Pages → Source = GitHub Actions**, and branch
+protection on `main` (Settings → Branches) requiring the checks **web-tests** and **apple-tests**,
+with no bypass for admins, so a pull request can't be merged until both pass.
 
 Live site: https://zsolt-kali.github.io/vijf/
 
@@ -293,3 +298,12 @@ saved data and backups (not a per-device setting like the voice was), so a strea
 restore. The watch records days too and sends them with its answers; both sides keep the union.
 Design: https://claude.ai/artifact/SnG6u65yPnCMeMAgwUGU66
 
+### 29. A pull request can't be merged until its tests pass
+GitHub let a pull request be merged while its tests were still running, or after they failed. `main`
+is now protected and requires the checks **web-tests** and **apple-tests**, with no bypass for the
+repo admin. Required checks must always report, so pull requests now start both workflows, and a
+small **changes** job skips the tests of an app the PR doesn't touch; GitHub counts a skipped job as
+passing. Pushes to `main` keep their folder filters, so deploying is unchanged. The test jobs got
+different names because GitHub matches required checks by job name, and both were called `test`.
+*Considered:* one combined workflow with a single gate job (against keeping one workflow per app),
+and a third-party paths-filter action (a plain `git diff` does the same).

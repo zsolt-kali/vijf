@@ -1,13 +1,13 @@
 name: Web
 
 # The PWA in web/. Tests run on every pull request and every push to main; only a push to
-# main deploys, and only when the tests pass. Changes outside web/ and design/ skip this.
+# main deploys, and only when the tests pass. Pushes outside web/ and design/ skip this; on a
+# pull request the tests are skipped instead, so the required check still reports.
 on:
   push:
     branches: [main]
     paths: ['web/**', 'design/**', '.github/workflows/web.yml']
   pull_request:
-    paths: ['web/**', 'design/**', '.github/workflows/web.yml']
   workflow_dispatch:
 
 permissions:
@@ -21,7 +21,34 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  test:
+  # Pull requests always start this workflow, so the required check below always reports.
+  # This job decides whether the tests are needed; when they're skipped, GitHub counts the
+  # skipped check as passing. Pushes and manual runs always test.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: check
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" != pull_request ] || git diff --name-only "$BASE...$HEAD" | grep -qE '^(web/|design/|\.github/workflows/web\.yml$)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in web/ or design/: tests skipped."
+          fi
+
+  web-tests:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -46,7 +73,7 @@ jobs:
           retention-days: 14
 
   deploy:
-    needs: test
+    needs: web-tests
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
