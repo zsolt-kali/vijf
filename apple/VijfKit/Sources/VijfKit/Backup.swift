@@ -23,7 +23,10 @@ public enum Backup {
                 box: min(max(int(c["box"]) ?? 1, 1), 5),
                 createdAt: int64(c["createdAt"]) ?? 0,
                 reviewedAt: int64(c["reviewedAt"]),
-                seenAt: int64(c["seenAt"])))
+                seenAt: int64(c["seenAt"]),
+                // Missing in data from before example sentences: none.
+                nativeExample: Card.sentence(c["nativeExample"] as? String),
+                dutchExample: Card.sentence(c["dutchExample"] as? String)))
         }
         var decks: [Deck] = []
         for case let d as [String: Any] in object["decks"] as? [Any] ?? [] {

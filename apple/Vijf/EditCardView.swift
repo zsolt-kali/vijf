@@ -12,12 +12,16 @@ struct EditCardView: View {
     let origin: Origin
     @State private var native: String
     @State private var dutch: String
+    @State private var nativeExample: String
+    @State private var dutchExample: String
 
     init(card: Card, origin: Origin) {
         self.card = card
         self.origin = origin
         _native = State(initialValue: card.native)
         _dutch = State(initialValue: card.dutch)
+        _nativeExample = State(initialValue: card.nativeExample ?? "")
+        _dutchExample = State(initialValue: card.dutchExample ?? "")
     }
 
     var body: some View {
@@ -25,7 +29,9 @@ struct EditCardView: View {
             HStack { Eyebrow("Edit", color: VJ.ink, size: 11); Spacer() }
             VStack(spacing: 14) {
                 VJField(label: "Your language", text: $native).onSubmit(save)
-                VJField(label: "Dutch", text: $dutch).onSubmit(save)
+                VJField(label: "Example, your language · optional", text: $nativeExample).onSubmit(save)
+                VJField(label: "Dutch", text: $dutch).onSubmit(save).padding(.top, 8)
+                VJField(label: "Example, Dutch · optional", text: $dutchExample).onSubmit(save)
             }
             .padding(22)
             .background(VJ.card)
@@ -55,6 +61,6 @@ struct EditCardView: View {
     }
 
     private func save() {
-        if model.editCard(card.id, native: native, dutch: dutch) { dismiss() }
+        if model.editCard(card.id, native: native, dutch: dutch, nativeExample: nativeExample, dutchExample: dutchExample) { dismiss() }
     }
 }

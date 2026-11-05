@@ -8,6 +8,7 @@ struct StudyView: View {
     let deckId: Int
     let box: Int
     @State private var flipped = false
+    @State private var exampleOpen = false
     @State private var editing: Card?
 
     var body: some View {
@@ -15,7 +16,7 @@ struct StudyView: View {
         Group {
             if let session, let id = session.currentCardId, let card = model.library.card(id) {
                 VStack(spacing: 18) {
-                    FlashCard(card: card, flipped: flipped,
+                    FlashCard(card: card, flipped: flipped, showExample: exampleOpen, toggleExample: { exampleOpen.toggle() },
                               edit: { editing = card })
                         .onTapGesture { withAnimation(reduceMotion ? nil : .spring(duration: 0.5)) { flipped.toggle() } }
                     HStack(spacing: 8) {
@@ -52,6 +53,7 @@ struct StudyView: View {
     private func answer(_ action: () -> Void) {
         action()
         flipped = false
+        exampleOpen = false
     }
 }
 
@@ -64,13 +66,16 @@ struct FlashCard: View {
     var backFooter = "Did you know it?"
     /// Shown at the right of both footers when browsing: "Box 3".
     var corner: String? = nil
+    /// The example sentence is showing (on both sides; SPEC.md → Example sentences).
+    var showExample = false
+    var toggleExample: () -> Void = {}
     let edit: () -> Void
 
     var body: some View {
         ZStack {
-            face(hint: "Your language", word: card.native, footer: "Tap to flip", back: false)
+            face(hint: "Your language", word: card.native, example: card.nativeExample, footer: "Tap to flip", back: false)
                 .opacity(flipped ? 0 : 1)
-            face(hint: "Dutch", word: card.dutch, footer: backFooter, back: true)
+            face(hint: "Dutch", word: card.dutch, example: card.dutchExample, footer: backFooter, back: true)
                 .opacity(flipped ? 1 : 0)
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
         }
@@ -80,13 +85,19 @@ struct FlashCard: View {
         .accessibilityAction(named: "Flip") {}
     }
 
-    private func face(hint: String, word: String, footer: String, back: Bool) -> some View {
+    private func face(hint: String, word: String, example: String?, footer: String, back: Bool) -> some View {
         let fg = back ? VJ.onSignal : VJ.ink
         let soft = back ? VJ.onSignal : VJ.mute
         return VStack(alignment: .leading) {
             Eyebrow(hint, color: soft)
             Spacer()
-            Text(word).font(.vjWord).tracking(-1.5).foregroundStyle(fg).fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 14) {
+                Text(word).font(.vjWord).tracking(-1.5).foregroundStyle(fg).fixedSize(horizontal: false, vertical: true)
+                if showExample, let example {
+                    Text(Self.marked(example, word: word, line: back ? VJ.onSignal : VJ.deep))
+                        .font(.vjBody).foregroundStyle(soft).fixedSize(horizontal: false, vertical: true)
+                }
+            }
             Spacer()
             HStack {
                 Eyebrow(footer, color: soft)
@@ -99,14 +110,37 @@ struct FlashCard: View {
         .background(back ? VJ.signal : VJ.card)
         .overlay(Rectangle().strokeBorder(back ? VJ.onSignal : VJ.ink, lineWidth: VJ.stroke))
         .overlay(alignment: .topTrailing) {
-            Button(action: edit) {
-                Image(systemName: "gearshape").font(.system(size: 20, weight: .regular))
-                    .frame(width: 44, height: 44)
+            HStack(spacing: 0) {
+                // Only on a side that has a sentence; filled while it shows.
+                if example != nil {
+                    Button(action: toggleExample) {
+                        Image(systemName: showExample ? "text.bubble.fill" : "text.bubble").font(.system(size: 20, weight: .regular))
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel(showExample ? "Hide the example sentence" : "Show the example sentence")
+                    .foregroundStyle(showExample ? fg : soft)
+                }
+                Button(action: edit) {
+                    Image(systemName: "gearshape").font(.system(size: 20, weight: .regular))
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Edit card")
+                .foregroundStyle(soft)
             }
-            .accessibilityLabel("Edit card")
-            .foregroundStyle(soft)
             .padding(8)
         }
+    }
+
+    /// The sentence with the card's word underlined where it appears (ignoring case and accents).
+    static func marked(_ sentence: String, word: String, line: Color) -> AttributedString {
+        var text = AttributedString(sentence)
+        if let r = ExampleMark.range(of: word, in: sentence),
+           let lower = AttributedString.Index(r.lowerBound, within: text),
+           let upper = AttributedString.Index(r.upperBound, within: text) {
+            text[lower..<upper].underlineStyle = .single
+            text[lower..<upper].underlineColor = UIColor(line)
+        }
+        return text
     }
 }
 

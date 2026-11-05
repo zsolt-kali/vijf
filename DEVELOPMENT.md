@@ -307,3 +307,12 @@ passing. Pushes to `main` keep their folder filters, so deploying is unchanged. 
 different names because GitHub matches required checks by job name, and both were called `test`.
 *Considered:* one combined workflow with a single gate job (against keeping one workflow per app),
 and a third-party paths-filter action (a plain `git diff` does the same).
+
+### 29. Example sentences: hidden behind a bubble, and `|` only on lines with `=`
+A card can carry an example sentence in each language (`nativeExample`, `dutchExample`). It stays
+hidden until the speech bubble is tapped, so it never hints at the answer, and it stays open
+through a flip so both languages can be compared. In imports, `|` already separated the two
+languages, so it only means "sentence" on a line that also has `=`; every existing word list
+imports as before. The Watch shows no sentences: its screen is too small. Description:
+https://claude.ai/artifact/SjU2TULq2FQ4NLnPb8GDDc · Design: https://claude.ai/artifact/2XabK76V3KRTW73kJAgq4z
+

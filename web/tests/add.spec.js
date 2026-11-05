@@ -72,3 +72,37 @@ test('bulk import with no usable lines shows a toast and adds nothing', async ({
   await expect(toast(page)).toHaveText('No valid lines found');
   expect((await saved(page)).cards).toHaveLength(1);
 });
+
+test('adding one word can carry a sentence in either language', async ({ page }) => {
+  await open(page, data([deck(1, 'Start')], []));
+  await page.getByRole('button', { name: 'Add words' }).click();
+  await page.fill('#f-native', 'the house');
+  await page.fill('#f-native-ex', 'The house is big.');
+  await page.fill('#f-dutch', 'het huis');
+  await page.getByRole('button', { name: /Save to box 1/ }).click();
+  const c = (await saved(page)).cards[0];
+  expect(c).toMatchObject({ native: 'the house', dutch: 'het huis', nativeExample: 'The house is big.' });
+  expect(c.dutchExample).toBeUndefined();
+  await expect(page.locator('#f-native-ex')).toHaveValue('');
+});
+
+test('bulk import reads sentences on lines with = and |, and old lines as before', async ({ page }) => {
+  await open(page, data([deck(1, 'Start')], []));
+  await page.getByRole('button', { name: 'Add words' }).click();
+  await page.fill('#f-bulk', [
+    'the house | The house is big. = het huis | Het huis is groot.',
+    'the bread = het brood | Het brood is vers.',
+    'the cheese = de kaas',
+    'the water | het water',
+    '= geen woord | Zin.',
+  ].join('\n'));
+  await page.getByRole('button', { name: 'Import list' }).click();
+  const cards = (await saved(page)).cards;
+  expect(cards.map((c) => [c.native, c.dutch, c.nativeExample, c.dutchExample])).toEqual([
+    ['the house', 'het huis', 'The house is big.', 'Het huis is groot.'],
+    ['the bread', 'het brood', undefined, 'Het brood is vers.'],
+    ['the cheese', 'de kaas', undefined, undefined],
+    ['the water', 'het water', undefined, undefined],
+  ]);
+});
+

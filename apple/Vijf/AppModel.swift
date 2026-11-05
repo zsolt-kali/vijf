@@ -180,24 +180,32 @@ final class AppModel {
 
     // MARK: Cards
 
-    func addCard(native: String, dutch: String, to deckId: Int) -> Bool {
+    func addCard(native: String, dutch: String, nativeExample: String = "", dutchExample: String = "", to deckId: Int) -> Bool {
         var added = false
-        change { added = $0.addCard(native: native, dutch: dutch, to: deckId, now: .nowMillis) != nil }
+        change {
+            added = $0.addCard(native: native, dutch: dutch, nativeExample: nativeExample, dutchExample: dutchExample,
+                               to: deckId, now: .nowMillis) != nil
+        }
         show(added ? "Added to box 1" : "Fill in both fields")
         return added
     }
 
     func importList(_ text: String, to deckId: Int) -> Bool {
-        let pairs = BulkImport.pairs(from: text)
-        guard !pairs.isEmpty else { show("No valid lines found"); return false }
-        change { l in for p in pairs { l.addCard(native: p.native, dutch: p.dutch, to: deckId, now: .nowMillis) } }
-        show("\(pairs.count) words added")
+        let entries = BulkImport.entries(from: text)
+        guard !entries.isEmpty else { show("No valid lines found"); return false }
+        change { l in
+            for e in entries {
+                l.addCard(native: e.native, dutch: e.dutch, nativeExample: e.nativeExample, dutchExample: e.dutchExample,
+                          to: deckId, now: .nowMillis)
+            }
+        }
+        show("\(entries.count) words added")
         return true
     }
 
-    func editCard(_ id: Int, native: String, dutch: String) -> Bool {
+    func editCard(_ id: Int, native: String, dutch: String, nativeExample: String? = nil, dutchExample: String? = nil) -> Bool {
         var saved = false
-        change { saved = $0.editCard(id, native: native, dutch: dutch) }
+        change { saved = $0.editCard(id, native: native, dutch: dutch, nativeExample: nativeExample, dutchExample: dutchExample) }
         show(saved ? "Saved" : "Fill in both fields")
         return saved
     }

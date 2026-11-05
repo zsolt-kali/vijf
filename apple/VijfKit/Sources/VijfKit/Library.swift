@@ -16,11 +16,23 @@ public struct Card: Codable, Equatable, Identifiable, Sendable {
     /// Set on every answer, "I know it" or "Not yet"; the gap until the card is due again counts
     /// from its day. Missing (never answered, or data from before the daily rule): the card is due.
     public var seenAt: Int64?
+    /// An example sentence in your language, and the same sentence in Dutch (SPEC.md → Example
+    /// sentences). Both optional; nil is left out of the saved JSON.
+    public var nativeExample: String?
+    public var dutchExample: String?
 
     public init(id: Int, deckId: Int, native: String, dutch: String, box: Int = 1,
-                createdAt: Int64, reviewedAt: Int64? = nil, seenAt: Int64? = nil) {
+                createdAt: Int64, reviewedAt: Int64? = nil, seenAt: Int64? = nil,
+                nativeExample: String? = nil, dutchExample: String? = nil) {
         self.id = id; self.deckId = deckId; self.native = native; self.dutch = dutch
         self.box = box; self.createdAt = createdAt; self.reviewedAt = reviewedAt; self.seenAt = seenAt
+        self.nativeExample = nativeExample; self.dutchExample = dutchExample
+    }
+
+    /// Trims a sentence; an empty one is no sentence.
+    public static func sentence(_ s: String?) -> String? {
+        guard let t = s?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty else { return nil }
+        return t
     }
 
     /// Days until a card answered "I know it" comes up again, for boxes 1–5.
@@ -167,39 +179,57 @@ public struct Library: Codable, Equatable, Sendable {
     @discardableResult
     public mutating func addStarterSet(now: Int64) -> Deck {
         let start = deck(named: "Start") ?? appendDeck(name: "Start", now: now)
-        for (native, dutch) in Library.starterWords { addCard(native: native, dutch: dutch, to: start.id, now: now) }
+        for w in Library.starterWords {
+            addCard(native: w.native, dutch: w.dutch, nativeExample: w.nativeExample, dutchExample: w.dutchExample, to: start.id, now: now)
+        }
         return start
     }
 
-    public static let starterWords: [(String, String)] = [
-        ("the house", "het huis"), ("the water", "het water"), ("the bread", "het brood"),
-        ("tomorrow", "morgen"), ("always", "altijd"), ("together", "samen"),
-        ("to work", "werken"), ("to understand", "begrijpen"), ("expensive", "duur"),
-        ("busy", "druk"), ("nice / kind", "aardig"), ("almost", "bijna"),
+    /// The same words and sentences as the web app's STARTER list.
+    public static let starterWords: [(native: String, dutch: String, nativeExample: String, dutchExample: String)] = [
+        ("the house", "het huis", "The house is big.", "Het huis is groot."),
+        ("the water", "het water", "The water is cold.", "Het water is koud."),
+        ("the bread", "het brood", "The bread is fresh.", "Het brood is vers."),
+        ("tomorrow", "morgen", "Tomorrow I work at home.", "Morgen werk ik thuis."),
+        ("always", "altijd", "She is always on time.", "Ze is altijd op tijd."),
+        ("together", "samen", "We eat together.", "We eten samen."),
+        ("to work", "werken", "I like to work here.", "Ik werk hier graag."),
+        ("to understand", "begrijpen", "I don't understand the question.", "Ik begrijp de vraag niet."),
+        ("expensive", "duur", "That bike is expensive.", "Die fiets is duur."),
+        ("busy", "druk", "It is busy in town.", "Het is druk in de stad."),
+        ("nice / kind", "aardig", "Your neighbour is kind.", "Je buurman is aardig."),
+        ("almost", "bijna", "It is almost five o'clock.", "Het is bijna vijf uur."),
     ]
 
     // MARK: Cards
 
-    /// Adds a card to box 1. Both sides are required; returns nil when one is empty.
+    /// Adds a card to box 1. Both sides are required; returns nil when one is empty. The example
+    /// sentences are optional.
     @discardableResult
-    public mutating func addCard(native: String, dutch: String, to deckId: Int, now: Int64) -> Card? {
+    public mutating func addCard(native: String, dutch: String, nativeExample: String? = nil, dutchExample: String? = nil,
+                                 to deckId: Int, now: Int64) -> Card? {
         let n = native.trimmingCharacters(in: .whitespacesAndNewlines)
         let d = dutch.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !n.isEmpty, !d.isEmpty else { return nil }
-        let card = Card(id: nextId, deckId: deckId, native: n, dutch: d, box: 1, createdAt: now)
+        let card = Card(id: nextId, deckId: deckId, native: n, dutch: d, box: 1, createdAt: now,
+                        nativeExample: Card.sentence(nativeExample), dutchExample: Card.sentence(dutchExample))
         nextId += 1
         cards.append(card)
         return card
     }
 
-    /// Changes both meanings; box and review date stay. Returns false when a side is empty.
+    /// Changes both meanings, and the sentences when given (an empty one removes it; nil keeps
+    /// it); box and review date stay. Returns false when a side is empty.
     @discardableResult
-    public mutating func editCard(_ id: Int, native: String, dutch: String) -> Bool {
+    public mutating func editCard(_ id: Int, native: String, dutch: String,
+                                  nativeExample: String? = nil, dutchExample: String? = nil) -> Bool {
         let n = native.trimmingCharacters(in: .whitespacesAndNewlines)
         let d = dutch.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !n.isEmpty, !d.isEmpty, let i = cards.firstIndex(where: { $0.id == id }) else { return false }
         cards[i].native = n
         cards[i].dutch = d
+        if let nativeExample { cards[i].nativeExample = Card.sentence(nativeExample) }
+        if let dutchExample { cards[i].dutchExample = Card.sentence(dutchExample) }
         return true
     }
 
