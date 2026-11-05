@@ -88,7 +88,7 @@ no account, works offline once loaded.
 | **Round done** | Box 1 only, between rounds: breadcrumb, "Round *n* done.", "*n* not yet.", and **Go again** (fill) / **Stop for today**. |
 | **Done for today** | See Days in a row: replaces the summary when nothing is due in any deck. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
-| **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
+| **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, each followed by an optional example sentence field (see Example sentences), saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
 | **Settings** | Opened from the deck list's ⋯ menu; the back button returns there. Three rows, each a name, a line saying what its current position does, and a square switch on the right (see design/components/Switch.md): **Classic Leitner** ("Missed cards go down one box" when off, the default; "Missed cards go back to box 1" when on), **Search** and **Days in a row** (both on by default: "Shown on the deck list" / "Hidden"). No heading or note. Search off hides the deck list's search field and clears a search in progress. Days in a row off hides the streak line on the deck list and the streak card on Done for today; done days are still recorded. Saved on the device, not in the cards or backups: web `vijf-miss`, `vijf-search` and `vijf-streak` (stored only when off) in `localStorage` (an old `vijf-voice` entry from when words could be read aloud is cleared on load); iPhone a settings file next to its library, sent to the watch (see Apple Watch → Sync). |
 | **Backup** | Opened from the deck list's ⋯ menu; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. At the bottom, the version: "Version 3116643 · 15 Oct 2026", the commit the app was built from and its date ("Version dev" when not deployed). |
 
@@ -97,6 +97,14 @@ no account, works offline once loaded.
 One card per line, native first and then Dutch. The separator can be `=`, `|`, tab or `;`,
 with spaces around it allowed. If none of those appear, a comma is used. Lines with fewer
 than two parts are skipped, and so are blank lines. Any parts after the second are ignored.
+
+**Example sentences:** a line that contains both `=` and `|` reads as
+`your word | your sentence = Dutch word | Dutch sentence`. Everything left of the first `=` is
+your language, everything right of it Dutch; each side splits at its first `|` into the word and
+its sentence (a later `|` and what follows is ignored). Either sentence may be left out
+(`the bread = het brood | Het brood is vers.`). A line whose word is missing on either side is
+skipped. Lines without both `=` and `|` follow the rules above exactly, so `the house | het huis`
+still imports as before. Under the import box, a note shows one example line.
 
 ## Search
 
@@ -140,6 +148,24 @@ least one deck and **Search** is on in Settings (the default).
 - Watch: shows nothing of this, but its answers count: it records done days too and sends them
   with its answers; phone and watch keep the days done on either.
 
+## Example sentences
+
+- A card may have an **example sentence in each language**, the same sentence in both:
+  `nativeExample` and `dutchExample`, both optional (see Data).
+- **The bubble:** a side that has a sentence shows a speech-bubble icon (Feather
+  "message-square") top-right, just left of the cog, in its own 44 × 44 tap area, in `mute` on
+  the front and `on-signal` on the back. A side without one shows no bubble.
+- **Tapping it** shows the sentence under the word: on the front the sentence in your language,
+  on the back the Dutch one (body text, 15 px, `mute` / `on-signal`). The bubble is then filled.
+  Tapping again hides it. It never flips the card. Once shown, the sentence stays shown when the
+  card flips; the next card starts with it hidden.
+- **The word is underlined** in the sentence where it appears, ignoring case and accents (2 px,
+  `deep` on the front, `on-signal` on the back). A word that doesn't appear as written (`werken`
+  in "Ik werk hier graag.") isn't underlined.
+- Where: studying (every box and round) and Browse cards. Not in search results, the deck list,
+  or on the Watch, whose screen is too small.
+- The **starter words** come with a sentence in both languages.
+
 ## Browsing a deck
 
 - **Browse cards**, on a deck's boxes screen next to **Add words**, goes through all the deck's
@@ -164,8 +190,10 @@ Cards are edited and deleted from the study screen, or from a search result (see
 There is no list of all cards.
 
 - The **cog** (⚙) inside the study card replaces the card with an edit form: both meanings
-  (*Your language*, *Dutch*) prefilled, **Cancel**, **Save**, and a red **Delete card**.
-- **Save** updates both meanings and returns to the same card, still current in the session.
+  (*Your language*, *Dutch*) and, under each, its optional example sentence (*Example, your
+  language · optional*, *Example, Dutch · optional*) prefilled, **Cancel**, **Save**, and a red **Delete card**.
+- **Save** updates both meanings and both sentences (an emptied sentence field removes that
+  sentence) and returns to the same card, still current in the session.
   The card keeps its box and `reviewedAt`. Both fields are required; an empty one shows a toast
   and nothing is saved. Enter in either field also saves.
 - **Cancel** returns to the card unchanged.
@@ -184,7 +212,8 @@ Stored in `localStorage` under the key **`leitner-dutch-v1`**:
 {
   "cards": [
     { "id": 1, "deckId": 1, "native": "the house", "dutch": "het huis",
-      "box": 1, "createdAt": 1700000000000, "reviewedAt": null, "seenAt": null }
+      "box": 1, "createdAt": 1700000000000, "reviewedAt": null, "seenAt": null,
+      "nativeExample": "The house is big.", "dutchExample": "Het huis is groot." }
   ],
   "nextId": 2,
   "decks": [
@@ -195,6 +224,8 @@ Stored in `localStorage` under the key **`leitner-dutch-v1`**:
 }
 ```
 
+- `nativeExample`, `dutchExample` (optional): the card's example sentence in each language (see
+  Example sentences); left out when there is none.
 - `doneDays`: the local dates nothing was due any more (see Days in a row), sorted.
 
 - `box` is 1–5. `reviewedAt` is set on "I know it" (box 5 included) and not on "Not yet".
@@ -217,6 +248,8 @@ Saved data and restored backups both go through `migrate()` in `web/index.html`:
   existed are carried over without losing progress.
 - Data and backups from before Days in a row have no `doneDays`: it reads as none. Anything in it that
   isn't a "YYYY-MM-DD" date is dropped, and duplicates are removed.
+- Cards from before example sentences have no `nativeExample` / `dutchExample`: they read as
+  none. A sentence that is empty or not text is dropped; a sentence is trimmed.
 
 ## Language and look
 

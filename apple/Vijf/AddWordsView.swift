@@ -8,6 +8,8 @@ struct AddWordsView: View {
     @State private var deckId: Int
     @State private var native = ""
     @State private var dutch = ""
+    @State private var nativeExample = ""
+    @State private var dutchExample = ""
     @State private var bulk = ""
     @FocusState private var nativeFocused: Bool
 
@@ -31,7 +33,9 @@ struct AddWordsView: View {
 
                     Text("New word").font(.vjHeading).padding(.top, 14)
                     VJField(label: "Your language", text: $native).focused($nativeFocused)
-                    VJField(label: "Dutch", text: $dutch).onSubmit(saveOne)
+                    VJField(label: "Example, your language · optional", text: $nativeExample)
+                    VJField(label: "Dutch", text: $dutch)
+                    VJField(label: "Example, Dutch · optional", text: $dutchExample).onSubmit(saveOne)
                     Button("Save to box 1", action: saveOne).buttonStyle(.vj(.fill))
 
                     Text("Several at once").font(.vjHeading).padding(.top, 20)
@@ -51,6 +55,8 @@ struct AddWordsView: View {
                                 }
                             }
                     }
+                    Text("Add a sentence with | after either word: the house | The house is big. = het huis | Het huis is groot.")
+                        .font(.vjNote).foregroundStyle(VJ.mute)
                     Button("Import list") { if model.importList(bulk, to: deckId) { bulk = "" } }
                         .buttonStyle(.vj())
                 }
@@ -65,8 +71,8 @@ struct AddWordsView: View {
     }
 
     private func saveOne() {
-        if model.addCard(native: native, dutch: dutch, to: deckId) {
-            native = ""; dutch = ""; nativeFocused = true
+        if model.addCard(native: native, dutch: dutch, nativeExample: nativeExample, dutchExample: dutchExample, to: deckId) {
+            native = ""; dutch = ""; nativeExample = ""; dutchExample = ""; nativeFocused = true
         }
     }
 }

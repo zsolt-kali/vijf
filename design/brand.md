@@ -42,7 +42,8 @@ vijf is a five-box Leitner flashcard app for learning Dutch words. It runs as a 
 - **The mark:** five bars narrowing downward, one per Leitner box, with the top bar (box 5,
   learned) in `signal` yellow on an `ink` square. It is the app icon and, drawn as shapes, the
   watch-face complication.
-- One interface icon: the **cog** (Feather "settings", MIT), stroke 2, `icon-size`, in `mute` (on the yellow back, `on-signal`). It sits inside the study card, top-right, `space-gap` from the corner, in a `tap-min` square.
+- Two interface icons. The **cog** (Feather "settings", MIT), stroke 2, `icon-size`, in `mute` (on the yellow back, `on-signal`). It sits inside the study card, top-right, `space-gap` from the corner, in a `tap-min` square.
+- The **speech bubble** (Feather "message-square", MIT), with the same stroke, size and colour rules as the cog, sits just left of it on a card side that has an example sentence, in its own `tap-min` square. Filled while the sentence shows. iOS: SF Symbols "text.bubble" / "text.bubble.fill".
 - No other icons and no emoji. Arrows in text use the "→" and "←" characters; the deck list's menu button is the "⋯" character and the search field's clear button "×", both in text, not icons. No magnifying glass: the placeholder "Search all cards" says what the field does.
 
 ## Platforms

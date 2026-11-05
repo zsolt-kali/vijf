@@ -152,6 +152,20 @@ import VijfKit
         #expect(model.miss == .backToBoxOne && model.showSearch && model.showStreak)
     }
 
+    @Test func addingEditingAndImportingKeepTheSentences() throws {
+        let model = freshModel()
+        _ = model.makeDeck(named: "Start")
+        let deckId = try #require(model.library.decks.first?.id)
+        #expect(model.addCard(native: "the house", dutch: "het huis", nativeExample: "The house is big.", dutchExample: "", to: deckId))
+        let card = try #require(model.library.cards.first)
+        #expect(card.nativeExample == "The house is big." && card.dutchExample == nil)
+        #expect(model.editCard(card.id, native: "the house", dutch: "het huis", nativeExample: "", dutchExample: "Het huis is groot."))
+        #expect(model.library.card(card.id)?.nativeExample == nil)
+        #expect(model.library.card(card.id)?.dutchExample == "Het huis is groot.")
+        #expect(model.importList("the bread | The bread is fresh. = het brood | Het brood is vers.", to: deckId))
+        #expect(model.library.cards.last?.dutchExample == "Het brood is vers.")
+    }
+
     @Test func undoAfterLeavingTheSessionOnlyRestoresTheCard() throws {
         let model = freshModel()
         model.addStarterSet()

@@ -97,3 +97,12 @@ test('done days are kept, with anything that is not a date dropped', async ({ pa
   expect((await saved(page)).doneDays).toEqual(['2026-10-19', '2026-10-20']);
 });
 
+test('cards from before example sentences have none; empty or odd ones are dropped', async ({ page }) => {
+  const d = data([deck(1, 'Start')], [card(1, 1, 'a', 'b'), Object.assign(card(2, 1, 'c', 'd'), { nativeExample: '  ', dutchExample: 3 })]);
+  await open(page, d);
+  const s = await saved(page);
+  expect(s.cards[0]).toEqual(card(1, 1, 'a', 'b'));
+  expect(s.cards[1].nativeExample).toBeUndefined();
+  expect(s.cards[1].dutchExample).toBeUndefined();
+});
+

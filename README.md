@@ -29,7 +29,9 @@ New words always start in box 1.
 ### Studying
 
 Open a deck, tap a box, and go through its cards that are due today, in random order. You see
-your own language first; tap to flip to the Dutch. Then answer:
+your own language first; tap to flip to the Dutch. If a card has an **example sentence**, a
+small speech bubble sits beside the cog: tap it to see the sentence (in your language on the
+front, in Dutch on the back), with the word underlined. Then answer:
 
 - **I know it:** the card moves up one box and waits that box's gap. From box 2 to box 3 means
   you see it again in 4 days. In box 5 it stays in box 5 and comes back in 16 days.
@@ -61,6 +63,18 @@ row** you've done, with a square for each day this week, and what's next ("Finis
 it 13"). **One missed day a week is let off**; a second one starts you again. When you finish
 the last card of the day, **Done for today.** shows your streak, what you did today and how many
 cards come tomorrow. Answers on the Watch count too.
+
+### Adding words with sentences
+
+When you add or edit a word you can also give it an example sentence in each language; both are
+optional. In a list you import, write the sentence after the word with `|`:
+
+```
+the house | The house is big. = het huis | Het huis is groot.
+```
+
+Lines without sentences import as before. On the Watch the sentences aren't shown; its screen
+is too small.
 
 ### Browsing a deck
 

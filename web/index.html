@@ -283,7 +283,7 @@
     text-transform: uppercase; color: var(--mute);
   }
   .face--back .hint { color: var(--on-signal); }
-  .mid { flex: 1; display: flex; align-items: center; }
+  .mid { flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 14px; }
   .hint--foot { display: flex; justify-content: space-between; gap: 12px; }
 
   /* Browsing: an ink band across the top says nothing is being answered. */
@@ -310,6 +310,25 @@
   .cog svg { width: 22px; height: 22px; }
   .cog:focus-visible { outline: 3px solid var(--deep); outline-offset: -4px; }
   .face--back .cog:focus-visible { outline-color: var(--on-signal); }
+  /* The example sentence: its bubble sits left of the cog; the sentence shows under the word
+     while #flip has the class "examples", the bubble then filled. */
+  .bubble {
+    position: absolute; top: 8px; right: 52px; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; padding: 0; color: var(--mute); cursor: pointer;
+  }
+  .examples .face:not(.face--back) .bubble { color: var(--ink); }
+  .face--back .bubble { color: var(--on-signal); }
+  .bubble svg { width: 22px; height: 22px; }
+  .examples .bubble svg { fill: currentColor; }
+  .bubble:focus-visible { outline: 3px solid var(--deep); outline-offset: -4px; }
+  .face--back .bubble:focus-visible { outline-color: var(--on-signal); }
+  .example { display: none; margin: 0; font-size: 15px; line-height: 1.5; color: var(--mute); }
+  .face--back .example { color: var(--on-signal); }
+  .examples .example { display: block; }
+  .example u { text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-color: var(--deep); }
+  .face--back .example u { text-decoration-color: var(--on-signal); }
+  .field--gap { margin-top: 8px; }
   .btn--danger { border-color: var(--danger); color: var(--danger); }
   .btn--danger:active { background: var(--danger); color: var(--on-danger); }
   .edit { background: var(--card); border: 1.5px solid var(--ink); padding: 22px 22px 8px; margin-bottom: 18px; }
@@ -382,12 +401,27 @@
     '0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 
 
+  /* Word, Dutch word, and an example sentence in each language (the same list as VijfKit's
+     starterWords). */
   var STARTER = [
-    ['the house','het huis'],['the water','het water'],['the bread','het brood'],
-    ['tomorrow','morgen'],['always','altijd'],['together','samen'],
-    ['to work','werken'],['to understand','begrijpen'],['expensive','duur'],
-    ['busy','druk'],['nice / kind','aardig'],['almost','bijna']
+    ['the house', 'het huis', 'The house is big.', 'Het huis is groot.'],
+    ['the water', 'het water', 'The water is cold.', 'Het water is koud.'],
+    ['the bread', 'het brood', 'The bread is fresh.', 'Het brood is vers.'],
+    ['tomorrow', 'morgen', 'Tomorrow I work at home.', 'Morgen werk ik thuis.'],
+    ['always', 'altijd', 'She is always on time.', 'Ze is altijd op tijd.'],
+    ['together', 'samen', 'We eat together.', 'We eten samen.'],
+    ['to work', 'werken', 'I like to work here.', 'Ik werk hier graag.'],
+    ['to understand', 'begrijpen', 'I don\'t understand the question.', 'Ik begrijp de vraag niet.'],
+    ['expensive', 'duur', 'That bike is expensive.', 'Die fiets is duur.'],
+    ['busy', 'druk', 'It is busy in town.', 'Het is druk in de stad.'],
+    ['nice / kind', 'aardig', 'Your neighbour is kind.', 'Je buurman is aardig.'],
+    ['almost', 'bijna', 'It is almost five o\'clock.', 'Het is bijna vijf uur.']
   ];
+
+  /* Speech bubble, from Feather Icons "message-square" (MIT): shows a card's example sentence. */
+  var BUBBLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
 
   function blank() { return { cards: [], nextId: 1, decks: [], nextDeckId: 1, doneDays: [] }; }
   function maxId(list) {
@@ -415,6 +449,14 @@
       return typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && all.indexOf(d) === i;
     }).sort();
     var ids = s.decks.map(function (d) { return d.id; });
+    /* Example sentences: optional, trimmed; anything else (or empty) means none. Data from
+       before them has none. */
+    s.cards.forEach(function (c) {
+      ['nativeExample', 'dutchExample'].forEach(function (k) {
+        var v = typeof c[k] === 'string' ? c[k].trim() : '';
+        if (v) c[k] = v; else delete c[k];
+      });
+    });
     var loose = s.cards.filter(function (c) { return ids.indexOf(c.deckId) < 0; });
     if (loose.length) {
       var start = findDeck(s, 'Start') || makeDeck(s, 'Start');
@@ -744,13 +786,26 @@
     var foot = function (text) {
       return '<span class="hint hint--foot"><span>' + text + '</span>' + (corner ? '<span>' + corner + '</span>' : '') + '</span>';
     };
+    /* A side with an example sentence gets the bubble beside the cog; the sentence shows while
+       #flip has the class "examples" (set by the bubble, kept across a flip, gone on the next card). */
+    var side = function (word, example) {
+      var bubble = example ? '<button class="bubble" data-act="example" aria-pressed="false" ' +
+        'aria-label="Show the example sentence">' + BUBBLE + '</button>' : '';
+      return '<div class="mid"><div class="word">' + esc(word) + '</div>' +
+        (example ? '<p class="example">' + markWord(example, word) + '</p>' : '') + '</div>' + bubble;
+    };
     return '<div class="stage"><div class="flip" id="flip">' +
-      '<div class="face"><span class="hint">Your language</span>' +
-      '<div class="mid"><div class="word">' + esc(card.native) + '</div></div>' +
+      '<div class="face"><span class="hint">Your language</span>' + side(card.native, card.nativeExample) +
       foot('Tap to flip') + cog + '</div>' +
-      '<div class="face face--back"><span class="hint">Dutch</span>' +
-      '<div class="mid"><div class="word">' + esc(card.dutch) + '</div></div>' +
+      '<div class="face face--back"><span class="hint">Dutch</span>' + side(card.dutch, card.dutchExample) +
       foot(backHint) + cog + '</div></div></div>';
+  }
+  /* The sentence with the card's word underlined where it appears, ignoring case and accents. */
+  function markWord(sentence, word) {
+    var f = fold(sentence), w = fold(word.trim()).text, i = w ? f.text.indexOf(w) : -1;
+    if (i < 0) return esc(sentence);
+    var a = f.at[i], b = f.at[i + w.length - 1] + 1;
+    return esc(sentence.slice(0, a)) + '<u>' + esc(sentence.slice(a, b)) + '</u>' + esc(sentence.slice(b));
   }
 
   /* Browse cards: every card of the deck, box 1 first, without answering. A dark band says
@@ -814,8 +869,12 @@
       '<div class="edit">' +
       '<label class="field"><span class="eyebrow">Your language</span>' +
       '<input type="text" id="f-edit-native" value="' + esc(card.native) + '" autocomplete="off" autocapitalize="none"></label>' +
-      '<label class="field"><span class="eyebrow">Dutch</span>' +
+      '<label class="field"><span class="eyebrow">Example, your language · optional</span>' +
+      '<input type="text" id="f-edit-native-ex" value="' + esc(card.nativeExample || '') + '" autocomplete="off"></label>' +
+      '<label class="field field--gap"><span class="eyebrow">Dutch</span>' +
       '<input type="text" id="f-edit-dutch" value="' + esc(card.dutch) + '" autocomplete="off" autocapitalize="none"></label>' +
+      '<label class="field"><span class="eyebrow">Example, Dutch · optional</span>' +
+      '<input type="text" id="f-edit-dutch-ex" value="' + esc(card.dutchExample || '') + '" autocomplete="off"></label>' +
       '</div>' +
       '<div class="rate">' +
       '<button class="btn" data-act="edit-cancel">Cancel</button>' +
@@ -877,13 +936,19 @@
       '<h2 style="margin-top:28px">New word</h2>' +
       '<label class="field"><span class="eyebrow">Your language</span>' +
       '<input type="text" id="f-native" autocomplete="off" autocapitalize="none"></label>' +
+      '<label class="field"><span class="eyebrow">Example, your language · optional</span>' +
+      '<input type="text" id="f-native-ex" autocomplete="off"></label>' +
       '<label class="field"><span class="eyebrow">Dutch</span>' +
       '<input type="text" id="f-dutch" autocomplete="off" autocapitalize="none"></label>' +
+      '<label class="field"><span class="eyebrow">Example, Dutch · optional</span>' +
+      '<input type="text" id="f-dutch-ex" autocomplete="off"></label>' +
       '<div class="row" style="margin-top:4px"><button class="btn btn--fill" data-act="save-one">' +
       'Save to box 1</button></div>' +
       '<h2 style="margin-top:34px">Several at once</h2>' +
       '<label class="field"><span class="eyebrow">One per line: your word = Dutch word</span>' +
       '<textarea id="f-bulk" placeholder="the house = het huis&#10;tomorrow = morgen"></textarea></label>' +
+      '<p class="note" style="margin-top:-6px">Add a sentence with <b>|</b> after either word: ' +
+      '<code>the house | The house is big. = het huis | Het huis is groot.</code></p>' +
       '<div class="row" style="margin-top:0"><button class="btn" data-act="save-bulk">' +
       'Import list</button></div>';
   }
@@ -987,13 +1052,41 @@
     render();
   }
 
-  function addCard(native, dutch, toDeck) {
+  function addCard(native, dutch, toDeck, nativeEx, dutchEx) {
     if (!native || !dutch) return false;
-    state.cards.push({
+    var c = {
       id: state.nextId++, deckId: toDeck, native: native, dutch: dutch,
       box: 1, createdAt: Date.now(), reviewedAt: null, seenAt: null
-    });
+    };
+    setExamples(c, nativeEx, dutchEx);
+    state.cards.push(c);
     return true;
+  }
+  /* Sets a card's example sentences; empty removes one, undefined leaves it as it is. */
+  function setExamples(c, nativeEx, dutchEx) {
+    [['nativeExample', nativeEx], ['dutchExample', dutchEx]].forEach(function (p) {
+      if (p[1] === undefined) return;
+      var v = String(p[1]).trim();
+      if (v) c[p[0]] = v; else delete c[p[0]];
+    });
+  }
+  /* One import line: "word = Dutch word" (or |, tab, ;, comma), and on a line with both = and |
+     "word | sentence = Dutch word | Dutch sentence". Returns [native, dutch, nativeEx, dutchEx]
+     or null. Mirrors VijfKit's BulkImport. */
+  function parseLine(line) {
+    if (!line.trim()) return null;
+    if (line.indexOf('=') >= 0 && line.indexOf('|') >= 0) {
+      var eq = line.indexOf('='), side = function (t) {
+        var parts = t.split('|').map(function (x) { return x.trim(); });
+        return [parts[0], parts.length > 1 ? parts[1] : ''];
+      };
+      var l = side(line.slice(0, eq)), r = side(line.slice(eq + 1));
+      return l[0] && r[0] ? [l[0], r[0], l[1], r[1]] : null;
+    }
+    var parts = line.split(/\s*[=|\t;]\s*/);
+    if (parts.length < 2) parts = line.split(/\s*,\s*/);
+    if (parts.length < 2 || !parts[0].trim() || !parts[1].trim()) return null;
+    return [parts[0].trim(), parts[1].trim(), '', ''];
   }
   function chosenDeck() { return parseInt(document.getElementById('f-deck').value, 10); }
 
@@ -1162,6 +1255,14 @@
     else if (act === 'browse-prev') browseMove(-1);
     else if (act === 'browse-next') browseMove(1);
     else if (act === 'browse-edit') { foundId = browseCard().id; editFrom = 'browse'; go('card'); }
+    else if (act === 'example') {
+      /* Show or hide the sentence on both sides, without redrawing (that would undo a flip). */
+      var flip = document.getElementById('flip'), shown = flip.classList.toggle('examples');
+      Array.prototype.forEach.call(flip.querySelectorAll('.bubble'), function (b) {
+        b.setAttribute('aria-pressed', String(shown));
+        b.setAttribute('aria-label', (shown ? 'Hide' : 'Show') + ' the example sentence');
+      });
+    }
     else if (act === 'again') { nextRound(session); render(); }
     else if (act === 'show') {
       var which = el.getAttribute('data-show');
@@ -1189,6 +1290,7 @@
       if (!en || !ed) { toast('Fill in both fields'); return; }
       var edited = fromSearch ? foundCard() : currentCard();
       edited.native = en; edited.dutch = ed;
+      setExamples(edited, document.getElementById('f-edit-native-ex').value, document.getElementById('f-edit-dutch-ex').value);
       save();
       if (fromSearch) go(editFrom);
       else { session.editing = false; render(); }
@@ -1200,7 +1302,7 @@
     }
     else if (act === 'starter') {
       var start = findDeck(state, 'Start') || makeDeck(state, 'Start');
-      STARTER.forEach(function (p) { addCard(p[0], p[1], start.id); });
+      STARTER.forEach(function (p) { addCard(p[0], p[1], start.id, p[2], p[3]); });
       save(); open(start.id); toast('12 words added to box 1');
     }
     else if (act === 'make-deck') {
@@ -1215,9 +1317,8 @@
       var d = document.getElementById('f-dutch').value.trim();
       if (!n || !d) { toast('Fill in both fields'); return; }
       deckId = chosenDeck();
-      addCard(n, d, deckId); save();
-      document.getElementById('f-native').value = '';
-      document.getElementById('f-dutch').value = '';
+      addCard(n, d, deckId, document.getElementById('f-native-ex').value, document.getElementById('f-dutch-ex').value); save();
+      ['f-native', 'f-dutch', 'f-native-ex', 'f-dutch-ex'].forEach(function (id) { document.getElementById(id).value = ''; });
       document.getElementById('f-native').focus();
       toast('Added to box 1');
     }
@@ -1225,11 +1326,8 @@
       var raw = document.getElementById('f-bulk').value, count = 0;
       deckId = chosenDeck();
       raw.split('\n').forEach(function (line) {
-        if (!line.trim()) return;
-        var parts = line.split(/\s*[=|\t;]\s*/);
-        if (parts.length < 2) parts = line.split(/\s*,\s*/);
-        if (parts.length < 2) return;
-        if (addCard(parts[0].trim(), parts[1].trim(), deckId)) count++;
+        var p = parseLine(line);
+        if (p && addCard(p[0], p[1], deckId, p[2], p[3])) count++;
       });
       if (!count) { toast('No valid lines found'); return; }
       save(); render(); toast(count + ' words added');
