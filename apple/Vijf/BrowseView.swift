@@ -8,7 +8,6 @@ struct BrowseView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let deckId: Int
     @State private var flipped = false
-    @State private var exampleOpen = false
     @State private var editing: Card?
 
     var body: some View {
@@ -26,7 +25,7 @@ struct BrowseView: View {
 
                     VStack(spacing: 18) {
                         FlashCard(card: card, flipped: flipped, backFooter: "Tap to flip back", corner: "Box \(card.box)",
-                                  showExample: exampleOpen, toggleExample: { exampleOpen.toggle() },
+                                  showExample: model.showExamples, toggleExample: { model.setShowExamples(!model.showExamples) },
                                   edit: { editing = card })
                             .onTapGesture { withAnimation(reduceMotion ? nil : .spring(duration: 0.5)) { flipped.toggle() } }
                         HStack(spacing: 8) {
@@ -54,6 +53,5 @@ struct BrowseView: View {
     private func move(_ action: () -> Void) {
         action()
         flipped = false
-        exampleOpen = false
     }
 }

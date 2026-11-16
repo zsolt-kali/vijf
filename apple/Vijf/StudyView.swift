@@ -8,7 +8,6 @@ struct StudyView: View {
     let deckId: Int
     let box: Int
     @State private var flipped = false
-    @State private var exampleOpen = false
     @State private var editing: Card?
 
     var body: some View {
@@ -16,7 +15,7 @@ struct StudyView: View {
         Group {
             if let session, let id = session.currentCardId, let card = model.library.card(id) {
                 VStack(spacing: 18) {
-                    FlashCard(card: card, flipped: flipped, showExample: exampleOpen, toggleExample: { exampleOpen.toggle() },
+                    FlashCard(card: card, flipped: flipped, showExample: model.showExamples, toggleExample: { model.setShowExamples(!model.showExamples) },
                               edit: { editing = card })
                         .onTapGesture { withAnimation(reduceMotion ? nil : .spring(duration: 0.5)) { flipped.toggle() } }
                     HStack(spacing: 8) {
@@ -53,7 +52,6 @@ struct StudyView: View {
     private func answer(_ action: () -> Void) {
         action()
         flipped = false
-        exampleOpen = false
     }
 }
 

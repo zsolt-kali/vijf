@@ -299,11 +299,11 @@ test('the setting is kept in this browser only, apart from the cards', async ({ 
   expect(await page.evaluate(() => localStorage.getItem('leitner-dutch-v1') || '')).not.toContain('box1');
 });
 
-test('Settings holds three switches, and cards have no speaker', async ({ page }) => {
+test('Settings holds four switches, and cards have no speaker', async ({ page }) => {
   await open(page, data([], []));
   await menu(page, 'Settings');
-  await expect(page.getByRole('switch')).toHaveCount(3);
-  for (const [name, on] of [['Classic Leitner', 'false'], ['Search', 'true'], ['Days in a row', 'true']]) {
+  await expect(page.getByRole('switch')).toHaveCount(4);
+  for (const [name, on] of [['Classic Leitner', 'false'], ['Search', 'true'], ['Days in a row', 'true'], ['Example sentences', 'false']]) {
     await expect(page.getByRole('switch', { name })).toHaveAttribute('aria-checked', on);
   }
   await expect(page.locator('[data-act=speed], [data-act=voice]')).toHaveCount(0);

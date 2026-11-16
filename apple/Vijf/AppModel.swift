@@ -43,6 +43,9 @@ final class AppModel {
     /// What the deck list shows (Settings); both on unless switched off.
     private(set) var showSearch = true
     private(set) var showStreak = true
+    /// Example sentences on the cards: off until the bubble (or Settings) turns them on, then
+    /// shown on every card until turned off again.
+    private(set) var showExamples = false
     /// The last send to the watch, nil until one was tried (no watch paired: stays nil).
     var watchSync: WatchSyncStatus?
 
@@ -59,6 +62,7 @@ final class AppModel {
             miss = saved.miss
             showSearch = saved.showSearch
             showStreak = saved.showStreak
+            showExamples = saved.showExamples
         }
         launch()
         refreshDay()
@@ -70,14 +74,17 @@ final class AppModel {
         if library.markDoneIfClear() { change { _ in } }
     }
 
-    /// The settings file. The two show-switches are missing in files from before them: on.
+    /// The settings file. The two show-switches are missing in files from before them: on;
+    /// `showExamples` likewise: off.
     private struct Settings: Codable {
         var miss: MissRule
         var showSearch = true
         var showStreak = true
+        var showExamples = false
 
-        init(miss: MissRule, showSearch: Bool, showStreak: Bool) {
+        init(miss: MissRule, showSearch: Bool, showStreak: Bool, showExamples: Bool) {
             self.miss = miss; self.showSearch = showSearch; self.showStreak = showStreak
+            self.showExamples = showExamples
         }
 
         init(from decoder: Decoder) throws {
@@ -85,13 +92,15 @@ final class AppModel {
             miss = try c.decodeIfPresent(MissRule.self, forKey: .miss) ?? .oneDown
             showSearch = try c.decodeIfPresent(Bool.self, forKey: .showSearch) ?? true
             showStreak = try c.decodeIfPresent(Bool.self, forKey: .showStreak) ?? true
+            showExamples = try c.decodeIfPresent(Bool.self, forKey: .showExamples) ?? false
         }
     }
     private var settingsURL: URL { url.deletingPathExtension().appendingPathExtension("settings.json") }
 
     private func saveSettings() {
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try? JSONEncoder().encode(Settings(miss: miss, showSearch: showSearch, showStreak: showStreak))
+        try? JSONEncoder().encode(Settings(miss: miss, showSearch: showSearch, showStreak: showStreak,
+                                          showExamples: showExamples))
             .write(to: settingsURL, options: .atomic)
     }
 
@@ -106,6 +115,8 @@ final class AppModel {
     /// Settings → Days in a row: the deck list's streak line and the Done for today card. Done
     /// days are recorded either way.
     func setShowStreak(_ on: Bool) { showStreak = on; saveSettings() }
+    /// The bubble on a card, or Settings → Example sentences. Remembered for every card.
+    func setShowExamples(_ on: Bool) { showExamples = on; saveSettings() }
 
     static var defaultURL: URL {
         URL.applicationSupportDirectory.appending(path: "vijf.json")
