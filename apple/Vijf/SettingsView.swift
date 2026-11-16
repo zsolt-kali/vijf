@@ -18,7 +18,7 @@ struct SettingsView: View {
                 row("Days in a row", Binding(get: { model.showStreak }, set: { model.setShowStreak($0) }),
                     on: "Shown on the deck list", off: "Hidden")
                 row("Example sentences", Binding(get: { model.showExamples }, set: { model.setShowExamples($0) }),
-                    on: "Shown on every card", off: "Shown when you tap the bubble")
+                    on: "Shown on the cards", off: "Hidden")
             }
             .padding(16)
         }

@@ -15,7 +15,7 @@ struct StudyView: View {
         Group {
             if let session, let id = session.currentCardId, let card = model.library.card(id) {
                 VStack(spacing: 18) {
-                    FlashCard(card: card, flipped: flipped, showExample: model.showExamples, toggleExample: { model.setShowExamples(!model.showExamples) },
+                    FlashCard(card: card, flipped: flipped, showExample: model.showExamples,
                               edit: { editing = card })
                         .onTapGesture { withAnimation(reduceMotion ? nil : .spring(duration: 0.5)) { flipped.toggle() } }
                     HStack(spacing: 8) {
@@ -64,9 +64,9 @@ struct FlashCard: View {
     var backFooter = "Did you know it?"
     /// Shown at the right of both footers when browsing: "Box 3".
     var corner: String? = nil
-    /// The example sentence is showing (on both sides; SPEC.md → Example sentences).
-    var showExample = false
-    var toggleExample: () -> Void = {}
+    /// Settings → Example sentences: each side's sentence shows under its word (SPEC.md →
+    /// Example sentences).
+    var showExample = true
     let edit: () -> Void
 
     var body: some View {
@@ -108,23 +108,12 @@ struct FlashCard: View {
         .background(back ? VJ.signal : VJ.card)
         .overlay(Rectangle().strokeBorder(back ? VJ.onSignal : VJ.ink, lineWidth: VJ.stroke))
         .overlay(alignment: .topTrailing) {
-            HStack(spacing: 0) {
-                // Only on a side that has a sentence; filled while it shows.
-                if example != nil {
-                    Button(action: toggleExample) {
-                        Image(systemName: showExample ? "text.bubble.fill" : "text.bubble").font(.system(size: 20, weight: .regular))
-                            .frame(width: 44, height: 44)
-                    }
-                    .accessibilityLabel(showExample ? "Hide the example sentence" : "Show the example sentence")
-                    .foregroundStyle(showExample ? fg : soft)
-                }
-                Button(action: edit) {
-                    Image(systemName: "gearshape").font(.system(size: 20, weight: .regular))
-                        .frame(width: 44, height: 44)
-                }
-                .accessibilityLabel("Edit card")
-                .foregroundStyle(soft)
+            Button(action: edit) {
+                Image(systemName: "gearshape").font(.system(size: 20, weight: .regular))
+                    .frame(width: 44, height: 44)
             }
+            .accessibilityLabel("Edit card")
+            .foregroundStyle(soft)
             .padding(8)
         }
     }

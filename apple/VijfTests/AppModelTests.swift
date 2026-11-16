@@ -149,17 +149,17 @@ import VijfKit
         let url = URL.temporaryDirectory.appending(path: "vijf-\(UUID().uuidString).json")
         try Data(#"{"miss":"box1"}"#.utf8).write(to: url.deletingPathExtension().appendingPathExtension("settings.json"))
         let model = AppModel(url: url)
-        #expect(model.miss == .backToBoxOne && model.showSearch && model.showStreak)
+        #expect(model.miss == .backToBoxOne && model.showSearch && model.showStreak && model.showExamples)
     }
 
-    @Test func exampleSentencesStartHiddenAndTheChoiceIsKept() throws {
+    @Test func exampleSentencesAreOnByDefaultAndTheChoiceIsKept() throws {
         let url = URL.temporaryDirectory.appending(path: "vijf-\(UUID().uuidString).json")
         let model = AppModel(url: url)
-        #expect(!model.showExamples)
-        model.setShowExamples(true)
-        #expect(AppModel(url: url).showExamples)
+        #expect(model.showExamples)
         model.setShowExamples(false)
         #expect(!AppModel(url: url).showExamples)
+        model.setShowExamples(true)
+        #expect(AppModel(url: url).showExamples)
     }
 
     @Test func addingEditingAndImportingKeepTheSentences() throws {

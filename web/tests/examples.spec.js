@@ -7,71 +7,58 @@ const one = (c) => data([deck(1, 'Start')], [c]);
 const front = (page) => page.locator('.face:not(.face--back)');
 const back = (page) => page.locator('.face--back');
 
-test('a card with a sentence shows the bubble; tapping it shows the sentence without flipping', async ({ page }) => {
+const settings = async (page) => {
+  await page.click('[data-act=menu]');
+  await page.getByRole('menuitem', { name: 'Settings' }).click();
+};
+
+test('sentences show under the word on both sides, with no bubble or other button', async ({ page }) => {
   await open(page, one(withEx(card(1, 1, 'the house', 'het huis', 1), 'The house is big.', 'Het huis is groot.')));
   await page.click('[data-go=box1]');
-  const bubble = front(page).locator('.bubble');
-  await expect(bubble).toHaveAttribute('aria-label', 'Show the example sentence');
-  await expect(front(page).locator('.example')).toBeHidden();
-  await bubble.click();
   await expect(front(page).locator('.example')).toHaveText('The house is big.');
   await expect(front(page).locator('.example u')).toHaveText('The house');
-  await expect(bubble).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#flip')).not.toHaveClass(/turned/);
-});
-
-test('once shown, sentences stay shown on the next cards, until the bubble hides them again', async ({ page }) => {
-  await open(page, data([deck(1, 'Start')], [
-    withEx(card(1, 1, 'the house', 'het huis', 1), 'The house is big.', 'Het huis is groot.'),
-    withEx(card(2, 1, 'the bread', 'het brood', 1), 'The bread is fresh.', 'Het brood is vers.'),
-  ]));
-  await page.click('[data-go=box1]');
-  await front(page).locator('.bubble').click();
+  await expect(page.locator('.bubble, [data-act=example]')).toHaveCount(0);
   await page.click('#flip');
   await expect(back(page).locator('.example')).toBeVisible();
-  await expect(back(page).locator('.example u')).toHaveText(/Het (huis|brood)/);
-  await page.getByRole('button', { name: /I know it/ }).click();
-  await expect(front(page).locator('.example')).toBeVisible();     // the next card too
-  await expect(front(page).locator('.bubble')).toHaveAttribute('aria-pressed', 'true');
-  await page.click('#flip');
-  await back(page).locator('.bubble').click();   // the back's bubble works the same way
-  await expect(back(page).locator('.example')).toBeHidden();
-  await page.getByRole('button', { name: /I know it/ }).click();
-  await expect(page.locator('.example')).toHaveCount(0);           // box 1 is done: no card left
+  await expect(back(page).locator('.example u')).toHaveText('Het huis');
 });
 
-test('the choice is saved: after a reload sentences are still shown, and Settings has the switch', async ({ page }) => {
-  await open(page, one(withEx(card(1, 1, 'the house', 'het huis', 1), 'The house is big.', null)));
+test('a side without a sentence shows only its word', async ({ page }) => {
+  await open(page, one(withEx(card(1, 1, 'the bread', 'het brood', 1), null, 'Het brood is vers.')));
   await page.click('[data-go=box1]');
-  await expect(front(page).locator('.example')).toBeHidden();
-  await front(page).locator('.bubble').click();
+  await expect(front(page).locator('.example')).toHaveCount(0);
+  await expect(back(page).locator('.example')).toHaveCount(1);
+});
+
+test('Settings → Example sentences is on by default; off hides them everywhere, and it is kept', async ({ page }) => {
+  await open(page, data([deck(1, 'Start'), deck(2, 'Werk')],
+    [withEx(card(1, 1, 'the house', 'het huis', 1), 'The house is big.', null)]));
+  await settings(page);
+  const sw = page.getByRole('switch', { name: 'Example sentences' });
+  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('.setting', { hasText: 'Example sentences' })).toContainText('Shown on the cards');
+  await sw.click();
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
+  await expect(page.locator('.setting', { hasText: 'Example sentences' })).toContainText('Hidden');
+  await page.reload();
+  await page.locator('.slot--deck', { hasText: 'Start' }).click();
+  await page.click('[data-go=box1]');
+  await expect(page.locator('.example')).toHaveCount(0);
+  await page.goto('/');
+  await settings(page);
+  await page.getByRole('switch', { name: 'Example sentences' }).click();
+  await page.reload();
+  await page.locator('.slot--deck', { hasText: 'Start' }).click();
+  await page.getByRole('button', { name: 'Browse cards' }).click();
+  await expect(front(page).locator('.example')).toHaveText('The house is big.');
+});
+
+test('an older saved "on" still reads as on', async ({ page }) => {
+  await open(page, one(withEx(card(1, 1, 'the house', 'het huis', 1), 'The house is big.', null)));
+  await page.evaluate(() => localStorage.setItem('vijf-examples', '1'));
   await page.reload();
   await page.click('[data-go=box1]');
   await expect(front(page).locator('.example')).toBeVisible();
-  await page.click('.bar button');
-  await page.click('[data-act=menu]');
-  await page.getByRole('menuitem', { name: 'Settings' }).click();
-  const sw = page.getByRole('switch', { name: 'Example sentences' });
-  await expect(sw).toHaveAttribute('aria-checked', 'true');
-  await expect(page.locator('.setting', { hasText: 'Example sentences' })).toContainText('Shown on every card');
-  await sw.click();
-  await expect(sw).toHaveAttribute('aria-checked', 'false');
-  await expect(page.locator('.setting', { hasText: 'Example sentences' })).toContainText('Shown when you tap the bubble');
-  await page.reload();
-  await page.click('[data-go=box1]');
-  await expect(front(page).locator('.example')).toBeHidden();
-});
-
-test('only a side with a sentence has the bubble; a card without any looks as before', async ({ page }) => {
-  await open(page, data([deck(1, 'Start')], [
-    withEx(card(1, 1, 'the bread', 'het brood', 1), null, 'Het brood is vers.'),
-  ]));
-  await page.click('[data-go=box1]');
-  await expect(front(page).locator('.bubble')).toHaveCount(0);
-  await expect(back(page).locator('.bubble')).toHaveCount(1);
-  await open(page, one(card(1, 1, 'the cheese', 'de kaas', 1)));
-  await page.click('[data-go=box1]');
-  await expect(page.locator('.bubble')).toHaveCount(0);
 });
 
 test('the word is underlined ignoring case and accents, and not when it does not appear', async ({ page }) => {
@@ -79,7 +66,6 @@ test('the word is underlined ignoring case and accents, and not when it does not
     withEx(card(1, 1, 'to work', 'werken', 1), 'I like to work here.', 'Ik werk hier graag.'),
   ]));
   await page.click('[data-go=box1]');
-  await front(page).locator('.bubble').click();
   await expect(front(page).locator('.example u')).toHaveText('to work');
   await expect(back(page).locator('.example u')).toHaveCount(0);
 });
@@ -87,15 +73,7 @@ test('the word is underlined ignoring case and accents, and not when it does not
 test('sentences are escaped, never markup', async ({ page }) => {
   await open(page, one(withEx(card(1, 1, 'a', 'b', 1), '<b>hi</b> a', null)));
   await page.click('[data-go=box1]');
-  await front(page).locator('.bubble').click();
   await expect(front(page).locator('.example')).toHaveText('<b>hi</b> a');
-});
-
-test('Browse cards shows the bubble too', async ({ page }) => {
-  await open(page, one(withEx(card(1, 1, 'the house', 'het huis', 1), 'The house is big.', 'Het huis is groot.')));
-  await page.getByRole('button', { name: 'Browse cards' }).click();
-  await front(page).locator('.bubble').click();
-  await expect(front(page).locator('.example')).toHaveText('The house is big.');
 });
 
 test('editing a card changes, adds or removes its sentences and keeps its box', async ({ page }) => {

@@ -310,22 +310,9 @@
   .cog svg { width: 22px; height: 22px; }
   .cog:focus-visible { outline: 3px solid var(--deep); outline-offset: -4px; }
   .face--back .cog:focus-visible { outline-color: var(--on-signal); }
-  /* The example sentence: its bubble sits left of the cog; the sentence shows under the word
-     while #flip has the class "examples", the bubble then filled. */
-  .bubble {
-    position: absolute; top: 8px; right: 52px; width: 44px; height: 44px;
-    display: flex; align-items: center; justify-content: center;
-    background: none; border: none; padding: 0; color: var(--mute); cursor: pointer;
-  }
-  .examples .face:not(.face--back) .bubble { color: var(--ink); }
-  .face--back .bubble { color: var(--on-signal); }
-  .bubble svg { width: 22px; height: 22px; }
-  .examples .bubble svg { fill: currentColor; }
-  .bubble:focus-visible { outline: 3px solid var(--deep); outline-offset: -4px; }
-  .face--back .bubble:focus-visible { outline-color: var(--on-signal); }
-  .example { display: none; margin: 0; font-size: 15px; line-height: 1.5; color: var(--mute); }
+  /* The example sentence, under the word, while Settings → Example sentences is on. */
+  .example { margin: 0; font-size: 15px; line-height: 1.5; color: var(--mute); }
   .face--back .example { color: var(--on-signal); }
-  .examples .example { display: block; }
   .example u { text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-color: var(--deep); }
   .face--back .example u { text-decoration-color: var(--on-signal); }
   .field--gap { margin-top: 8px; }
@@ -418,10 +405,6 @@
     ['almost', 'bijna', 'It is almost five o\'clock.', 'Het is bijna vijf uur.']
   ];
 
-  /* Speech bubble, from Feather Icons "message-square" (MIT): shows a card's example sentence. */
-  var BUBBLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
 
   function blank() { return { cards: [], nextId: 1, decks: [], nextDeckId: 1, doneDays: [] }; }
   function maxId(list) {
@@ -580,16 +563,16 @@
   var SHOW_KEYS = { search: 'vijf-search', streak: 'vijf-streak' };
   var show = { search: true, streak: true };
   try { Object.keys(SHOW_KEYS).forEach(function (k) { show[k] = localStorage.getItem(SHOW_KEYS[k]) !== '0'; }); } catch (e) {}
-  /* Example sentences: shown on every card once the bubble (or the Settings switch) turns them
-     on, until it is turned off again. Only "on" is stored ('1'), per browser like the above. */
+  /* Example sentences on the cards: on unless switched off in Settings. Only "off" is stored
+     ('0'), per browser like the above (an older '1' reads as on). */
   var EXAMPLES_KEY = 'vijf-examples';
-  var examplesOn = false;
-  try { examplesOn = localStorage.getItem(EXAMPLES_KEY) === '1'; } catch (e) {}
+  var examplesOn = true;
+  try { examplesOn = localStorage.getItem(EXAMPLES_KEY) !== '0'; } catch (e) {}
   function setExamplesOn(on) {
     examplesOn = on;
     try {
-      if (on) localStorage.setItem(EXAMPLES_KEY, '1');
-      else localStorage.removeItem(EXAMPLES_KEY);
+      if (on) localStorage.removeItem(EXAMPLES_KEY);
+      else localStorage.setItem(EXAMPLES_KEY, '0');
     } catch (e) {}
   }
   /* Reading words aloud was removed; clear the voice choice an older version saved. */
@@ -798,15 +781,12 @@
     var foot = function (text) {
       return '<span class="hint hint--foot"><span>' + text + '</span>' + (corner ? '<span>' + corner + '</span>' : '') + '</span>';
     };
-    /* A side with an example sentence gets the bubble beside the cog; the sentence shows while
-       #flip has the class "examples": from the saved setting, toggled by the bubble. */
+    /* A side's example sentence shows under its word while Settings → Example sentences is on. */
     var side = function (word, example) {
-      var bubble = example ? '<button class="bubble" data-act="example" aria-pressed="' + examplesOn + '" ' +
-        'aria-label="' + (examplesOn ? 'Hide' : 'Show') + ' the example sentence">' + BUBBLE + '</button>' : '';
       return '<div class="mid"><div class="word">' + esc(word) + '</div>' +
-        (example ? '<p class="example">' + markWord(example, word) + '</p>' : '') + '</div>' + bubble;
+        (example && examplesOn ? '<p class="example">' + markWord(example, word) + '</p>' : '') + '</div>';
     };
-    return '<div class="stage"><div class="flip' + (examplesOn ? ' examples' : '') + '" id="flip">' +
+    return '<div class="stage"><div class="flip" id="flip">' +
       '<div class="face"><span class="hint">Your language</span>' + side(card.native, card.nativeExample) +
       foot('Tap to flip') + cog + '</div>' +
       '<div class="face face--back"><span class="hint">Dutch</span>' + side(card.dutch, card.dutchExample) +
@@ -990,7 +970,7 @@
     h += settingRow('streak', 'Days in a row', show.streak, show.streak ? 'Shown on the deck list' : 'Hidden',
       'data-act="show" data-show="streak"');
     h += settingRow('examples', 'Example sentences', examplesOn,
-      examplesOn ? 'Shown on every card' : 'Shown when you tap the bubble', 'data-act="examples"');
+      examplesOn ? 'Shown on the cards' : 'Hidden', 'data-act="examples"');
     return h;
   }
   /* One setting: its name, a line saying what the current position does, and the switch. */
@@ -1269,16 +1249,6 @@
     else if (act === 'browse-prev') browseMove(-1);
     else if (act === 'browse-next') browseMove(1);
     else if (act === 'browse-edit') { foundId = browseCard().id; editFrom = 'browse'; go('card'); }
-    else if (act === 'example') {
-      /* Show or hide the sentence on both sides, without redrawing (that would undo a flip),
-         and remember it for every card from now on. */
-      var flip = document.getElementById('flip'), shown = flip.classList.toggle('examples');
-      setExamplesOn(shown);
-      Array.prototype.forEach.call(flip.querySelectorAll('.bubble'), function (b) {
-        b.setAttribute('aria-pressed', String(shown));
-        b.setAttribute('aria-label', (shown ? 'Hide' : 'Show') + ' the example sentence');
-      });
-    }
     else if (act === 'again') { nextRound(session); render(); }
     else if (act === 'show') {
       var which = el.getAttribute('data-show');
