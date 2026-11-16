@@ -2,7 +2,8 @@ import SwiftUI
 import VijfKit
 
 /// The iPhone's settings (SPEC.md → Settings): Classic Leitner (what "Not yet" does above box 1;
-/// the watch follows it), and what the deck list shows: Search and Days in a row.
+/// the watch follows it), what the deck list shows (Search and Days in a row), and whether cards
+/// show their example sentences.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
 
@@ -16,6 +17,8 @@ struct SettingsView: View {
                     on: "Shown on the deck list", off: "Hidden")
                 row("Days in a row", Binding(get: { model.showStreak }, set: { model.setShowStreak($0) }),
                     on: "Shown on the deck list", off: "Hidden")
+                row("Example sentences", Binding(get: { model.showExamples }, set: { model.setShowExamples($0) }),
+                    on: "Shown on every card", off: "Shown when you tap the bubble")
             }
             .padding(16)
         }

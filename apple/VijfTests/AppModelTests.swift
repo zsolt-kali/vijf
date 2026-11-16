@@ -152,6 +152,16 @@ import VijfKit
         #expect(model.miss == .backToBoxOne && model.showSearch && model.showStreak)
     }
 
+    @Test func exampleSentencesStartHiddenAndTheChoiceIsKept() throws {
+        let url = URL.temporaryDirectory.appending(path: "vijf-\(UUID().uuidString).json")
+        let model = AppModel(url: url)
+        #expect(!model.showExamples)
+        model.setShowExamples(true)
+        #expect(AppModel(url: url).showExamples)
+        model.setShowExamples(false)
+        #expect(!AppModel(url: url).showExamples)
+    }
+
     @Test func addingEditingAndImportingKeepTheSentences() throws {
         let model = freshModel()
         _ = model.makeDeck(named: "Start")

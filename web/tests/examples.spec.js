@@ -20,7 +20,7 @@ test('a card with a sentence shows the bubble; tapping it shows the sentence wit
   await expect(page.locator('#flip')).not.toHaveClass(/turned/);
 });
 
-test('the sentence stays open when the card flips, and the next card starts hidden', async ({ page }) => {
+test('once shown, sentences stay shown on the next cards, until the bubble hides them again', async ({ page }) => {
   await open(page, data([deck(1, 'Start')], [
     withEx(card(1, 1, 'the house', 'het huis', 1), 'The house is big.', 'Het huis is groot.'),
     withEx(card(2, 1, 'the bread', 'het brood', 1), 'The bread is fresh.', 'Het brood is vers.'),
@@ -31,12 +31,35 @@ test('the sentence stays open when the card flips, and the next card starts hidd
   await expect(back(page).locator('.example')).toBeVisible();
   await expect(back(page).locator('.example u')).toHaveText(/Het (huis|brood)/);
   await page.getByRole('button', { name: /I know it/ }).click();
-  await expect(front(page).locator('.example')).toBeHidden();
+  await expect(front(page).locator('.example')).toBeVisible();     // the next card too
+  await expect(front(page).locator('.bubble')).toHaveAttribute('aria-pressed', 'true');
   await page.click('#flip');
   await back(page).locator('.bubble').click();   // the back's bubble works the same way
-  await expect(back(page).locator('.example')).toBeVisible();
-  await back(page).locator('.bubble').click();
   await expect(back(page).locator('.example')).toBeHidden();
+  await page.getByRole('button', { name: /I know it/ }).click();
+  await expect(page.locator('.example')).toHaveCount(0);           // box 1 is done: no card left
+});
+
+test('the choice is saved: after a reload sentences are still shown, and Settings has the switch', async ({ page }) => {
+  await open(page, one(withEx(card(1, 1, 'the house', 'het huis', 1), 'The house is big.', null)));
+  await page.click('[data-go=box1]');
+  await expect(front(page).locator('.example')).toBeHidden();
+  await front(page).locator('.bubble').click();
+  await page.reload();
+  await page.click('[data-go=box1]');
+  await expect(front(page).locator('.example')).toBeVisible();
+  await page.click('.bar button');
+  await page.click('[data-act=menu]');
+  await page.getByRole('menuitem', { name: 'Settings' }).click();
+  const sw = page.getByRole('switch', { name: 'Example sentences' });
+  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('.setting', { hasText: 'Example sentences' })).toContainText('Shown on every card');
+  await sw.click();
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
+  await expect(page.locator('.setting', { hasText: 'Example sentences' })).toContainText('Shown when you tap the bubble');
+  await page.reload();
+  await page.click('[data-go=box1]');
+  await expect(front(page).locator('.example')).toBeHidden();
 });
 
 test('only a side with a sentence has the bubble; a card without any looks as before', async ({ page }) => {

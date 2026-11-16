@@ -89,7 +89,7 @@ no account, works offline once loaded.
 | **Done for today** | See Days in a row: replaces the summary when nothing is due in any deck. |
 | **Summary** | Breadcrumb, "Round complete." with the moved-up and "Not yet" counts, and buttons back to the boxes or to another deck. |
 | **Add** | A deck picker that defaults to the current deck; both single and bulk add use it, and the chosen deck becomes the current one. Single add: native and Dutch fields, both required, each followed by an optional example sentence field (see Example sentences), saved to box 1. The form clears and refocuses so the next word can be typed right away. Bulk add: a textarea with one pair per line (see below). |
-| **Settings** | Opened from the deck list's ⋯ menu; the back button returns there. Three rows, each a name, a line saying what its current position does, and a square switch on the right (see design/components/Switch.md): **Classic Leitner** ("Missed cards go down one box" when off, the default; "Missed cards go back to box 1" when on), **Search** and **Days in a row** (both on by default: "Shown on the deck list" / "Hidden"). No heading or note. Search off hides the deck list's search field and clears a search in progress. Days in a row off hides the streak line on the deck list and the streak card on Done for today; done days are still recorded. Saved on the device, not in the cards or backups: web `vijf-miss`, `vijf-search` and `vijf-streak` (stored only when off) in `localStorage` (an old `vijf-voice` entry from when words could be read aloud is cleared on load); iPhone a settings file next to its library, sent to the watch (see Apple Watch → Sync). |
+| **Settings** | Opened from the deck list's ⋯ menu; the back button returns there. Four rows, each a name, a line saying what its current position does, and a square switch on the right (see design/components/Switch.md): **Classic Leitner** ("Missed cards go down one box" when off, the default; "Missed cards go back to box 1" when on), **Search** and **Days in a row** (both on by default: "Shown on the deck list" / "Hidden"), **Example sentences** (off by default: "Shown when you tap the bubble" / "Shown on every card"; the card's bubble flips the same setting, see Example sentences). No heading or note. Search off hides the deck list's search field and clears a search in progress. Days in a row off hides the streak line on the deck list and the streak card on Done for today; done days are still recorded. Saved on the device, not in the cards or backups: web `vijf-miss`, `vijf-search` and `vijf-streak` (stored only when off) and `vijf-examples` (stored only when on, `'1'`) in `localStorage` (an old `vijf-voice` entry from when words could be read aloud is cleared on load); iPhone a settings file next to its library, Classic Leitner sent to the watch (see Apple Watch → Sync). |
 | **Backup** | Opened from the deck list's ⋯ menu; the back button returns there. A textarea holding the full state as JSON. Copy puts it on the clipboard; restore replaces the state with the pasted JSON. At the bottom, the version: "Version 3116643 · 15 Oct 2026", the commit the app was built from and its date ("Version dev" when not deployed). |
 
 ### Bulk import format
@@ -157,8 +157,10 @@ least one deck and **Search** is on in Settings (the default).
   the front and `on-signal` on the back. A side without one shows no bubble.
 - **Tapping it** shows the sentence under the word: on the front the sentence in your language,
   on the back the Dutch one (body text, 15 px, `mute` / `on-signal`). The bubble is then filled.
-  Tapping again hides it. It never flips the card. Once shown, the sentence stays shown when the
-  card flips; the next card starts with it hidden.
+  Tapping again hides it. It never flips the card. **The choice is remembered:** once shown,
+  sentences stay shown through a flip, on every next card and in later sessions, until a bubble
+  is tapped again. It is the **Example sentences** setting (off by default), also switchable in
+  Settings.
 - **The word is underlined** in the sentence where it appears, ignoring case and accents (2 px,
   `deep` on the front, `on-signal` on the back). A word that doesn't appear as written (`werken`
   in "Ik werk hier graag.") isn't underlined.

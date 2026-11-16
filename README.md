@@ -31,7 +31,8 @@ New words always start in box 1.
 Open a deck, tap a box, and go through its cards that are due today, in random order. You see
 your own language first; tap to flip to the Dutch. If a card has an **example sentence**, a
 small speech bubble sits beside the cog: tap it to see the sentence (in your language on the
-front, in Dutch on the back), with the word underlined. Then answer:
+front, in Dutch on the back), with the word underlined. vijf remembers this: sentences then
+stay shown on every card until you tap the bubble again. Then answer:
 
 - **I know it:** the card moves up one box and waits that box's gap. From box 2 to box 3 means
   you see it again in 4 days. In box 5 it stays in box 5 and comes back in 16 days.
@@ -48,11 +49,13 @@ brings it back the next day, so a word you forgot gets practised again soon.
 
 ### Settings
 
-**Settings** in the ⋯ menu has three switches:
+**Settings** in the ⋯ menu has four switches:
 - **Classic Leitner:** off (the default), a card you answer **Not yet** goes down one box; on,
   it goes back to box 1, which is stricter. The iPhone's setting also applies on the Watch.
 - **Search** and **Days in a row** (both on): switch them off to hide the search field or the
   streak from the deck list. Your finished days are still counted while the streak is hidden.
+- **Example sentences** (off): on, every card shows its sentences straight away. Tapping the
+  speech bubble on a card flips this same switch.
 
 The line under each switch says what it does right now.
 
