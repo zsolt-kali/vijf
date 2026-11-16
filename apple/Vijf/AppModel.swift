@@ -43,9 +43,8 @@ final class AppModel {
     /// What the deck list shows (Settings); both on unless switched off.
     private(set) var showSearch = true
     private(set) var showStreak = true
-    /// Example sentences on the cards: off until the bubble (or Settings) turns them on, then
-    /// shown on every card until turned off again.
-    private(set) var showExamples = false
+    /// Settings → Example sentences: shown on the cards unless switched off.
+    private(set) var showExamples = true
     /// The last send to the watch, nil until one was tried (no watch paired: stays nil).
     var watchSync: WatchSyncStatus?
 
@@ -75,12 +74,12 @@ final class AppModel {
     }
 
     /// The settings file. The two show-switches are missing in files from before them: on;
-    /// `showExamples` likewise: off.
+    /// `showExamples` likewise: on.
     private struct Settings: Codable {
         var miss: MissRule
         var showSearch = true
         var showStreak = true
-        var showExamples = false
+        var showExamples = true
 
         init(miss: MissRule, showSearch: Bool, showStreak: Bool, showExamples: Bool) {
             self.miss = miss; self.showSearch = showSearch; self.showStreak = showStreak
@@ -92,7 +91,7 @@ final class AppModel {
             miss = try c.decodeIfPresent(MissRule.self, forKey: .miss) ?? .oneDown
             showSearch = try c.decodeIfPresent(Bool.self, forKey: .showSearch) ?? true
             showStreak = try c.decodeIfPresent(Bool.self, forKey: .showStreak) ?? true
-            showExamples = try c.decodeIfPresent(Bool.self, forKey: .showExamples) ?? false
+            showExamples = try c.decodeIfPresent(Bool.self, forKey: .showExamples) ?? true
         }
     }
     private var settingsURL: URL { url.deletingPathExtension().appendingPathExtension("settings.json") }
@@ -115,7 +114,7 @@ final class AppModel {
     /// Settings → Days in a row: the deck list's streak line and the Done for today card. Done
     /// days are recorded either way.
     func setShowStreak(_ on: Bool) { showStreak = on; saveSettings() }
-    /// The bubble on a card, or Settings → Example sentences. Remembered for every card.
+    /// Settings → Example sentences.
     func setShowExamples(_ on: Bool) { showExamples = on; saveSettings() }
 
     static var defaultURL: URL {

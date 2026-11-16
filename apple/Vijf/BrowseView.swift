@@ -25,7 +25,7 @@ struct BrowseView: View {
 
                     VStack(spacing: 18) {
                         FlashCard(card: card, flipped: flipped, backFooter: "Tap to flip back", corner: "Box \(card.box)",
-                                  showExample: model.showExamples, toggleExample: { model.setShowExamples(!model.showExamples) },
+                                  showExample: model.showExamples,
                                   edit: { editing = card })
                             .onTapGesture { withAnimation(reduceMotion ? nil : .spring(duration: 0.5)) { flipped.toggle() } }
                         HStack(spacing: 8) {

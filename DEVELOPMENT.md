@@ -316,3 +316,10 @@ languages, so it only means "sentence" on a line that also has `=`; every existi
 imports as before. The Watch shows no sentences: its screen is too small. Description:
 https://claude.ai/artifact/SjU2TULq2FQ4NLnPb8GDDc · Design: https://claude.ai/artifact/2XabK76V3KRTW73kJAgq4z
 
+### 30. Example sentences: a setting, on by default, no button on the card
+Decision 29 hid sentences behind a speech bubble on each card. In use, the bubble took space on
+every card and was tapped on every card, so it became a setting remembered across cards (#66) and
+then, with the bubble no longer needed, a plain Settings switch, on by default (#68). Sentences now
+show under the word whenever a card has one. Web keeps `vijf-examples` but stores only "off"
+(`'0'`), and an older `'1'` still reads as on.
+*Considered:* keeping the bubble as a per-card override (against: two controls for one thing).

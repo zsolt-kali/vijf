@@ -303,7 +303,7 @@ test('Settings holds four switches, and cards have no speaker', async ({ page })
   await open(page, data([], []));
   await menu(page, 'Settings');
   await expect(page.getByRole('switch')).toHaveCount(4);
-  for (const [name, on] of [['Classic Leitner', 'false'], ['Search', 'true'], ['Days in a row', 'true'], ['Example sentences', 'false']]) {
+  for (const [name, on] of [['Classic Leitner', 'false'], ['Search', 'true'], ['Days in a row', 'true'], ['Example sentences', 'true']]) {
     await expect(page.getByRole('switch', { name })).toHaveAttribute('aria-checked', on);
   }
   await expect(page.locator('[data-act=speed], [data-act=voice]')).toHaveCount(0);
